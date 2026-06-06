@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-bg: 255 255 255;
+  --color-fg: 15 23 42;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: 2 6 23;
+    --color-fg: 226 232 240;
+  }
+}
+
+body {
+  background: rgb(var(--color-bg));
+  color: rgb(var(--color-fg));
+}
+
+/* High contrast mode for accessibility */
+.high-contrast {
+  --color-bg: 0 0 0;
+  --color-fg: 255 255 255;
+}
+
+.high-contrast a {
+  text-decoration: underline;
+}
+
+/* Focus indicators for keyboard nav */
+*:focus-visible {
+  outline: 2px solid #0ea5e9;
+  outline-offset: 2px;
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

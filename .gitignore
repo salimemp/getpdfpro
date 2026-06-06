@@ -1,0 +1,46 @@
+# Local working artifacts (regenerable, don't commit)
+getpdfpro-monorepo.zip
+getpdfpro-docs.zip
+getpdfpro-blog-adsense.zip
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local environment
+.env
+.env.local
+.env.*.local
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Build outputs (defensive — should already be in subdir .gitignores)
+/build/
+/dist/
+/.next/
+/out/
+
+# Test coverage
+/coverage/
+*.lcov
+
+# Python (defensive)
+/__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Node (defensive)
+/node_modules/
+
+# Flutter (defensive)
+/.dart_tool/
+/build/

@@ -1,0 +1,118 @@
+# GetPDFPro — WordPress .htaccess (TEMPLATE)
+#
+# Copy contents to /home/user/public_html/.htaccess on the Hostinger server.
+# This is in addition to Cloudflare's edge security.
+
+# ============================================================================
+# BEGIN WordPress
+# ============================================================================
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+RewriteRule ^index\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.php [L]
+</IfModule>
+# END WordPress
+
+# ============================================================================
+# Security Headers
+# ============================================================================
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    Header set Permissions-Policy "camera=(self), microphone=(self), geolocation=()"
+    Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+    # CSP - adjust as needed for your theme/plugins
+    Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://*.sentry.io"
+</IfModule>
+
+# ============================================================================
+# Disable XML-RPC (if not needed)
+# ============================================================================
+<Files xmlrpc.php>
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</Files>
+
+# ============================================================================
+# Protect wp-config.php
+# ============================================================================
+<Files wp-config.php>
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</Files>
+
+# ============================================================================
+# Protect .htaccess itself
+# ============================================================================
+<Files ".htaccess">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</Files>
+
+# ============================================================================
+# Disable directory browsing
+# ============================================================================
+Options -Indexes
+
+# ============================================================================
+# Block access to sensitive files
+# ============================================================================
+<FilesMatch "^(wp-config\.php|readme\.html|license\.txt|wp-config-sample\.php|changelog\.txt|debug\.log|error\.log)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</FilesMatch>
+
+# ============================================================================
+# Prevent PHP execution in uploads directory
+# ============================================================================
+<Directory "/wp-content/uploads">
+    <FilesMatch "\.(php|phtml|php3|php4|php5|phar|pl|py|jsp|asp|sh|cgi)$">
+        <IfModule mod_authz_core.c>
+            Require all denied
+        </IfModule>
+    </FilesMatch>
+</Directory>
+
+# ============================================================================
+# Disable hotlinking (optional, prevents others from using your images)
+# ============================================================================
+#<IfModule mod_rewrite.c>
+#    RewriteCond %{HTTP_REFERER} !^$
+#    RewriteCond %{HTTP_REFERER} !^https://(www\.)?getpdfpro\.com [NC]
+#    RewriteRule \.(jpg|jpeg|png|gif|svg|webp|woff2)$ - [F,L]
+#</IfModule>
+
+# ============================================================================
+# Gzip compression
+# ============================================================================
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript
+    AddOutputFilterByType DEFLATE application/javascript application/json application/xml
+    AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+# ============================================================================
+# Browser caching
+# ============================================================================
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/jpg "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType application/pdf "access plus 1 month"
+    ExpiresByType text/javascript "access plus 1 month"
+    ExpiresByType text/html "access plus 1 hour"
+</IfModule>
