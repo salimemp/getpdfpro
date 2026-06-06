@@ -1,0 +1,150 @@
+# MkDocs configuration for docs.getpdfpro.com
+# Builds static site from getpdfpro/docs/ and deploys to GitHub Pages
+
+site_name: GetPDFPro Docs
+site_description: Documentation for GetPDFPro — cross-platform PDF converter with voice, AI, and accessibility
+site_url: https://docs.getpdfpro.com/
+site_author: GetPDFPro Team
+
+# Source
+docs_dir: getpdfpro/docs
+
+# Don't include the blog drafts in the public docs
+# (we'll keep the blog posts in getpdfpro/docs/BLOG-POSTS/ for the team,
+# but exclude from public navigation)
+exclude_docs: |
+  BLOG-POSTS/
+  COMPARISON-TEMPLATES/
+  LEGAL/
+  SEO/
+
+# Theme
+theme:
+  name: material
+  language: en
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: sky
+      accent: sky
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: sky
+      accent: sky
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.tracking
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - content.tooltips
+    - content.action.edit
+  icon:
+    repo: fontawesome/brands/github
+    edit: material/pencil
+    view: material/eye
+
+# Plugins
+plugins:
+  - search:
+      separator: '[\s\-,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
+  - git-revision-date-localized:
+      enable: true
+      type: date
+      fallback_to_build_date: true
+  - minify:
+      minify_html: true
+
+# Markdown extensions
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.tilde
+  - pymdownx.caret
+  - pymdownx.smartsymbols
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.magiclink:
+      social_url_disabled: true
+      repo_url_shorthand: true
+      social_url_shorthand: true
+
+# Navigation
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Architecture: ARCHITECTURE.md
+    - WordPress Setup: WORDPRESS-SETUP.md
+  - Operations:
+    - Cost Model: COST-MODEL.md
+    - Security: SECURITY.md
+    - i18n (25 languages): I18N.md
+    - SEO Strategy: SEO-STRATEGY.md
+    - AdSense Compliance: ADSENSE-COMPLIANCE.md
+  - Product:
+    - E2E Encryption: E2E-ENCRYPTION.md
+
+# Edit on GitHub
+edit_uri: edit/main/getpdfpro/docs/
+
+# Repository
+repo_name: salimemp/getpdfpro
+repo_url: https://github.com/salimemp/getpdfpro
+
+# Copyright
+copyright: Copyright &copy; 2026 GetPDFPro · <a href="https://getpdfpro.com/legal/privacy" target="_blank">Privacy</a> · <a href="https://getpdfpro.com/legal/terms" target="_blank">Terms</a>
+
+# Extra
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/salimemp/getpdfpro
+      name: GitHub
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/getpdfpro
+      name: Twitter
+  generator: false  # Hide "Made with Material for MkDocs"
+  # analytics:
+  #   provider: plausible
+  #   domain: docs.getpdfpro.com
+
+extra_css:
+  - css/extra.css
+
+# Strict mode off (we have some non-standard markdown in existing docs)
+strict: false

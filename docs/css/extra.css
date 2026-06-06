@@ -1,0 +1,40 @@
+# Custom CSS for the docs site
+/* Placeholder — extend as needed */
+
+/* Slightly tighter line-height for readability */
+.md-typeset {
+  line-height: 1.6;
+}
+
+/* Make code blocks easier to read */
+.md-typeset pre > code {
+  font-size: 0.85em;
+}
+
+/* Custom admonition colors */
+.md-typeset .admonition.note {
+  border-left-color: #0ea5e9;
+}
+
+.md-typeset .admonition.tip {
+  border-left-color: #10b981;
+}
+
+.md-typeset .admonition.warning {
+  border-left-color: #f59e0b;
+}
+
+.md-typeset .admonition.danger {
+  border-left-color: #ef4444;
+}
+
+/* Improve table rendering */
+.md-typeset table:not([class]) {
+  font-size: 0.85em;
+}
+
+/* Make headings pop more on the home page */
+.md-typeset h1 {
+  font-weight: 700;
+  margin-bottom: 0.5em;
+}

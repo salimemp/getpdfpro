@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: GetPDFPro Community Discussions
+    url: https://github.com/salimemp/getpdfpro/discussions
+    about: General questions, ideas, and community help
+  - name: GetPDFPro Security Disclosure
+    url: https://github.com/salimemp/getpdfpro/security/advisories/new
+    about: For sensitive security issues (private, not public)
+  - name: Email Support
+    url: mailto:hello@getpdfpro.com
+    about: For account, billing, or non-technical issues
