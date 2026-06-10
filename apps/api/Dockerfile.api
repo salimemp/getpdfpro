@@ -8,6 +8,11 @@
 #   - Root Directory:  (blank)
 #   - Dockerfile Path: apps/api/Dockerfile.api
 #   - Watch Patterns:  apps/api/**
+#
+# Important: We use ENTRYPOINT (not CMD) with a shell wrapper, so the
+# $PORT env var always expands even if Railway overrides CMD via its
+# dashboard "Start Command" field. Railway's Start Command replaces CMD
+# but leaves ENTRYPOINT intact.
 # =============================================================================
 
 FROM python:3.12-slim
@@ -41,5 +46,7 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD curl -fsS "http://127.0.0.1:${PORT}/health" || exit 1
 
-# uvicorn — $PORT injected by Railway at runtime
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
+# Always run through a shell so $PORT is expanded. ENTRYPOINT survives
+# Railway's Start Command override, CMD does not.
+ENTRYPOINT ["sh", "-c"]
+CMD ["exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
