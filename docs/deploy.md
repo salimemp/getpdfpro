@@ -71,24 +71,31 @@ Click on the auto-created service, then **Settings**:
 | Setting                     | Value                                |
 |-----------------------------|--------------------------------------|
 | **Service Name**            | `getpdfpro-api`                      |
-| **Root Directory**          | `apps/api`                           |
-| **Dockerfile Path**         | `Dockerfile.api`                     |
+| **Root Directory**          | *(blank — build context = repo root)* |
+| **Dockerfile Path**         | `apps/api/Dockerfile.api`            |
 | **Watch Patterns**          | `apps/api/**`                        |
 | **Healthcheck Path**        | `/health`                            |
 | **Healthcheck Timeout**     | `30`                                 |
 | **Port** (auto)             | `$PORT`                              |
+
+> **Why blank Root Directory?** Railway's build context is always the repo
+> root, and the Dockerfile paths use full `apps/api/...` prefixes so they
+> resolve correctly. Setting Root Directory to `apps/api` would upload
+> only that subtree but the Dockerfile's `COPY` paths would still expect
+> the repo-root layout, leading to `failed to compute cache key: "/app":
+> not found` build errors.
 
 #### 3. Add the **Worker** service
 
 - **+ New** → **GitHub Repo** → pick `salimemp/getpdfpro` again
 - **Settings**:
 
-| Setting             | Value                       |
-|---------------------|-----------------------------|
-| **Service Name**    | `getpdfpro-worker`          |
-| **Root Directory**  | `apps/api`                  |
-| **Dockerfile Path** | `Dockerfile.worker`         |
-| **Watch Patterns**  | `apps/api/**`               |
+| Setting             | Value                              |
+|---------------------|------------------------------------|
+| **Service Name**    | `getpdfpro-worker`                 |
+| **Root Directory**  | *(blank — same as API)*            |
+| **Dockerfile Path** | `apps/api/Dockerfile.worker`       |
+| **Watch Patterns**  | `apps/api/**`                      |
 
 **Important:** worker has no port, no healthcheck. In **Settings** → **Networking**, **do NOT generate a domain** — leave it as a private service. If Railway tries to assign a domain, that's fine; it just won't get traffic.
 
@@ -174,7 +181,7 @@ A real PDF will get a real result. The endpoint is wired and the worker pulls fr
 │   ├── web/                    # Next.js 15 — Vercel
 │   │   └── (no vercel.json — root one wins)
 │   └── api/                    # FastAPI — Railway
-│       ├── Dockerfile.api      # ← API service
+│       ├── Dockerfile.api      # ← API service (build context = repo root)
 │       ├── Dockerfile.worker   # ← Worker service
 │       ├── requirements.txt
 │       ├── runtime.txt         # python-3.12.4
@@ -187,6 +194,7 @@ A real PDF will get a real result. The endpoint is wired and the worker pulls fr
 │           └── routers/
 │               ├── pdf.py      # /api/v1/pdf/* sync
 │               └── jobs.py     # /api/v1/jobs/* async
+├── .dockerignore               # at repo root — applies to the API build
 ├── vercel.json                 # Vercel build contract
 ├── railway.toml                # (decorative — see note below)
 └── package.json                # npm workspaces, root
