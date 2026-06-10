@@ -1,9 +1,12 @@
 # =============================================================================
 # Railway service definition for the GetPDFPro API
 # =============================================================================
-# Drop this file at the REPO ROOT. Railway will pick it up the first time
-# the repo is added to a project; it pre-creates the api + worker services
-# so you don't have to click "Add Service" twice in the dashboard.
+# This file is the source of truth for the deploy contract on Railway.
+# The dashboard "Custom Start Command" field is OVERRIDDEN by this file
+# when present. We use a start.sh script (not a one-liner) because the
+# script is exec'd through /bin/sh which expands $PORT — if we put
+# $PORT directly in startCommand here, Railway exec's it literally and
+# uvicorn dies with "Invalid value for '--port': '$PORT'".
 #
 # For the Redis service, add it manually in the Railway dashboard:
 #   "+ New" → "Database" → "Redis"
@@ -15,16 +18,13 @@ builder = "DOCKERFILE"
 dockerfilePath = "apps/api/Dockerfile.api"
 
 [deploy]
-startCommand = "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+# Use the start.sh script (in the image at /usr/local/bin/start.sh).
+# It handles $PORT expansion via /bin/sh before exec'ing uvicorn.
+startCommand = "/usr/local/bin/start.sh"
 healthcheckPath = "/health"
 healthcheckTimeout = 30
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
-
-# Per-service source path tells Railway "this is a multi-service repo,
-# only the apps/api subtree belongs to this service."
-[[services]]
-source = "apps/api"
 
 # Worker (Celery) — same image, different Dockerfile + CMD.
 # Created from the dashboard: "+ New" → "GitHub Repo" → same repo →
