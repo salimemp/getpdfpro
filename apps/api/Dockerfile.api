@@ -9,10 +9,11 @@
 #   - Dockerfile Path: apps/api/Dockerfile.api
 #   - Watch Patterns:  apps/api/**
 #
-# Important: We use ENTRYPOINT (not CMD) with a shell wrapper, so the
-# $PORT env var always expands even if Railway overrides CMD via its
-# dashboard "Start Command" field. Railway's Start Command replaces CMD
-# but leaves ENTRYPOINT intact.
+# Important: We use a start.sh script as CMD so the $PORT env var is
+# always expanded by /bin/sh, even if Railway overrides the CMD via
+# its dashboard "Start Command" field. Set the dashboard's Start
+# Command to the same path (/usr/local/bin/start.sh) and the script
+# runs either way.
 # =============================================================================
 
 FROM python:3.12-slim
@@ -31,6 +32,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # App code — context is repo root, paths are prefixed
 COPY apps/api/app/ ./app/
+COPY apps/api/start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
 
 # Non-root user for runtime
 RUN useradd -m --uid 1000 appuser && chown -R appuser:appuser /srv/app
@@ -46,7 +49,8 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD curl -fsS "http://127.0.0.1:${PORT}/health" || exit 1
 
-# Always run through a shell so $PORT is expanded. ENTRYPOINT survives
-# Railway's Start Command override, CMD does not.
-ENTRYPOINT ["sh", "-c"]
-CMD ["exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
+# Use the start.sh script — single source of truth for the start
+# command, and it expands $PORT via /bin/sh. This survives Railway
+# overriding the start command because we set BOTH Dockerfile CMD
+# AND the dashboard's Start Command to call the same script.
+CMD ["/usr/local/bin/start.sh"]

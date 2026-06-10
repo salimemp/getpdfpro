@@ -74,9 +74,18 @@ Click on the auto-created service, then **Settings**:
 | **Root Directory**          | *(blank — build context = repo root)* |
 | **Dockerfile Path**         | `apps/api/Dockerfile.api`            |
 | **Watch Patterns**          | `apps/api/**`                        |
+| **Start Command**           | `/usr/local/bin/start.sh` *(critical — see below)* |
 | **Healthcheck Path**        | `/health`                            |
 | **Healthcheck Timeout**     | `30`                                 |
 | **Port** (auto)             | `$PORT`                              |
+
+> **Why explicit Start Command?** Railway's Start Command field **replaces**
+> the Dockerfile's `CMD` entirely. If you leave it blank or set it to
+> `uvicorn app.main:app --port $PORT`, the literal `$PORT` gets passed
+> straight to uvicorn without shell expansion, and the container crashes
+> with `Invalid value for '--port': '$PORT' is not a valid integer`.
+> Pointing it at the in-container `start.sh` script (which uses
+> `/bin/sh` to expand `$PORT`) avoids that footgun.
 
 > **Why blank Root Directory?** Railway's build context is always the repo
 > root, and the Dockerfile paths use full `apps/api/...` prefixes so they
@@ -96,6 +105,7 @@ Click on the auto-created service, then **Settings**:
 | **Root Directory**  | *(blank — same as API)*            |
 | **Dockerfile Path** | `apps/api/Dockerfile.worker`       |
 | **Watch Patterns**  | `apps/api/**`                      |
+| **Start Command**   | `celery -A app.celery_app:celery_app worker --loglevel=info --concurrency=2` *(or leave blank — Dockerfile CMD works too)* |
 
 **Important:** worker has no port, no healthcheck. In **Settings** → **Networking**, **do NOT generate a domain** — leave it as a private service. If Railway tries to assign a domain, that's fine; it just won't get traffic.
 
@@ -183,6 +193,7 @@ A real PDF will get a real result. The endpoint is wired and the worker pulls fr
 │   └── api/                    # FastAPI — Railway
 │       ├── Dockerfile.api      # ← API service (build context = repo root)
 │       ├── Dockerfile.worker   # ← Worker service
+│       ├── start.sh            # ← API start script (expands $PORT)
 │       ├── requirements.txt
 │       ├── runtime.txt         # python-3.12.4
 │       ├── Procfile            # fallback if Railway's Nixpacks runs first
