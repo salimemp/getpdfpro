@@ -41,6 +41,12 @@ venv/
 # Node (defensive)
 /node_modules/
 
+# Turbo
+.turbo/
+
+# Next.js auto-generated
+next-env.d.ts
+
 # Flutter (defensive)
 /.dart_tool/
 /build/

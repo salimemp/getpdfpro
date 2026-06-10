@@ -14,10 +14,10 @@ The Next.js 15 web app for GetPDFPro. Marketing site, tool UI, account dashboard
 
 ```bash
 # from repo root
-pnpm install
+npm install
 cp apps/web/.env.example apps/web/.env.local
 # fill in the values
-pnpm --filter web dev
+npm --workspace web run dev
 ```
 
 App runs on http://localhost:3000.
@@ -25,7 +25,7 @@ App runs on http://localhost:3000.
 ## Build
 
 ```bash
-pnpm --filter web build
+npm --workspace web run build
 ```
 
 ## Deploy
