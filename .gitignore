@@ -27,6 +27,8 @@ logs/
 /dist/
 /.next/
 /out/
+**/.next/
+**/dist/
 
 # Test coverage
 /coverage/

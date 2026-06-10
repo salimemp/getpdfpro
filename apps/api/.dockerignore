@@ -1,0 +1,47 @@
+# Keep the Docker build context small — only the API app + its deps.
+# Without this, Railway uploads the whole monorepo (web app, node_modules,
+# .next, git history) every time, and the API doesn't need any of it.
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+*.egg-info/
+
+# Node / Next.js (not used by the API)
+node_modules/
+.next/
+out/
+dist/
+.npm/
+
+# Git + IDE
+.git/
+.gitignore
+.gitattributes
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Docs / monorepo noise
+README.md
+docs/
+getpdfpro-feasibility-report.md
+*.zip
+*.tar.gz
+*.log
+
+# Tests (kept lean for now; revisit when we add CI)
+tests/
+test/

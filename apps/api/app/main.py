@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.config import get_settings
-from app.routers import pdf
+from app.routers import jobs, pdf
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +47,7 @@ def create_app() -> FastAPI:
 
     # Routers
     app.include_router(pdf.router, prefix="/api/v1/pdf", tags=["pdf"])
+    app.include_router(jobs.router, prefix="/api/v1", tags=["jobs"])
 
     @app.get("/health", tags=["meta"])
     def health() -> dict:
