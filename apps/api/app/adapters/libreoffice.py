@@ -122,18 +122,38 @@ class LibreOfficeAdapter:
 
                 # Build env. soffice on a slim Docker image (no GUI,
                 # no X) needs:
-                #   - HOME writable (so it can put lock files there)
+                #   - HOME writable (so it can put lock files there
+                #     in ~/.config/libreoffice)
                 #   - TMPDIR writable (so it can put tmp files there)
-                #   - JAVA_HOME pointing at the JRE (else javaldx
-                #     probe fails and DOCX save aborts with 0xc10)
-                # Without these, soffice silently writes no output and
-                # the cascade falls through to Local — which is
-                # exactly the bug we just spent hours debugging.
+                #   - JAVA_HOME pointing at the JRE (so the (missing)
+                #     javaldx probe would succeed if it were present)
+                #
+                # We also explicitly bypass any pre-existing soffice
+                # user profile by passing -env:UserInstallation.
+                #
+                # Note: the apt-installed libreoffice-common on Debian
+                # does NOT ship /usr/lib/libreoffice/program/javaldx —
+                # the javaldx script is part of the libreoffice-base
+                # package on older releases, but the slim package set
+                # we install (libreoffice-core + -writer + -calc +
+                # -impress) omits it. The javaldx warning is harmless;
+                # the 0xc10 save error is a separate issue that we
+                # work around by ensuring HOME and TMPDIR are writable
+                # and we use a per-invocation -env:UserInstallation.
                 run_env = os.environ.copy()
                 run_env["TMPDIR"] = str(tmppath)
-                run_env["HOME"] = str(tmppath)  # profile lives under tmppath
-                # JAVA_HOME: prefer the standard Debian default-jvm path.
-                # If it's not there, fall back to wherever java is.
+                # HOME: prefer the real user home if it exists and is
+                # writable, else fall back to tmppath. Setting HOME to
+                # tmppath can confuse some soffice internals (it tries
+                # to write ~/.config/libreoffice/... and expects
+                # certain paths to exist). Use the real home.
+                user_home = run_env.get("HOME") or os.path.expanduser("~")
+                if not Path(user_home).exists():
+                    user_home = str(tmppath)
+                    Path(user_home).mkdir(parents=True, exist_ok=True)
+                run_env["HOME"] = user_home
+                # JAVA_HOME: point at the JRE so any internal java
+                # lookups succeed (even though javaldx is missing).
                 java_home = (
                     run_env.get("JAVA_HOME")
                     or "/usr/lib/jvm/default-java"
