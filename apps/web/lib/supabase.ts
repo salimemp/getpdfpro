@@ -11,13 +11,37 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  */
 let _client: SupabaseClient | null = null;
 
+/**
+ * Returns true if `value` looks like a real Supabase config string.
+ * We accept any non-empty string that:
+ *   - is not a placeholder (e.g. Vercel's "<from Supabase>" sentinel,
+ *     or "<my-supabase-url>" template placeholders)
+ *   - starts with http:// or https://
+ *   - has at least 20 characters (Supabase URLs are 30+ chars in practice)
+ *   - contains "supabase" (the real ones do)
+ *
+ * Without this check, the underlying supabase-js client will try
+ * `new URL(emptyOrPlaceholder)` and throw "Invalid URL" at runtime,
+ * which manifests as a hydration error on every page.
+ */
+function isValidConfig(value: string | undefined): value is string {
+  if (!value) return false;
+  if (value.length < 20) return false;
+  if (!value.startsWith("http://") && !value.startsWith("https://")) return false;
+  // Reject any value that contains angle brackets — these are template
+  // placeholders like "<from Supabase>" or "<my-url>" that some build
+  // systems inline when env vars are unset.
+  if (value.includes("<") || value.includes(">")) return false;
+  return true;
+}
+
 export function createSupabaseBrowserClient(): SupabaseClient | null {
   if (_client) return _client;
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!url || !anonKey) {
+  if (!isValidConfig(url) || !isValidConfig(anonKey)) {
     // Don't throw at import time — let the consumer decide.
     // This makes the file safe to import in tests / storybooks.
     return null;
@@ -34,7 +58,7 @@ export function createSupabaseBrowserClient(): SupabaseClient | null {
  */
 export function isSupabaseConfigured(): boolean {
   return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    isValidConfig(process.env.NEXT_PUBLIC_SUPABASE_URL) &&
+      isValidConfig(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
   );
 }
