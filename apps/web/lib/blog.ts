@@ -57,7 +57,7 @@ export const posts: BlogPost[] = [
       "Step-by-step guide to merging PDF files in your browser — including how to preserve bookmarks, form fields, and page order. No upload, no sign-up.",
     excerpt:
       "Merging PDFs is the most common PDF task. Here's the order-of-operations that produces clean output, preserves bookmarks, and avoids the two bugs that show up in most free tools.",
-    cover: "/blog/cover-merge-pdfs.webp",
+    cover: "/blog/cover-how-to-merge-pdfs.webp",
     date: "2026-06-11",
     author: "GetPDFPro",
     readingMinutes: 5,
@@ -189,7 +189,7 @@ export const posts: BlogPost[] = [
       "What's actually inside a PDF file? A short, accurate tour of the spec — versions, encryption, fonts, and the subsets (PDF/A, PDF/UA) that matter in practice.",
     excerpt:
       "PDF looks like a document. Under the hood, it's a typed object graph with a specific structure. Here's what every developer and curious user should know about the format in 2026.",
-    cover: "/blog/cover-pdf-primer.webp",
+    cover: "/blog/cover-pdf-file-format-primer.webp",
     date: "2026-06-13",
     author: "GetPDFPro",
     readingMinutes: 7,
@@ -313,7 +313,7 @@ export const posts: BlogPost[] = [
       "Why most PDF compression advice is wrong, what the three real levers are, and how to pick the right setting for your file. Real numbers, no marketing.",
     excerpt:
       "PDF compression is dominated by two levers: re-encoding images, and stripping redundant data. Text-heavy PDFs barely shrink. Image-heavy PDFs shrink a lot. Here's the math.",
-    cover: "/blog/cover-compress-pdfs.webp",
+    cover: "/blog/cover-compressing-pdfs-what-works.webp",
     date: "2026-06-15",
     author: "GetPDFPro",
     readingMinutes: 6,
@@ -452,7 +452,7 @@ export const posts: BlogPost[] = [
       "PDF was never designed for files bigger than 4 GB. Here's why, what to do about it, and how to safely extract the pages you need from a multi-GB file.",
     excerpt:
       "The PDF spec caps any single file at ~4.7 GB. Hitting that ceiling is more common than you'd think — legal discovery, design files, medical imaging. Here's how to work around it.",
-    cover: "/blog/cover-split-pdfs.webp",
+    cover: "/blog/cover-splitting-large-pdfs-4gb-problem.webp",
     date: "2026-06-17",
     author: "GetPDFPro",
     readingMinutes: 5,
@@ -564,7 +564,7 @@ export const posts: BlogPost[] = [
       "iLovePDF is the incumbent. Here's where it's strong, where it's not, and what to look for in an alternative. Plus a 6-point checklist for evaluating any PDF tool.",
     excerpt:
       "iLovePDF is the default PDF tool on the internet. It is also not the only option, and not always the best one. This is an honest, sourced comparison of the major alternatives in 2026.",
-    cover: "/blog/cover-vs-ilovepdf.webp",
+    cover: "/blog/cover-ilovepdf-alternatives-honest-comparison.webp",
     date: "2026-06-19",
     author: "GetPDFPro",
     readingMinutes: 8,
