@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.config import get_settings
-from app.routers import billing, jobs, ocr, pdf
+from app.routers import billing, debug, jobs, ocr, pdf
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +50,7 @@ def create_app() -> FastAPI:
     app.include_router(ocr.router, prefix="/api/v1/pdf", tags=["ocr"])
     app.include_router(jobs.router, prefix="/api/v1", tags=["jobs"])
     app.include_router(billing.router, prefix="/api/v1", tags=["billing"])
+    app.include_router(debug.router, prefix="/api/v1", tags=["debug"])
 
     @app.get("/health", tags=["meta"])
     def health() -> dict:
