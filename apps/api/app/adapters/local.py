@@ -10,7 +10,7 @@ was extracted into an adapter so the router can use a 3-tier cascade
 without duplicating logic.
 
 Honest accuracy: 70-80% for clean PDFs. For higher quality, the cascade
-falls through to CloudConvert (90-95%) or Adobe (95-99%).
+falls through to LibreOffice (90-95%) or Adobe (95-99%).
 """
 
 from __future__ import annotations
@@ -42,7 +42,7 @@ class LocalAdapter:
         if output_format != "docx":
             raise ConversionError(
                 f"Local adapter only supports docx, not {output_format!r}. "
-                "Use Adobe or CloudConvert for xlsx/pptx.",
+                "Use Adobe or LibreOffice for xlsx/pptx.",
                 adapter_name=self.name,
                 retryable=False,  # user picked a format we can't do
             )

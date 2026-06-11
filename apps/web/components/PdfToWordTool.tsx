@@ -142,14 +142,14 @@ export function PdfToWordTool() {
           <strong>How accurate is this?</strong> We use a 3-tier
           cascade: <strong>Adobe PDF Services</strong> (95-99% layout
           fidelity, free up to 500 conversions/month) →
-          <strong> CloudConvert</strong> (90-95%, ~€0.07/conversion) →
-          <strong> local fallback</strong> (70-80%, free, best-effort).
-          You always get the best quality available on our end. The
-          following will <strong>not</strong> round-trip perfectly even
-          with the best tier: multi-column layouts, complex tables with
-          merged cells, math equations, custom fonts, and precise
-          positioning. Expect some manual cleanup in Word for complex
-          documents.
+          <strong> LibreOffice</strong> (90-95%, self-hosted, free,
+          no per-conversion cost) → <strong>local fallback</strong>
+          (70-80%, free, best-effort). You always get the best
+          quality available on our end. The following will
+          <strong>not</strong> round-trip perfectly even with the
+          best tier: multi-column layouts, complex tables with merged
+          cells, math equations, custom fonts, and precise positioning.
+          Expect some manual cleanup in Word for complex documents.
         </div>
       </div>
 

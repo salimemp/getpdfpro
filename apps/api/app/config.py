@@ -67,8 +67,8 @@ class Settings(BaseSettings):
     # Tier 1: Adobe PDF Services (free tier, 500 doc-txns/month)
     adobe_client_id: str = ""
     adobe_client_secret: str = ""
-    # Tier 2: CloudConvert (pay-as-you-go fallback)
-    cloudconvert_api_key: str = ""
+    # Tier 2: LibreOffice (self-hosted headless). No env var needed —
+    # install the apt package in the Dockerfile.
 
     @field_validator("cors_origins")
     @classmethod

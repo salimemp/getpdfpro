@@ -21,17 +21,31 @@ FROM python:3.12-slim
 # System dependencies
 # - tesseract-ocr: OCR engine (apt package)
 # - tesseract-ocr-eng: English language data (add more langs as needed)
-# - libpq-dev: not needed yet, kept for future
+# - libreoffice-core + writers + calc + impress: PDF↔Office conversion
+#   via headless `soffice --convert-to`. ~250MB total. Used by the
+#   LibreOffice adapter in the PDF→Office conversion cascade.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         curl \
         ca-certificates \
         tesseract-ocr \
         tesseract-ocr-eng \
+        libreoffice-core \
+        libreoffice-writer \
+        libreoffice-calc \
+        libreoffice-impress \
+        # Fonts — common ones that headless LibreOffice needs to render
+        # Office files without missing-font fallback.
+        fonts-dejavu \
+        fonts-liberation \
+        fonts-noto-core \
+        # Used by LibreOffice for some image conversions
+        libpng-dev \
+        # Clean up the apt cache to keep the image small
     && rm -rf /var/lib/apt/lists/*
 
-# Verify Tesseract is installed and reachable at the path pytesseract
-# expects. /usr/bin/tesseract is the default on Debian-slim images.
-RUN tesseract --version && which tesseract
+# Verify Tesseract + LibreOffice are installed and reachable.
+RUN tesseract --version && which tesseract \
+    && soffice --version && which soffice
 
 WORKDIR /srv/app
 

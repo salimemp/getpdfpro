@@ -1,6 +1,6 @@
 """3-tier cascade for PDF → Office conversion.
 
-Picks the first available adapter (Adobe → CloudConvert → Local).
+Picks the first available adapter (Adobe → LibreOffice → Local).
 If the chosen adapter raises a retryable ConversionError, falls
 through to the next. The user only sees an error if ALL adapters
 fail (or if the input was bad and the error is non-retryable).
@@ -17,7 +17,7 @@ from . import (
     OutputFormat,
 )
 from .adobe import AdobeAdapter
-from .cloudconvert import CloudConvertAdapter
+from .libreoffice import LibreOfficeAdapter
 from .local import LocalAdapter
 
 logger = logging.getLogger(__name__)
@@ -28,12 +28,14 @@ class ConversionCascade:
     apart from a singleton instance for the FastAPI dependency."""
 
     def __init__(self) -> None:
-        # Tier 1 (best quality, free): Adobe PDF Services
-        # Tier 2 (good quality, cheap): CloudConvert
+        # Tier 1 (best quality, free up to 500/mo): Adobe PDF Services
+        # Tier 2 (very good quality, free, self-hosted): LibreOffice
         # Tier 3 (always works, best-effort quality): Local
+        # CloudConvert is no longer in the cascade — LibreOffice
+        # replaces it (free, no per-conversion cost, similar quality).
         self.adapters: list[ConversionAdapter] = [
             AdobeAdapter(),
-            CloudConvertAdapter(),
+            LibreOfficeAdapter(),
             LocalAdapter(),
         ]
 
@@ -92,7 +94,7 @@ class ConversionCascade:
         # No adapter was even available (no credentials at all).
         raise ConversionError(
             "No PDF→Office adapter is configured. "
-            "Set ADOBE_CLIENT_ID/SECRET or CLOUDCONVERT_API_KEY.",
+            "Set ADOBE_CLIENT_ID/SECRET (or install LibreOffice via Dockerfile).",
             adapter_name="cascade",
             retryable=False,
         )

@@ -320,7 +320,7 @@ async def pdf_to_word(
     except Exception as exc:
         raise HTTPException(400, f"Could not read PDF: {exc}") from exc
 
-    # Run the cascade (Adobe → CloudConvert → local)
+    # Run the cascade (Adobe → LibreOffice → local)
     from app.adapters import ConversionError
     from app.adapters.cascade import get_cascade
 
@@ -359,7 +359,7 @@ async def pdf_to_word(
     # Adjust the accuracy warning based on which adapter served us
     if result.file_extension == "docx":
         if result.cost_usd and result.cost_usd > 0:
-            # CloudConvert or paid tier — high quality
+            # High-quality tier (Adobe or LibreOffice)
             accuracy = (
                 "90-95% layout fidelity. Text, headings, tables, and images "
                 "preserved by the conversion engine. Multi-column layouts "
@@ -423,7 +423,7 @@ async def pdf_to_word_download(
     except Exception as exc:
         raise HTTPException(400, f"Could not read PDF: {exc}") from exc
 
-    # Run the cascade (Adobe → CloudConvert → local)
+    # Run the cascade (Adobe → LibreOffice → local)
     from app.adapters import ConversionError
     from app.adapters.cascade import get_cascade
 

@@ -32,8 +32,8 @@ class AdapterResult:
     # Optional metadata about the conversion
     elapsed_ms: int = 0
     pages_converted: int = 0
-    # If the adapter charged money (CloudConvert), record it for cost
-    # analytics. None for free adapters.
+    # If the adapter charged money, record it for cost analytics.
+    # None for free adapters (Adobe free tier, LibreOffice, Local).
     cost_usd: float | None = None
 
 
@@ -48,7 +48,7 @@ class ConversionAdapter(Protocol):
     """
 
     # Short identifier for logs and X-Conversion-Adapter header.
-    # e.g. "adobe", "cloudconvert", "local"
+    # e.g. "adobe", "libreoffice", "local"
     name: str
 
     # Human-readable description (used in /docs)
