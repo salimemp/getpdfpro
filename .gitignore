@@ -52,3 +52,6 @@ next-env.d.ts
 # Flutter (defensive)
 /.dart_tool/
 /build/
+
+# Local scratch files
+adsense-checklist.html

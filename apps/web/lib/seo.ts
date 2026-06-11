@@ -120,6 +120,53 @@ export function breadcrumbLd(items: { name: string; url: string }[]) {
   };
 }
 
+export function blogPostingLd(post: {
+  slug: string;
+  title: string;
+  description: string;
+  date: string;
+  author: string;
+  cover: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.description,
+    datePublished: post.date,
+    dateModified: post.date,
+    author: { "@type": "Organization", name: post.author, url: SITE_URL },
+    publisher: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: SITE_URL,
+      logo: { "@type": "ImageObject", url: `${SITE_URL}/icon.png` },
+    },
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": `${SITE_URL}/blog/${post.slug}`,
+    },
+    image: `${SITE_URL}${post.cover}`,
+    inLanguage: SITE_LOCALE,
+  };
+}
+
+export function blogListingLd(items: { slug: string; title: string; date: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    name: `${SITE_NAME} blog`,
+    url: `${SITE_URL}/blog`,
+    publisher: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
+    blogPost: items.map((it) => ({
+      "@type": "BlogPosting",
+      headline: it.title,
+      url: `${SITE_URL}/blog/${it.slug}`,
+      datePublished: it.date,
+    })),
+  };
+}
+
 export function faqLd(faqs: { q: string; a: string }[]) {
   return {
     "@context": "https://schema.org",

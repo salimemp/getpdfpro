@@ -27,6 +27,9 @@ export function SiteHeader() {
           <Link href="/pricing" className="hover:text-slate-900 dark:hover:text-white">
             Pricing
           </Link>
+          <Link href="/blog" className="hover:text-slate-900 dark:hover:text-white">
+            Blog
+          </Link>
           <Link href="/beta" className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 hover:bg-amber-200 dark:bg-amber-950 dark:text-amber-200 dark:hover:bg-amber-900">
             Beta
           </Link>
@@ -152,6 +155,9 @@ export function SiteFooter() {
           <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-slate-600 dark:text-slate-400">
             <Link href="/pricing" className="hover:text-slate-900 dark:hover:text-white">
               Pricing
+            </Link>
+            <Link href="/blog" className="hover:text-slate-900 dark:hover:text-white">
+              Blog
             </Link>
             <Link href="/about" className="hover:text-slate-900 dark:hover:text-white">
               About
