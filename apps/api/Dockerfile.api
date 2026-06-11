@@ -34,9 +34,6 @@ FROM python:3.12-slim
 #     its socket protocol and use the in-process UNO API to load+save
 #     documents. This bypasses the broken `soffice --headless --convert-to`
 #     CLI save path entirely.
-#   - unoconv: a small Python wrapper around the UNO API. Useful as a
-#     fallback CLI invoker (calls into the same UNO listener the
-#     adapter does).
 #
 # Tier 3: fonts. Headless LibreOffice needs a LOT of fonts to render
 # Office files without missing-font fallback. The slim set
@@ -60,7 +57,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libreoffice \
         libreoffice-script-provider-python \
         python3-uno \
-        unoconv \
         # Fonts — hdejager/libreoffice-api recipe
         fonts-dejavu \
         fonts-dejavu-core \
