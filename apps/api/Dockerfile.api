@@ -16,33 +16,27 @@
 # runs either way.
 # =============================================================================
 
-FROM python:3.12-slim
+FROM python:3.11-slim-bookworm
 
 # System dependencies
 # - tesseract-ocr: OCR engine (apt package)
 # - tesseract-ocr-eng: English language data (add more langs as needed)
-# - libreoffice (the full metapackage): pulls in every LO component
-#   needed for headless PDF↔Office conversion. ~700MB total. We tried
-#   the slim set (libreoffice-core + -writer + -calc + -impress + -base)
-#   first (~250MB), but soffice kept failing with 0xc10 save errors
-#   because some Java-side save helpers weren't in those packages
-#   (Debian 13 / libreoffice 25.2.3 reorganized where the javaldx
-#   script + common config files live, and the slim set doesn't pull
-#   them all in). The full metapackage gives us everything so we stop
-#   guessing. Image size goes from ~250MB → ~700MB for LO, but it's
-#   the difference between "user gets a working .docx" and "user
-#   gets nothing". Worth it.
+# - LibreOffice slim set: On Debian 12 (bookworm) — the base image
+#   python:3.11-slim-bookworm pulls in — LibreOffice 7.x is in apt
+#   with a known-working headless save framework. 25.x on Debian 13
+#   (trixie) had a broken save path that aborted DOCX export with
+#   0xc10 (4 failed fix attempts). Pinning to Debian 12 + LO 7.x to
+#   avoid the bug.
 # - default-jre-headless: LibreOffice checks for a JRE at startup.
-#   Even if the C++ writer doesn't need it, the check failing aborts
-#   DOCX saves with 0xc10.
-# - fonts-* (dejavu, liberation, noto-core): headless LO needs these
-#   to render Office files without missing-font fallback.
+# - fonts-* (dejavu, liberation, noto-core): headless LO needs these.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         curl \
         ca-certificates \
         tesseract-ocr \
         tesseract-ocr-eng \
-        libreoffice \
+        libreoffice-core \
+        libreoffice-writer \
+        libreoffice-common \
         # Fonts — common ones that headless LibreOffice needs to render
         # Office files without missing-font fallback.
         fonts-dejavu \
@@ -52,7 +46,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libpng-dev \
         # JRE — see comment above. Headless variant (no GUI deps).
         default-jre-headless \
-        # Clean up the apt cache to keep the image small
     && rm -rf /var/lib/apt/lists/*
 
 # Verify Tesseract + LibreOffice + JRE are installed and reachable.
