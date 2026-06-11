@@ -20,6 +20,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+import time
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
@@ -32,6 +33,31 @@ router = APIRouter(
     tags=["debug"],
     include_in_schema=False,
 )
+
+
+# Minimal 1-page PDF (Hello Word) — used for the conversion dry-run.
+# Same shape as the test PDF in the verify scripts.
+_TEST_PDF = b"""%PDF-1.4
+1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj
+2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj
+3 0 obj<</Type/Page/Parent 2 0 R/Resources<</Font<</F1 4 0 R>>>>/MediaBox[0 0 612 792]/Contents 4 0 R>>endobj
+4 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj
+5 0 obj<</Length 44>>stream
+BT /F1 24 Tf 100 700 Td (Hello Word) Tj ET
+endstream endobj
+xref
+0 6
+0000000000 65535 f
+0000000009 00000 n
+0000000056 00000 n
+0000000110 00000 n
+0000000210 00000 n
+0000000269 00000 n
+trailer<</Size 6/Root 1 0 R>>
+startxref
+360
+%%EOF
+"""
 
 
 def _gate():
@@ -171,3 +197,84 @@ async def debug_cascade() -> dict:
             entry["available_error"] = f"{type(e).__name__}: {e}"
         out.append(entry)
     return {"adapters": out}
+
+
+@router.get("/convert-dry-run", include_in_schema=False)
+async def debug_convert_dry_run() -> dict:
+    """Force-run the cascade with a known-good 1-page test PDF and
+    report what each adapter did — including full error messages from
+    any adapter that failed. Use this to find out why LibreOffice
+    is_available=True but isn't being used in the live /to-word-download
+    response.
+
+    Does NOT return the converted file (it would bloat the response);
+    just reports the metadata + first 200 bytes of each attempt's error.
+    """
+    _gate()
+
+    from app.adapters import ConversionError
+    from app.adapters.cascade import get_cascade
+
+    cascade = get_cascade()
+    attempts: list[dict] = []
+    chosen: dict | None = None
+
+    for adapter in cascade.adapters:
+        entry: dict = {
+            "name": adapter.name,
+            "available": None,
+            "tried": False,
+            "succeeded": False,
+            "error_type": None,
+            "error_message": None,
+            "error_retryable": None,
+            "elapsed_ms": None,
+            "output_size": None,
+        }
+
+        try:
+            entry["available"] = bool(await adapter.is_available())
+        except Exception as e:
+            entry["available"] = False
+            entry["available_error"] = f"{type(e).__name__}: {e}"
+
+        if not entry["available"]:
+            attempts.append(entry)
+            continue
+
+        entry["tried"] = True
+        t0 = time.time()
+        try:
+            result = await adapter.convert(_TEST_PDF, output_format="docx")
+            entry["succeeded"] = True
+            entry["elapsed_ms"] = int((time.time() - t0) * 1000)
+            entry["output_size"] = len(result.bytes)
+            entry["adapter_reported_name"] = result.adapter_name
+            entry["file_extension"] = result.file_extension
+            entry["cost_usd"] = result.cost_usd
+            chosen = entry
+            attempts.append(entry)
+            break  # cascade stops at first success
+        except ConversionError as exc:
+            entry["succeeded"] = False
+            entry["elapsed_ms"] = int((time.time() - t0) * 1000)
+            entry["error_type"] = "ConversionError"
+            entry["error_message"] = str(exc)[:500]
+            entry["error_retryable"] = exc.retryable
+            attempts.append(entry)
+            if not exc.retryable:
+                break  # non-retryable — cascade stops
+        except Exception as exc:
+            entry["succeeded"] = False
+            entry["elapsed_ms"] = int((time.time() - t0) * 1000)
+            entry["error_type"] = type(exc).__name__
+            entry["error_message"] = str(exc)[:500]
+            entry["error_retryable"] = None
+            attempts.append(entry)
+            break  # unhandled — don't keep going
+
+    return {
+        "test_pdf_size_bytes": len(_TEST_PDF),
+        "attempts": attempts,
+        "winner": chosen["name"] if chosen else None,
+    }
