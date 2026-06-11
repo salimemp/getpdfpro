@@ -16,53 +16,21 @@
 # runs either way.
 # =============================================================================
 
-FROM python:3.11-slim-bookworm
+FROM python:3.12-slim
 
 # System dependencies
 # - tesseract-ocr: OCR engine (apt package)
 # - tesseract-ocr-eng: English language data (add more langs as needed)
-# - LibreOffice slim set for UNO bridge (tier 2 PDF→Word adapter):
-#   * libreoffice-core: the binary
-#   * libreoffice-writer: DOCX output writer
-#   * libreoffice-impress: PDF input reader (LO uses Impress to read
-#     PDFs in headless mode)
-#   * libreoffice-common: shared config files
-#   * libreoffice-script-provider-python: lets soffice run Python
-#     macros if needed (and python3-uno can call into it)
-#   * python3-uno: the UNO bridge client library. Lets Python talk
-#     to the running soffice listener over its socket protocol,
-#     bypassing the broken --convert-to CLI save path.
-#   * default-jre-headless: soffice's javaldx probe wants a JRE
-# - fonts-*: headless LO needs them to render Office files
 RUN apt-get update && apt-get install -y --no-install-recommends \
         curl \
         ca-certificates \
         tesseract-ocr \
         tesseract-ocr-eng \
-        libreoffice-core \
-        libreoffice-writer \
-        libreoffice-impress \
-        libreoffice-common \
-        libreoffice-script-provider-python \
-        python3-uno \
-        # Fonts — common ones that headless LibreOffice needs to render
-        # Office files without missing-font fallback.
-        fonts-dejavu \
-        fonts-liberation \
-        fonts-noto-core \
-        # Used by LibreOffice for some image conversions
-        libpng-dev \
-        # JRE — see comment above. Headless variant (no GUI deps).
-        default-jre-headless \
+        # Clean up the apt cache to keep the image small
     && rm -rf /var/lib/apt/lists/*
 
-# Verify Tesseract + LibreOffice + JRE are installed and reachable.
-# The JRE check matters: without it, soffice logs "Warning: failed to
-# launch javaldx" and aborts DOCX saves with 0xc10. Having a working
-# JRE in PATH makes the check pass cleanly.
-RUN tesseract --version && which tesseract \
-    && soffice --version && which soffice \
-    && java -version 2>&1 | head -1 && which java
+# Verify Tesseract is installed and reachable.
+RUN tesseract --version && which tesseract
 
 WORKDIR /srv/app
 
