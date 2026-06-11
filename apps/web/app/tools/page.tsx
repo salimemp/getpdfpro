@@ -42,17 +42,17 @@ const tools = [
   },
   {
     name: "PDF to Image",
-    description: "Convert to JPG, PNG, or WebP at any DPI.",
+    description: "Convert each page to PNG or JPEG, bundled as a ZIP.",
     icon: FileImage,
     href: "/tools/pdf-to-image",
-    ready: false,
+    ready: true,
   },
   {
     name: "Image to PDF",
     description: "Turn photos and scans into clean, searchable PDFs.",
     icon: FileText,
     href: "/tools/image-to-pdf",
-    ready: false,
+    ready: true,
   },
   {
     name: "Sign PDF",

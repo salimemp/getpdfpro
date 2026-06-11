@@ -490,3 +490,221 @@ async def compress_pdf_download(
             "Cache-Control": "no-store",
         },
     )
+
+
+# ─── PDF to Images ─────────────────────────────────────────────
+class PdfToImagesResponse(BaseModel):
+    pages: int = Field(..., description="Number of pages in the source PDF")
+    images: int = Field(..., description="Number of images generated (one per page)")
+    size_bytes: int = Field(..., description="Total size of the ZIP in bytes")
+    filename: str = Field(..., description="Suggested filename for download")
+
+
+@router.post(
+    "/to-images-download",
+    response_class=StreamingResponse,
+    summary="Convert a PDF's pages to images (PNG or JPEG), returned as a ZIP",
+    responses={
+        200: {
+            "description": "ZIP of one image per page",
+            "content": {"application/zip": {}},
+        },
+        400: {"description": "Invalid PDF or format"},
+        413: {"description": "File exceeds 50 MB cap"},
+    },
+)
+async def pdf_to_images_download(
+    file: Annotated[UploadFile, File(description="PDF file to convert")],
+    format: Annotated[
+        Literal["png", "jpeg"],
+        Form(description="Output image format (png or jpeg)"),
+    ] = "png",
+    dpi: Annotated[
+        int,
+        Form(description="Output DPI (72-300, default 144)"),
+    ] = 144,
+) -> StreamingResponse:
+    """Convert every page of a PDF to an image, bundled in a ZIP.
+
+    Default: PNG @ 144 DPI (2x of 72 DPI, good for screen reading).
+    Use JPEG for smaller file sizes; PNG for lossless quality.
+    """
+    if not file.filename or not file.filename.lower().endswith(".pdf"):
+        raise HTTPException(400, "File must be a PDF.")
+    if dpi < 72 or dpi > 300:
+        raise HTTPException(400, "DPI must be between 72 and 300.")
+    blob = await file.read()
+    if len(blob) > MAX_SYNC_SIZE:
+        raise HTTPException(413, f"File exceeds {MAX_SYNC_SIZE // (1024 * 1024)} MB limit.")
+    if len(blob) == 0:
+        raise HTTPException(400, "Empty file.")
+
+    try:
+        src = fitz.open(stream=blob, filetype="pdf")
+    except Exception as exc:
+        raise HTTPException(400, f"Could not read PDF: {exc}") from exc
+
+    try:
+        page_count = len(src)
+        if page_count == 0:
+            raise HTTPException(400, "PDF has no pages.")
+
+        # PyMuPDF's `get_pixmap` renders at the given DPI by passing `matrix`
+        # scaled by dpi/72. We use alpha=False for JPEG, alpha=True for PNG.
+        zoom = dpi / 72.0
+        matrix = fitz.Matrix(zoom, zoom)
+        ext = "png" if format == "png" else "jpg"
+        mime_ext = "png" if format == "png" else "jpeg"
+
+        zip_buf = io.BytesIO()
+        with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
+            for i, page in enumerate(src):
+                # alpha=True for PNG (transparency support), False for JPEG
+                pix = page.get_pixmap(matrix=matrix, alpha=(format == "png"))
+                img_bytes = pix.tobytes(mime_ext)
+                # 1-based numbering for human-friendly filenames
+                filename = f"page_{i + 1:03d}.{ext}"
+                zf.writestr(filename, img_bytes)
+                pix = None  # free C-level memory
+        zip_bytes = zip_buf.getvalue()
+    except Exception as exc:
+        logger.exception("PDF-to-images failed")
+        raise HTTPException(500, f"PDF-to-images failed: {exc}") from exc
+    finally:
+        src.close()
+
+    base = (file.filename or "document.pdf").rsplit(".", 1)[0]
+    zip_name = f"{base}-images.zip"
+
+    return StreamingResponse(
+        io.BytesIO(zip_bytes),
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="{zip_name}"',
+            "X-Pdf-Source-Pages": str(page_count),
+            "X-Image-Format": format,
+            "X-Image-Dpi": str(dpi),
+            "X-Pdf-Size-Bytes": str(len(zip_bytes)),
+            "Cache-Control": "no-store",
+        },
+    )
+
+
+# ─── Images to PDF ─────────────────────────────────────────────
+@router.post(
+    "/from-images-download",
+    response_class=StreamingResponse,
+    summary="Convert one or more images (JPG/PNG/WebP) to a single PDF",
+    responses={
+        200: {
+            "description": "Generated PDF",
+            "content": {"application/pdf": {}},
+        },
+        400: {"description": "Invalid images or no images provided"},
+        413: {"description": "Total size exceeds 50 MB cap"},
+    },
+)
+async def images_to_pdf_download(
+    files: Annotated[
+        list[UploadFile], File(description="Image files to combine into a PDF (in order)")
+    ],
+    page_size: Annotated[
+        Literal["fit", "a4", "letter", "original"],
+        Form(description="fit = scale to one A4 page; a4/letter = force size; original = image native size"),
+    ] = "fit",
+) -> StreamingResponse:
+    """Combine 1+ images into a single PDF.
+
+    Each image becomes one page. Order is preserved (filename sort is the
+    caller's responsibility; the API uses upload order).
+
+    Supported input formats: JPEG, PNG, WebP, BMP, GIF, TIFF, GIF.
+    """
+    if len(files) < 1:
+        raise HTTPException(400, "Need at least 1 image.")
+
+    # Standard page sizes in PDF points (1 pt = 1/72 inch)
+    A4_W, A4_H = 595.0, 842.0
+    LETTER_W, LETTER_H = 612.0, 792.0
+
+    blobs: list[tuple[str, bytes]] = []
+    total = 0
+    for f in files:
+        b = await f.read()
+        total += len(b)
+        if total > MAX_SYNC_SIZE:
+            raise HTTPException(413, f"Total size exceeds {MAX_SYNC_SIZE // (1024 * 1024)} MB limit.")
+        blobs.append((f.filename or "image", b))
+
+    try:
+        out_doc = fitz.open()
+        try:
+            for name, blob in blobs:
+                # Open image as a Pixmap; PyMuPDF auto-detects format from bytes
+                pix = fitz.Pixmap(blob)
+                try:
+                    # Normalize colorspace: CMYK or other >3-channel → RGB
+                    if pix.colorspace and pix.colorspace.n >= 4:
+                        pix = fitz.Pixmap(fitz.csRGB, pix)
+                    # Flatten alpha onto white background (PDF doesn't have native alpha)
+                    if pix.alpha:
+                        rgb = fitz.Pixmap(fitz.csRGB, fitz.IRect(0, 0, pix.width, pix.height), 0)
+                        rgb.clear_with(255)  # white background
+                        rgb.set_rect(rgb.irect, (255, 255, 255))
+                        rgb.copy(pix, pix.irect)
+                        pix = rgb
+
+                    img_w, img_h = pix.width, pix.height
+                    if img_w <= 0 or img_h <= 0:
+                        continue
+
+                    # Determine target page size
+                    if page_size == "a4":
+                        page_w, page_h = A4_W, A4_H
+                    elif page_size == "letter":
+                        page_w, page_h = LETTER_W, LETTER_H
+                    elif page_size == "original":
+                        page_w, page_h = float(img_w), float(img_h)
+                    else:  # fit
+                        page_w, page_h = A4_W, A4_H
+
+                    page = out_doc.new_page(width=page_w, height=page_h)
+                    # Scale image to fit page preserving aspect ratio, centered with margin
+                    margin = 36 if page_size != "original" else 0
+                    max_w = page_w - 2 * margin
+                    max_h = page_h - 2 * margin
+                    scale = min(max_w / img_w, max_h / img_h, 1.0)
+                    scaled_w = img_w * scale
+                    scaled_h = img_h * scale
+                    x0 = (page_w - scaled_w) / 2
+                    y0 = (page_h - scaled_h) / 2
+                    img_rect = fitz.Rect(x0, y0, x0 + scaled_w, y0 + scaled_h)
+                    page.insert_image(img_rect, pixmap=pix)
+                finally:
+                    pix = None  # free C-level memory
+
+            out_buf = io.BytesIO()
+            out_doc.save(out_buf)
+            payload = out_buf.getvalue()
+            page_count = len(out_doc)
+        finally:
+            out_doc.close()
+    except Exception as exc:
+        logger.exception("Images-to-PDF failed")
+        raise HTTPException(500, f"Images-to-PDF failed: {exc}") from exc
+
+    base = (blobs[0][0] or "images").rsplit(".", 1)[0]
+    out_name = f"{base}.pdf"
+
+    return StreamingResponse(
+        io.BytesIO(payload),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{out_name}"',
+            "X-Image-Source-Count": str(len(blobs)),
+            "X-Pdf-Pages": str(page_count),
+            "X-Pdf-Size-Bytes": str(len(payload)),
+            "X-Page-Size": page_size,
+            "Cache-Control": "no-store",
+        },
+    )

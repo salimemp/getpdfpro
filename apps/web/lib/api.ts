@@ -164,6 +164,27 @@ export interface CompressResult {
   savedPercent: number;
 }
 
+export interface PdfToImagesResult {
+  blob: Blob;
+  filename: string;
+  sourcePages: number;
+  format: "png" | "jpeg";
+  dpi: number;
+  sizeBytes: number;
+}
+
+export type ImageFormat = "png" | "jpeg";
+export type PageSize = "fit" | "a4" | "letter" | "original";
+
+export interface ImagesToPdfResult {
+  blob: Blob;
+  filename: string;
+  sourceCount: number;
+  pages: number;
+  sizeBytes: number;
+  pageSize: PageSize;
+}
+
 /**
  * Compress a PDF. Three quality levels:
  *   - low:    best quality, ~10% smaller (garbage collect only)
@@ -223,6 +244,116 @@ export async function compressPdf(
     compressedBytes,
     savedPercent,
   };
+}
+
+/**
+ * Convert a PDF's pages to images (PNG or JPEG), bundled in a ZIP.
+ * Hits /api/v1/pdf/to-images-download (capped at 50 MB input).
+ *
+ * - format: png (default, lossless) or jpeg (smaller files)
+ * - dpi: 72-300, default 144 (2x of screen DPI)
+ */
+export async function pdfToImages(
+  file: File,
+  options: { format?: ImageFormat; dpi?: number } = {}
+): Promise<PdfToImagesResult> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  form.append("format", options.format ?? "png");
+  form.append("dpi", String(options.dpi ?? 144));
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/to-images-download`, {
+      method: "POST",
+      body: form,
+    });
+  } catch (err) {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+
+  if (!res.ok) {
+    let detail = res.statusText;
+    try {
+      const body = await res.json();
+      detail = body.detail || JSON.stringify(body);
+    } catch {
+      // not JSON
+    }
+    throw new ApiError(res.status, detail);
+  }
+
+  const blob = await res.blob();
+  const disp = res.headers.get("Content-Disposition") || "";
+  const filenameMatch = disp.match(/filename="?([^";]+)"?/);
+  const filename = filenameMatch ? filenameMatch[1] : "images.zip";
+  const sourcePages = parseInt(
+    res.headers.get("X-Pdf-Source-Pages") || "0",
+    10
+  );
+  const format = (res.headers.get("X-Image-Format") || "png") as ImageFormat;
+  const dpi = parseInt(res.headers.get("X-Image-Dpi") || "144", 10);
+  const sizeBytes = parseInt(res.headers.get("X-Pdf-Size-Bytes") || "0", 10);
+
+  return { blob, filename, sourcePages, format, dpi, sizeBytes };
+}
+
+/**
+ * Combine 1+ images into a single PDF.
+ * Hits /api/v1/pdf/from-images-download (capped at 50 MB total).
+ *
+ * - pageSize:
+ *   - "fit" (default): A4 page, image scaled to fit with 0.5" margin
+ *   - "a4" / "letter": force page size
+ *   - "original": page size = image size in pixels (1px = 1pt)
+ */
+export async function imagesToPdf(
+  files: File[],
+  options: { pageSize?: PageSize } = {}
+): Promise<ImagesToPdfResult> {
+  if (files.length < 1) {
+    throw new Error("Need at least 1 image");
+  }
+  const form = new FormData();
+  for (const f of files) {
+    form.append("files", f, f.name);
+  }
+  form.append("page_size", options.pageSize ?? "fit");
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/from-images-download`, {
+      method: "POST",
+      body: form,
+    });
+  } catch (err) {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+
+  if (!res.ok) {
+    let detail = res.statusText;
+    try {
+      const body = await res.json();
+      detail = body.detail || JSON.stringify(body);
+    } catch {
+      // not JSON
+    }
+    throw new ApiError(res.status, detail);
+  }
+
+  const blob = await res.blob();
+  const disp = res.headers.get("Content-Disposition") || "";
+  const filenameMatch = disp.match(/filename="?([^";]+)"?/);
+  const filename = filenameMatch ? filenameMatch[1] : "images.pdf";
+  const sourceCount = parseInt(
+    res.headers.get("X-Image-Source-Count") || "0",
+    10
+  );
+  const pages = parseInt(res.headers.get("X-Pdf-Pages") || "0", 10);
+  const sizeBytes = parseInt(res.headers.get("X-Pdf-Size-Bytes") || "0", 10);
+  const pageSize = (res.headers.get("X-Page-Size") || "fit") as PageSize;
+
+  return { blob, filename, sourceCount, pages, sizeBytes, pageSize };
 }
 
 export type BillingInterval = "monthly" | "yearly";
