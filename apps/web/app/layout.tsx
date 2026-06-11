@@ -2,7 +2,9 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://getpdfpro.com"),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://app.getpdfpro.com"
+  ),
   title: {
     default: "GetPDFPro — The Professional PDF Toolkit",
     template: "%s | GetPDFPro",
@@ -24,7 +26,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://getpdfpro.com",
+    url: "https://app.getpdfpro.com",
     siteName: "GetPDFPro",
     title: "GetPDFPro — The Professional PDF Toolkit",
     description:
