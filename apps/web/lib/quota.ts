@@ -114,6 +114,11 @@ function getUserTier(user: { user_metadata?: Record<string, unknown> } | null | 
 
 export function useQuota(): QuotaState {
   const auth = useAuth();
+  // Depend on a stable primitive (user id) instead of the user
+  // object reference. This prevents the effect from re-running on
+  // every render if the Supabase client returns a new Session object
+  // (and therefore a new User object) for the same user.
+  const userId = auth.user?.id ?? null;
   const [userKey, setUserKey] = useState<string>("anon");
   const [used, setUsed] = useState<number>(0);
   const [tier, setTier] = useState<Tier>("anon");
@@ -138,7 +143,8 @@ export function useQuota(): QuotaState {
       setUsed(readCount(newKey));
     }
     setHydrated(true);
-  }, [auth.user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   // Derive the limit from the tier — no separate state needed.
   const limit =

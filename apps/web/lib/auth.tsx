@@ -6,6 +6,7 @@ import {
   useEffect,
   useState,
   useCallback,
+  useMemo,
   type ReactNode,
 } from "react";
 import type { Session, User, Provider } from "@supabase/supabase-js";
@@ -126,16 +127,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
   }, []);
 
-  const value: AuthState = {
-    enabled,
-    loading,
-    session,
-    user: session?.user ?? null,
-    signInWithEmail,
-    signUpWithEmail,
-    signInWithOAuth,
-    signOut,
-  };
+  // Memoize the context value so consumers don't re-render on every
+  // parent render. Without this, any useEffect in a consumer that
+  // depends on `auth.user` (or any other field) re-runs on every
+  // render of the provider, which can cause infinite loops if the
+  // effect calls setState.
+  const value = useMemo<AuthState>(
+    () => ({
+      enabled,
+      loading,
+      session,
+      user: session?.user ?? null,
+      signInWithEmail,
+      signUpWithEmail,
+      signInWithOAuth,
+      signOut,
+    }),
+    // We intentionally exclude the callback functions from deps
+    // because they're already stable (useCallback with [] deps above).
+    // Re-memoizing when the callbacks change is unnecessary.
+    [enabled, loading, session]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
