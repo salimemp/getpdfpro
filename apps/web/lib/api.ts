@@ -185,6 +185,38 @@ export interface ImagesToPdfResult {
   pageSize: PageSize;
 }
 
+export interface OcrTextResult {
+  text: string;
+  pages: number;
+  chars: number;
+  elapsedMs: number;
+}
+
+export interface OcrPdfResult {
+  blob: Blob;
+  filename: string;
+  sourcePages: number;
+  sizeBytes: number;
+  lang: string;
+  dpi: number;
+  elapsedMs: number;
+}
+
+export interface ToWordResult {
+  pages: number;
+  paragraphs: number;
+  tables: number;
+  sizeBytes: number;
+  accuracyWarning: string;
+}
+
+export interface ToWordDownloadResult {
+  blob: Blob;
+  filename: string;
+  sourcePages: number;
+  sizeBytes: number;
+}
+
 /**
  * Compress a PDF. Three quality levels:
  *   - low:    best quality, ~10% smaller (garbage collect only)
@@ -354,6 +386,132 @@ export async function imagesToPdf(
   const pageSize = (res.headers.get("X-Page-Size") || "fit") as PageSize;
 
   return { blob, filename, sourceCount, pages, sizeBytes, pageSize };
+}
+
+/**
+ * OCR a scanned PDF and return the extracted plain text.
+ * Hits /api/v1/pdf/ocr (capped at 50 MB input).
+ *
+ * - lang: Tesseract language code (default 'eng'). Multiple: 'eng+fra'.
+ * - dpi: render DPI 150-600, default 300.
+ */
+export async function ocrText(
+  file: File,
+  options: { lang?: string; dpi?: number } = {}
+): Promise<OcrTextResult> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  form.append("lang", options.lang ?? "eng");
+  form.append("dpi", String(options.dpi ?? 300));
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/ocr`, {
+      method: "POST",
+      body: form,
+    });
+  } catch (err) {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+  if (!res.ok) {
+    let detail = res.statusText;
+    try {
+      const body = await res.json();
+      detail = body.detail || JSON.stringify(body);
+    } catch {
+      // not JSON
+    }
+    throw new ApiError(res.status, detail);
+  }
+  return res.json();
+}
+
+/**
+ * OCR a scanned PDF and return a searchable PDF (invisible text layer over scans).
+ * Hits /api/v1/pdf/ocr-download.
+ */
+export async function ocrToSearchablePdf(
+  file: File,
+  options: { lang?: string; dpi?: number } = {}
+): Promise<OcrPdfResult> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  form.append("lang", options.lang ?? "eng");
+  form.append("dpi", String(options.dpi ?? 300));
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/ocr-download`, {
+      method: "POST",
+      body: form,
+    });
+  } catch (err) {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+  if (!res.ok) {
+    let detail = res.statusText;
+    try {
+      const body = await res.json();
+      detail = body.detail || JSON.stringify(body);
+    } catch {
+      // not JSON
+    }
+    throw new ApiError(res.status, detail);
+  }
+  const blob = await res.blob();
+  const disp = res.headers.get("Content-Disposition") || "";
+  const filenameMatch = disp.match(/filename="?([^";]+)"?/);
+  const filename = filenameMatch ? filenameMatch[1] : "searchable.pdf";
+  return {
+    blob,
+    filename,
+    sourcePages: parseInt(res.headers.get("X-Pdf-Source-Pages") || "0", 10),
+    sizeBytes: parseInt(res.headers.get("X-Pdf-Size-Bytes") || "0", 10),
+    lang: res.headers.get("X-Ocr-Lang") || "eng",
+    dpi: parseInt(res.headers.get("X-Ocr-Dpi") || "300", 10),
+    elapsedMs: parseInt(res.headers.get("X-Ocr-Elapsed-Ms") || "0", 10),
+  };
+}
+
+/**
+ * Convert a PDF to .docx (best-effort text + structure).
+ * Hits /api/v1/pdf/to-word (JSON metadata) or /to-word-download (binary).
+ */
+export async function pdfToWord(
+  file: File
+): Promise<ToWordDownloadResult> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/to-word-download`, {
+      method: "POST",
+      body: form,
+    });
+  } catch (err) {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+  if (!res.ok) {
+    let detail = res.statusText;
+    try {
+      const body = await res.json();
+      detail = body.detail || JSON.stringify(body);
+    } catch {
+      // not JSON
+    }
+    throw new ApiError(res.status, detail);
+  }
+  const blob = await res.blob();
+  const disp = res.headers.get("Content-Disposition") || "";
+  const filenameMatch = disp.match(/filename="?([^";]+)"?/);
+  const filename = filenameMatch ? filenameMatch[1] : "document.docx";
+  return {
+    blob,
+    filename,
+    sourcePages: parseInt(res.headers.get("X-Pdf-Source-Pages") || "0", 10),
+    sizeBytes: parseInt(res.headers.get("X-Docx-Size-Bytes") || "0", 10),
+  };
 }
 
 export type BillingInterval = "monthly" | "yearly";

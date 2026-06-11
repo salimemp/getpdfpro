@@ -6,6 +6,8 @@ import {
   Minimize2,
   FileImage,
   FileText,
+  FileType,
+  ScanText,
   PenTool,
   ArrowRight,
 } from "lucide-react";
@@ -14,7 +16,7 @@ import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
 export const metadata: Metadata = {
   title: "All PDF tools",
   description:
-    "Every PDF tool you need: merge, split, compress, convert, sign, and edit — all in your browser, all private.",
+    "Every PDF tool you need: merge, split, compress, convert, OCR, and more — all in your browser, all private.",
   alternates: { canonical: "/tools" },
 };
 
@@ -52,6 +54,22 @@ const tools = [
     description: "Turn photos and scans into clean, searchable PDFs.",
     icon: FileText,
     href: "/tools/image-to-pdf",
+    ready: true,
+  },
+  {
+    name: "OCR PDF",
+    description:
+      "Make scanned PDFs searchable. Adds an invisible text layer or extracts plain text.",
+    icon: ScanText,
+    href: "/tools/ocr",
+    ready: true,
+  },
+  {
+    name: "PDF to Word",
+    description:
+      "Convert PDF to .docx. Best-effort text, headings, and basic tables.",
+    icon: FileType,
+    href: "/tools/pdf-to-word",
     ready: true,
   },
   {

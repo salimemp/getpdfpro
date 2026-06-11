@@ -9,6 +9,20 @@ pillow==11.0.0
 pikepdf==9.4.0
 reportlab==4.2.5
 
+# OCR (Tesseract via pytesseract)
+# The Tesseract binary itself is installed in the Dockerfile (apt).
+# pytesseract is the Python binding. Tesseract must be reachable at
+# /usr/bin/tesseract (default on python:3.12-slim after apt install).
+pytesseract==0.3.13
+
+# Office document generation
+# python-docx is the .docx writer. We use it for PDF -> Word.
+# The conversion is best-effort: text + basic structure (headings,
+# paragraphs, tables). Complex layouts (multi-column, math, complex
+# tables) will NOT round-trip faithfully — we mark this clearly in
+# the UI and API responses.
+python-docx==1.1.2
+
 # AI
 google-generativeai==0.8.3
 httpx==0.27.2
