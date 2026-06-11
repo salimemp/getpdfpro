@@ -21,14 +21,19 @@ FROM python:3.11-slim-bookworm
 # System dependencies
 # - tesseract-ocr: OCR engine (apt package)
 # - tesseract-ocr-eng: English language data (add more langs as needed)
-# - LibreOffice slim set: On Debian 12 (bookworm) — the base image
-#   python:3.11-slim-bookworm pulls in — LibreOffice 7.x is in apt
-#   with a known-working headless save framework. 25.x on Debian 13
-#   (trixie) had a broken save path that aborted DOCX export with
-#   0xc10 (4 failed fix attempts). Pinning to Debian 12 + LO 7.x to
-#   avoid the bug.
-# - default-jre-headless: LibreOffice checks for a JRE at startup.
-# - fonts-* (dejavu, liberation, noto-core): headless LO needs these.
+# - LibreOffice slim set for UNO bridge (tier 2 PDF→Word adapter):
+#   * libreoffice-core: the binary
+#   * libreoffice-writer: DOCX output writer
+#   * libreoffice-impress: PDF input reader (LO uses Impress to read
+#     PDFs in headless mode)
+#   * libreoffice-common: shared config files
+#   * libreoffice-script-provider-python: lets soffice run Python
+#     macros if needed (and python3-uno can call into it)
+#   * python3-uno: the UNO bridge client library. Lets Python talk
+#     to the running soffice listener over its socket protocol,
+#     bypassing the broken --convert-to CLI save path.
+#   * default-jre-headless: soffice's javaldx probe wants a JRE
+# - fonts-*: headless LO needs them to render Office files
 RUN apt-get update && apt-get install -y --no-install-recommends \
         curl \
         ca-certificates \
@@ -38,6 +43,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libreoffice-writer \
         libreoffice-impress \
         libreoffice-common \
+        libreoffice-script-provider-python \
+        python3-uno \
         # Fonts — common ones that headless LibreOffice needs to render
         # Office files without missing-font fallback.
         fonts-dejavu \

@@ -1,60 +1,85 @@
 """LibreOffice adapter — tier 2 (self-hosted, free, good quality).
 
-TEMPORARILY DISABLED for debugging — see TODO.
+Uses the **UNO bridge** (python3-uno) instead of the broken
+`soffice --headless --convert-to docx` CLI. Six attempts at the CLI
+save path failed with `0xc10` (SfxBaseModel::impl_store) on both
+Debian 12 and Debian 13, both LO 7.x and LO 25.x. The UNO bridge
+bypasses that broken path entirely by talking to soffice over its
+own socket protocol.
 
-LibreOffice headless mode (`soffice --headless --convert-to`)
-provides high-fidelity PDF ↔ Office conversion. The trade-offs:
+Architecture:
+  - One long-running soffice listener process per container.
+    Started by Dockerfile CMD (via start.sh) on port 2002.
+    Accepts UNO connections from Python via python3-uno.
+  - The adapter is a thin client. Each convert() call:
+      1. Connect to localhost:2002 (UNO bridge)
+      2. Load the input PDF as a Draw/Impress document
+      3. Store the document as DOCX (Word 2007 XML) into a tmp file
+      4. Read the bytes back, return as AdapterResult
+  - No per-call soffice process spawn. No 1-2s cold start per call.
+  - The listener can handle many concurrent calls (we add an
+    asyncio.Semaphore to be safe).
 
-  - + Free, no API costs, no rate limits
-  - + 90-95% layout fidelity (Adobe quality minus the last 5%)
-  - + Supports DOCX, XLSX, PPTX inputs and outputs
-  - - ~250 MB added to the Docker image
-  - - 1-2 min cold start (soffice loads)
-  - - Each conversion spawns a process; cap concurrent runs
-  - - Sometimes hangs on malformed PDFs — we wrap with a hard timeout
+What we install in the image:
+  - libreoffice-core, -writer, -impress, -common (for the binary
+    and the Java-implemented Impress PDF importer that does the
+    actual PDF read)
+  - libreoffice-script-provider-python (so soffice can run
+    Python macros if needed)
+  - python3-uno (the UNO bridge client library)
+  - default-jre-headless (Java for the soffice JVM, not strictly
+    required for headless docx export but javaldx warns if absent)
 
-How we invoke it:
-  soffice --headless --norestore --nologo --nodefault --nofirststartwizard
-          --convert-to docx --outdir <tmpdir> <input.pdf>
-
-Then read the converted file from the output dir. soffice writes
-the output with the same basename as the input + new extension.
-
-Concurrency: a small asyncio.Semaphore limits us to N concurrent
-soffice processes. Default 2 — enough for our load without OOM-ing
-the container. Configurable via env var.
+Trade-offs vs the CLI:
+  - + Bypasses the broken CLI save path; should actually work
+  - + Faster (no per-call process spawn; ~50-200ms per call)
+  - + Cleaner error reporting (UNO exceptions have stack traces)
+  - - More code; more moving parts
+  - - Single point of failure (the listener); if it dies, all
+    conversions fail until Railway restarts the container
+  - - Slightly larger image (script-provider-python is small, but
+    the listener has to be in start.sh)
 """
 
 from __future__ import annotations
 
+import asyncio
 import os
 import shutil
-import subprocess
+import socket
 import tempfile
+import threading
+import time
 from pathlib import Path
 
 from . import AdapterResult, ConversionAdapter, ConversionError, OutputFormat
 
-
-# Default conversion timeout. LibreOffice can hang on bad PDFs;
-# 60s is generous for a 50-page document.
+# Default conversion timeout. The UNO call itself is fast (<5s for
+# most PDFs), but malformed PDFs can hang. 60s is generous.
 DEFAULT_TIMEOUT_S = 60.0
 
-# Default max concurrent soffice processes. Each uses 100-200MB RAM.
-# 2 is safe for Railway's free tier (1GB); bump to 4 on Pro.
-DEFAULT_MAX_CONCURRENCY = 2
+# Default max concurrent UNO calls. The listener can handle many
+# concurrently; we cap to avoid OOM on the slim container.
+DEFAULT_MAX_CONCURRENCY = 4
+
+# UNO bridge connection. Listener runs on localhost:2002 per the
+# Dockerfile start.sh.
+UNO_HOST = os.getenv("UNO_HOST", "localhost")
+UNO_PORT = int(os.getenv("UNO_PORT", "2002"))
 
 
 class LibreOfficeAdapter:
     name = "libreoffice"
     description = (
-        "Self-hosted LibreOffice headless. 90-95% layout fidelity. "
+        "Self-hosted LibreOffice via UNO bridge. 90-95% layout fidelity. "
         "Always free, no per-conversion cost."
     )
     quality_score = 92
 
     def __init__(self) -> None:
         self._timeout_s = float(os.getenv("LIBREOFFICE_TIMEOUT_S", DEFAULT_TIMEOUT_S))
+        self._max_conc = int(os.getenv("LIBREOFFICE_MAX_CONCURRENCY", DEFAULT_MAX_CONCURRENCY))
+        self._semaphore: asyncio.Semaphore | None = None
         # Lazily-resolved soffice path. We resolve on first is_available()
         # so the app can boot even if soffice isn't installed.
         self._soffice_path: str | None = None
@@ -67,7 +92,17 @@ class LibreOfficeAdapter:
         return path
 
     async def is_available(self) -> bool:
-        return self._find_soffice() is not None
+        # Two requirements: soffice binary installed AND a UNO listener
+        # is reachable on the configured port.
+        if not self._find_soffice():
+            return False
+        return await asyncio.to_thread(_port_open, UNO_HOST, UNO_PORT, timeout_s=1.0)
+
+    def _get_semaphore(self) -> asyncio.Semaphore:
+        # Lazily create the semaphore inside the running event loop.
+        if self._semaphore is None:
+            self._semaphore = asyncio.Semaphore(self._max_conc)
+        return self._semaphore
 
     async def convert(
         self,
@@ -75,167 +110,63 @@ class LibreOfficeAdapter:
         output_format: OutputFormat = "docx",
         filename_hint: str = "document.pdf",
     ) -> AdapterResult:
-        # 1. Sanity check that soffice is installed. If not, return a
-        #    non-retryable error so the cascade falls straight to Local.
-        soffice = self._find_soffice()
-        if not soffice:
-            raise ConversionError(
-                "LibreOffice (soffice) not installed on server",
-                adapter_name=self.name,
-                retryable=False,  # missing dep, won't help to retry
-            )
-
-        # 2. Validate output format
-        LO_OUTPUT_MAP = {
-            "docx": "docx:MS Word 2007 XML",
-            "xlsx": "xlsx:Calc Office Open XML",
-            "pptx": "pptx:Impress Office Open XML",
+        # 1. Validate output format
+        UNO_OUTPUT_FILTER = {
+            "docx": "MS Word 2007 XML",
+            "xlsx": "Calc Office Open XML",
+            "pptx": "Impress Office Open XML",
         }
-        lo_target = LO_OUTPUT_MAP.get(output_format)
-        if not lo_target:
+        filter_name = UNO_OUTPUT_FILTER.get(output_format)
+        if not filter_name:
             raise ConversionError(
                 f"LibreOffice doesn't support output_format={output_format!r}",
                 adapter_name=self.name,
                 retryable=False,
             )
 
-        # 3. Run soffice. Wrap in asyncio.to_thread so the blocking
-        #    subprocess.run() doesn't stall the event loop.
-        import asyncio
-        import time
-        from concurrent.futures import TimeoutError as FuturesTimeout
-
-        t0 = time.time()
-
-        def _run_soffice() -> bytes:
-            # Per-PID temp dir for soffice's user profile. soffice
-            # refuses to start if the profile is locked by another
-            # soffice instance, so each invocation needs its own.
-            with tempfile.TemporaryDirectory(prefix="lo-") as tmpdir:
-                tmppath = Path(tmpdir)
-                in_file = tmppath / "input.pdf"
-                in_file.write_bytes(pdf_bytes)
-                out_dir = tmppath / "out"
-                out_dir.mkdir()
-                profile_dir = tmppath / "profile"
-                profile_dir.mkdir()
-
-                # Build env. soffice on a slim Docker image (no GUI,
-                # no X) needs:
-                #   - HOME writable (so it can put lock files there
-                #     in ~/.config/libreoffice)
-                #   - TMPDIR writable (so it can put tmp files there)
-                #   - JAVA_HOME pointing at the JRE (so the (missing)
-                #     javaldx probe would succeed if it were present)
-                #
-                # We also explicitly bypass any pre-existing soffice
-                # user profile by passing -env:UserInstallation.
-                #
-                # Note: the apt-installed libreoffice-common on Debian
-                # does NOT ship /usr/lib/libreoffice/program/javaldx —
-                # the javaldx script is part of the libreoffice-base
-                # package on older releases, but the slim package set
-                # we install (libreoffice-core + -writer + -calc +
-                # -impress) omits it. The javaldx warning is harmless;
-                # the 0xc10 save error is a separate issue that we
-                # work around by ensuring HOME and TMPDIR are writable
-                # and we use a per-invocation -env:UserInstallation.
-                run_env = os.environ.copy()
-                run_env["TMPDIR"] = str(tmppath)
-                # HOME: prefer the real user home if it exists and is
-                # writable, else fall back to tmppath. Setting HOME to
-                # tmppath can confuse some soffice internals (it tries
-                # to write ~/.config/libreoffice/... and expects
-                # certain paths to exist). Use the real home.
-                user_home = run_env.get("HOME") or os.path.expanduser("~")
-                if not Path(user_home).exists():
-                    user_home = str(tmppath)
-                    Path(user_home).mkdir(parents=True, exist_ok=True)
-                run_env["HOME"] = user_home
-                # JAVA_HOME: point at the JRE so any internal java
-                # lookups succeed (even though javaldx is missing).
-                java_home = (
-                    run_env.get("JAVA_HOME")
-                    or "/usr/lib/jvm/default-java"
-                    or str(Path(shutil.which("java") or "/usr/bin/java").parent.parent)
-                )
-                if Path(java_home).exists():
-                    run_env["JAVA_HOME"] = java_home
-
-                cmd = [
-                    soffice,
-                    "--headless",
-                    "--norestore",
-                    "--nologo",
-                    "--nodefault",
-                    "--nofirststartwizard",
-                    f"-env:UserInstallation=file://{profile_dir}",
-                    "--convert-to", lo_target,
-                    "--outdir", str(out_dir),
-                    str(in_file),
-                ]
-
-                # Use subprocess.run with a hard timeout. We catch
-                # TimeoutExpired and re-raise as ConversionError so
-                # the cascade can fall through. Pass `env=run_env` so
-                # soffice sees the writable HOME/TMPDIR/JAVA_HOME we
-                # set above.
-                result = subprocess.run(
-                    cmd,
-                    capture_output=True,
-                    timeout=self._timeout_s,
-                    check=False,
-                    env=run_env,
-                )
-                if result.returncode != 0:
-                    err = result.stderr.decode("utf-8", errors="replace")[:500]
-                    raise RuntimeError(
-                        f"soffice exited {result.returncode}: {err}"
-                    )
-
-                # soffice names the output after the input basename
-                # + new extension. With our cmd line, that's
-                # `input{ext}` in out_dir. But older soffice versions
-                # may behave differently, so fall back to glob.
-                ext_map = {"docx": ".docx", "xlsx": ".xlsx", "pptx": ".pptx"}
-                expected_ext = ext_map[output_format]
-
-                # First: exact match (most common case)
-                out_file = out_dir / f"input{expected_ext}"
-                if not out_file.exists():
-                    # Second: any file with the expected extension
-                    candidates = sorted(
-                        f for f in out_dir.iterdir()
-                        if f.suffix.lower() == expected_ext
-                    )
-                    if candidates:
-                        out_file = candidates[0]
-                    else:
-                        # Last resort: list what soffice DID write,
-                        # raise a useful error so the cascade can
-                        # fall through to Local.
-                        actual = [f.name for f in out_dir.iterdir()]
-                        raise RuntimeError(
-                            f"soffice exited 0 but no {expected_ext} file "
-                            f"found in {out_dir}. soffice wrote: {actual}. "
-                            f"stderr: {result.stderr.decode('utf-8', errors='replace')[:200]}"
-                        )
-                return out_file.read_bytes()
-
-        try:
-            out_bytes = await asyncio.to_thread(_run_soffice)
-        except subprocess.TimeoutExpired as exc:
+        # 2. Validate the UNO listener is reachable. If not, raise
+        #    retryable=True so the cascade falls through to Local.
+        if not await self.is_available():
             raise ConversionError(
-                f"LibreOffice timed out after {self._timeout_s}s",
-                adapter_name=self.name,
-                retryable=False,
-            ) from exc
-        except Exception as exc:
-            raise ConversionError(
-                f"LibreOffice conversion failed: {exc}",
+                f"LibreOffice UNO listener not reachable at "
+                f"{UNO_HOST}:{UNO_PORT}",
                 adapter_name=self.name,
                 retryable=True,
-            ) from exc
+            )
+
+        sem = self._get_semaphore()
+        t0 = time.time()
+
+        async with sem:
+            try:
+                out_bytes = await asyncio.wait_for(
+                    asyncio.to_thread(
+                        _uno_convert,
+                        pdf_bytes,
+                        output_format,
+                        filter_name,
+                        UNO_HOST,
+                        UNO_PORT,
+                    ),
+                    timeout=self._timeout_s,
+                )
+            except asyncio.TimeoutError as exc:
+                raise ConversionError(
+                    f"LibreOffice timed out after {self._timeout_s}s",
+                    adapter_name=self.name,
+                    retryable=False,
+                ) from exc
+            except Exception as exc:
+                # Anything from the UNO bridge — log full traceback
+                # via the conversion error message; the cascade can
+                # fall through to Local.
+                import traceback
+                tb = traceback.format_exc()
+                raise ConversionError(
+                    f"LibreOffice UNO conversion failed: {type(exc).__name__}: {exc}\n{tb[:300]}",
+                    adapter_name=self.name,
+                    retryable=True,
+                ) from exc
 
         elapsed_ms = int((time.time() - t0) * 1000)
         mime, ext = _mime_and_ext(output_format)
@@ -248,6 +179,113 @@ class LibreOfficeAdapter:
             pages_converted=0,
             cost_usd=0.0,
         )
+
+
+def _port_open(host: str, port: int, timeout_s: float = 1.0) -> bool:
+    """TCP probe: is anything listening on host:port?"""
+    try:
+        with socket.create_connection((host, port), timeout=timeout_s):
+            return True
+    except (OSError, socket.timeout):
+        return False
+
+
+def _uno_convert(
+    pdf_bytes: bytes,
+    output_format: str,
+    filter_name: str,
+    host: str,
+    port: int,
+) -> bytes:
+    """Synchronous helper. Connects to the UNO bridge, loads the
+    PDF, stores as the target Office format, reads back bytes.
+
+    Called from asyncio.to_thread() so it doesn't block the event loop.
+
+    Why the per-call local-context bridge: python3-uno is a C
+    extension that, when imported, looks for a UNO listener and
+    bootstraps a UNO context. We do that once per thread invocation
+    (cheap; ~50ms). Each Python process (the FastAPI worker) has
+    its own bridge connection to the listener.
+    """
+    import sys
+    # python3-uno installs to /usr/lib/python3/dist-packages (system
+    # Python path). The base image's Python (from python:3.11-slim)
+    # is at /usr/local/bin/python and does NOT include that on its
+    # default sys.path. Add it explicitly so `import uno` works.
+    for sys_path in (
+        "/usr/lib/python3/dist-packages",
+        "/usr/lib/python3.11/dist-packages",
+    ):
+        if sys_path not in sys.path and Path(sys_path).exists():
+            sys.path.insert(0, sys_path)
+            break
+
+    import uno  # python3-uno; only present if the apt package is installed
+    from com.sun.star.beans import PropertyValue  # type: ignore
+
+    with tempfile.TemporaryDirectory(prefix="uno-") as tmpdir:
+        tmppath = Path(tmpdir)
+        in_file = tmppath / "input.pdf"
+        in_file.write_bytes(pdf_bytes)
+        out_file = tmppath / f"output.{output_format}"
+
+        # 1. Connect to the listener
+        local_ctx = uno.getComponentContext()
+        resolver = local_ctx.ServiceManager.createInstanceWithContext(
+            "com.sun.star.bridge.UnoUrlResolver", local_ctx
+        )
+        ctx = resolver.resolve(
+            f"uno:socket,host={host},port={port};urp;StarOffice.ComponentContext"
+        )
+        smgr = ctx.ServiceManager
+        desktop = smgr.createInstanceWithContext("com.sun.star.frame.Desktop", ctx)
+
+        # 2. Load the PDF
+        # Hidden=True keeps the document invisible (we don't need a
+        # window). ReadOnly=True because we're converting, not editing.
+        # FilterName=PDF:impress forces the Impress PDF importer.
+        load_props = (
+            _prop("Hidden", True),
+            _prop("ReadOnly", True),
+            _prop("FilterName", "impress_pdf_import"),
+        )
+        load_url = uno.systemPathToFileUrl(str(in_file))
+        doc = desktop.loadComponentFromURL(load_url, "_blank", 0, load_props)
+
+        if doc is None:
+            raise RuntimeError("loadComponentFromURL returned None — PDF import failed")
+
+        try:
+            # 3. Store as the target Office format
+            store_props = (
+                _prop("FilterName", filter_name),
+                _prop("Overwrite", True),
+            )
+            store_url = uno.systemPathToFileUrl(str(out_file))
+            doc.storeToURL(store_url, store_props)
+        finally:
+            doc.close(True)
+
+        # 4. Read the bytes back
+        if not out_file.exists():
+            raise RuntimeError(
+                f"storeToURL did not produce output file at {out_file}"
+            )
+        return out_file.read_bytes()
+
+
+def _prop(name: str, value):
+    """Build a UNO com.sun.star.beans.PropertyValue (the 'Property' type
+    soffice uses for option bags). python3-uno exposes this as
+    com.sun.star.beans.PropertyValue. Done here so we don't have to
+    import the type at module top level (which would fail in test
+    environments without python3-uno)."""
+    from com.sun.star.beans import PropertyValue  # type: ignore
+    p = PropertyValue()
+    p.Name = name
+    p.Value = value
+    return p
 
 
 def _mime_and_ext(output_format: str) -> tuple[str, str]:
