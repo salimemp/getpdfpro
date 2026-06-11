@@ -424,6 +424,7 @@ async def pdf_to_word_download(
         raise HTTPException(400, f"Could not read PDF: {exc}") from exc
 
     # Run the cascade (Adobe → LibreOffice → local)
+    import traceback
     from app.adapters import ConversionError
     from app.adapters.cascade import get_cascade
 
@@ -434,6 +435,13 @@ async def pdf_to_word_download(
     except ConversionError as exc:
         status_code = 400 if not exc.retryable else 502
         raise HTTPException(status_code, str(exc)) from exc
+    except Exception as exc:
+        # Unhandled — surface the traceback so we can debug.
+        # This is wider than the router normally allows; remove once
+        # the cascade is stable.
+        tb = traceback.format_exc()
+        logger.error("Unhandled conversion error: %s\n%s", exc, tb)
+        raise HTTPException(500, f"Conversion crashed: {type(exc).__name__}: {exc}\n\n{tb}") from exc
 
     base = (file.filename or "document.pdf").rsplit(".", 1)[0]
     out_name = f"{base}.{result.file_extension}"
