@@ -204,26 +204,37 @@ def debug_soffice() -> dict:
             "is_file": path_obj.is_file() if path_obj.exists() else None,
         }
 
-    # Try running the soffice-bundled javaldx to see what it reports
+    # Try running the soffice-bundled javaldx to see what it reports.
+    # On Debian, the real javaldx lives at /usr/lib/libreoffice/program/javaldx
+    # (not next to /usr/bin/soffice). Probe multiple known locations.
     javaldx_output = None
     javaldx_err = None
-    if soffice_path:
+    javaldx_candidates = [
+        str(Path(soffice_path).parent / "javaldx") if soffice_path else None,
+        "/usr/lib/libreoffice/program/javaldx",
+        "/usr/lib64/libreoffice/program/javaldx",
+        "/opt/libreoffice/program/javaldx",
+    ]
+    javaldx_candidates = [p for p in javaldx_candidates if p]
+    javaldx_found_at = None
+    for cand in javaldx_candidates:
+        if Path(cand).exists():
+            javaldx_found_at = cand
+            break
+    if javaldx_found_at:
         try:
-            # javaldx lives next to the soffice binary
-            javaldx_path = str(Path(soffice_path).parent / "javaldx")
-            if Path(javaldx_path).exists():
-                jx = subprocess.run(
-                    [javaldx_path],
-                    capture_output=True,
-                    text=True,
-                    timeout=10,
-                    check=False,
-                )
-                javaldx_output = (jx.stdout or jx.stderr).strip()[:500]
-            else:
-                javaldx_err = f"javaldx not found at {javaldx_path}"
+            jx = subprocess.run(
+                [javaldx_found_at],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                check=False,
+            )
+            javaldx_output = (jx.stdout or jx.stderr).strip()[:500]
         except Exception as e:
             javaldx_err = f"{type(e).__name__}: {e}"
+    else:
+        javaldx_err = f"javaldx not found in any of: {javaldx_candidates}"
 
     return {
         "soffice_path": soffice_path,
@@ -242,6 +253,8 @@ def debug_soffice() -> dict:
         "java_common_paths": java_common_path_results,
         "javaldx_output": javaldx_output,
         "javaldx_error": javaldx_err,
+        "javaldx_found_at": javaldx_found_at,
+        "javaldx_candidates": javaldx_candidates,
         "env": {
             "PATH": os.environ.get("PATH", "<unset>"),
             "HOME": os.environ.get("HOME", "<unset>"),
