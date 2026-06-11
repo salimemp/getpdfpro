@@ -63,6 +63,13 @@ class Settings(BaseSettings):
     # Sentry
     sentry_dsn: str = ""
 
+    # PDF → Office conversion adapters (see docs/adapters.md)
+    # Tier 1: Adobe PDF Services (free tier, 500 doc-txns/month)
+    adobe_client_id: str = ""
+    adobe_client_secret: str = ""
+    # Tier 2: CloudConvert (pay-as-you-go fallback)
+    cloudconvert_api_key: str = ""
+
     @field_validator("cors_origins")
     @classmethod
     def _strip_origins(cls, v: str) -> str:

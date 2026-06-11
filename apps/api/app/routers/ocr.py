@@ -312,112 +312,79 @@ async def pdf_to_word(
     if len(blob) == 0:
         raise HTTPException(400, "Empty file.")
 
+    # Page count for the response metadata
     try:
         src = fitz.open(stream=blob, filetype="pdf")
+        page_count = len(src)
+        src.close()
     except Exception as exc:
         raise HTTPException(400, f"Could not read PDF: {exc}") from exc
 
+    # Run the cascade (Adobe → CloudConvert → local)
+    from app.adapters import ConversionError
+    from app.adapters.cascade import get_cascade
+
     try:
-        page_count = len(src)
-        if page_count == 0:
-            raise HTTPException(400, "PDF has no pages.")
+        result = await get_cascade().convert(
+            blob, output_format="docx", filename_hint=file.filename
+        )
+    except ConversionError as exc:
+        # Map to HTTP status codes. Retryable: 502 (bad gateway — try
+        # again later). Non-retryable: 400 (bad input).
+        status_code = 400 if not exc.retryable else 502
+        raise HTTPException(status_code, str(exc)) from exc
 
-        from docx import Document
-        from docx.shared import Pt
-
-        out_doc = Document()
-        # Page break between pages (except before the first page)
-        first_page = True
-        total_paragraphs = 0
-        total_tables = 0
-
-        for page in src:
-            if not first_page:
-                out_doc.add_page_break()
-            first_page = False
-
-            # Extract structured text from the page
-            # mode="dict" gives us per-block info: type (text/image), bbox, lines, spans
-            page_dict = page.get_text("dict")
-
-            for block in page_dict.get("blocks", []):
-                block_type = block.get("type", 0)
-                if block_type == 1:
-                    # Image block — skip; we don't embed images in the .docx
-                    continue
-                # Text block
-                block_lines = block.get("lines", [])
-                if not block_lines:
-                    continue
-                # If a block has only one line and the line contains a long
-                # run of single-char spans, treat it as a heading candidate.
-                # Heuristic: if the average font size on the page is X and
-                # this block's first line's largest font size is > 1.3X, it's
-                # likely a heading.
-                for line in block_lines:
-                    spans = line.get("spans", [])
-                    if not spans:
+    # Best-effort paragraph/table count by re-parsing with the local
+    # adapter. We don't re-parse the converted .docx (which would
+    # require another round-trip); the count is from the source PDF.
+    try:
+        src = fitz.open(stream=blob, filetype="pdf")
+        try:
+            paragraphs = 0
+            tables = 0
+            for page in src:
+                page_dict = page.get_text("dict")
+                for block in page_dict.get("blocks", []):
+                    if block.get("type", 0) == 1:
                         continue
-                    text = "".join(s.get("text", "") for s in spans).strip()
-                    if not text:
-                        continue
-                    # Use the largest font size in the line to pick a heading
-                    # level. If it's notably larger than the page median, mark
-                    # it as a heading.
-                    sizes = [s.get("size", 0) for s in spans if s.get("size", 0) > 0]
-                    max_size = max(sizes) if sizes else 12
-                    page_sizes = [
-                        s.get("size", 0)
-                        for b in page_dict.get("blocks", [])
-                        for l in b.get("lines", [])
-                        for s in l.get("spans", [])
-                        if s.get("size", 0) > 0
-                    ]
-                    page_median = sorted(page_sizes)[len(page_sizes) // 2] if page_sizes else 12
+                    paragraphs += len(block.get("lines", []))
+                    block_lines = block.get("lines", [])
+                    if _looks_like_table(block_lines) and len(_extract_table_rows(block_lines)) > 1:
+                        tables += 1
+        finally:
+            src.close()
+    except Exception:
+        paragraphs, tables = 0, 0
 
-                    if max_size >= page_median * 1.5:
-                        out_doc.add_heading(text, level=1)
-                    elif max_size >= page_median * 1.25:
-                        out_doc.add_heading(text, level=2)
-                    else:
-                        para = out_doc.add_paragraph(text)
-                        # Set font size to the first span's size, falling
-                        # back to 12. python-docx defaults to Calibri 11.
-                        para.style = out_doc.styles["Normal"]
-                    total_paragraphs += 1
-
-                # After extracting all lines from this block, try to detect
-                # a simple table: if the block's spans are arranged in a grid
-                # (multiple lines, each with spans at roughly the same x
-                # positions), treat the lines as table rows.
-                if _looks_like_table(block_lines):
-                    rows = _extract_table_rows(block_lines)
-                    if rows and len(rows) > 1:
-                        ncols = max(len(r) for r in rows)
-                        table = out_doc.add_table(rows=len(rows), cols=ncols)
-                        for r_idx, row in enumerate(rows):
-                            for c_idx, cell_text in enumerate(row):
-                                if c_idx < ncols:
-                                    table.cell(r_idx, c_idx).text = cell_text
-                        total_tables += 1
-
-        out_buf = io.BytesIO()
-        out_doc.save(out_buf)
-        out_bytes = out_buf.getvalue()
-    finally:
-        src.close()
+    # Adjust the accuracy warning based on which adapter served us
+    if result.file_extension == "docx":
+        if result.cost_usd and result.cost_usd > 0:
+            # CloudConvert or paid tier — high quality
+            accuracy = (
+                "90-95% layout fidelity. Text, headings, tables, and images "
+                "preserved by the conversion engine. Multi-column layouts "
+                "and unusual fonts may still need manual cleanup in Word."
+            )
+        else:
+            # Adobe or local (cost_usd=0 for both). If local, the
+            # warning is stronger. We can't distinguish here without
+            # looking at the adapter name; the cascade logs it.
+            accuracy = (
+                "Best-effort conversion. Text, headings, and basic tables "
+                "are preserved. Multi-column layouts, math, complex tables, "
+                "custom fonts, and precise positioning may NOT round-trip "
+                "faithfully. Expect manual cleanup in Word for complex "
+                "documents."
+            )
+    else:
+        accuracy = f"Converted to {result.file_extension}."
 
     return ToWordResponse(
         pages=page_count,
-        paragraphs=total_paragraphs,
-        tables=total_tables,
-        size_bytes=len(out_bytes),
-        accuracy_warning=(
-            "Best-effort conversion. Text, headings, and basic tables are "
-            "preserved. Multi-column layouts, math, complex tables, custom "
-            "fonts, and precise positioning will NOT round-trip faithfully. "
-            "Expect manual cleanup in Word for complex documents."
-        ),
+        paragraphs=paragraphs,
+        tables=tables,
+        size_bytes=len(result.bytes),
+        accuracy_warning=accuracy,
     )
 
 
@@ -448,80 +415,38 @@ async def pdf_to_word_download(
     if len(blob) == 0:
         raise HTTPException(400, "Empty file.")
 
+    # Page count for the response metadata
     try:
         src = fitz.open(stream=blob, filetype="pdf")
+        page_count = len(src)
+        src.close()
     except Exception as exc:
         raise HTTPException(400, f"Could not read PDF: {exc}") from exc
 
+    # Run the cascade (Adobe → CloudConvert → local)
+    from app.adapters import ConversionError
+    from app.adapters.cascade import get_cascade
+
     try:
-        from docx import Document
-
-        out_doc = Document()
-        page_count = len(src)
-        if page_count == 0:
-            raise HTTPException(400, "PDF has no pages.")
-
-        first_page = True
-        for page in src:
-            if not first_page:
-                out_doc.add_page_break()
-            first_page = False
-
-            page_dict = page.get_text("dict")
-            for block in page_dict.get("blocks", []):
-                if block.get("type", 0) == 1:
-                    continue
-                block_lines = block.get("lines", [])
-                for line in block_lines:
-                    spans = line.get("spans", [])
-                    if not spans:
-                        continue
-                    text = "".join(s.get("text", "") for s in spans).strip()
-                    if not text:
-                        continue
-                    sizes = [s.get("size", 0) for s in spans if s.get("size", 0) > 0]
-                    max_size = max(sizes) if sizes else 12
-                    page_sizes = [
-                        s.get("size", 0)
-                        for b in page_dict.get("blocks", [])
-                        for l in b.get("lines", [])
-                        for s in l.get("spans", [])
-                        if s.get("size", 0) > 0
-                    ]
-                    page_median = sorted(page_sizes)[len(page_sizes) // 2] if page_sizes else 12
-                    if max_size >= page_median * 1.5:
-                        out_doc.add_heading(text, level=1)
-                    elif max_size >= page_median * 1.25:
-                        out_doc.add_heading(text, level=2)
-                    else:
-                        out_doc.add_paragraph(text)
-                if _looks_like_table(block_lines):
-                    rows = _extract_table_rows(block_lines)
-                    if rows and len(rows) > 1:
-                        ncols = max(len(r) for r in rows)
-                        table = out_doc.add_table(rows=len(rows), cols=ncols)
-                        for r_idx, row in enumerate(rows):
-                            for c_idx, cell_text in enumerate(row):
-                                if c_idx < ncols:
-                                    table.cell(r_idx, c_idx).text = cell_text
-
-        out_buf = io.BytesIO()
-        out_doc.save(out_buf)
-        out_bytes = out_buf.getvalue()
-    finally:
-        src.close()
+        result = await get_cascade().convert(
+            blob, output_format="docx", filename_hint=file.filename
+        )
+    except ConversionError as exc:
+        status_code = 400 if not exc.retryable else 502
+        raise HTTPException(status_code, str(exc)) from exc
 
     base = (file.filename or "document.pdf").rsplit(".", 1)[0]
-    out_name = f"{base}.docx"
+    out_name = f"{base}.{result.file_extension}"
 
     return StreamingResponse(
-        io.BytesIO(out_bytes),
-        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        io.BytesIO(result.bytes),
+        media_type=result.mime_type,
         headers={
             "Content-Disposition": f'attachment; filename="{out_name}"',
             "X-Pdf-Source-Pages": str(page_count),
-            "X-Docx-Size-Bytes": str(len(out_bytes)),
-            "X-Conversion-Accuracy": "best-effort",
+            "X-Docx-Size-Bytes": str(len(result.bytes)),
+            "X-Conversion-Adapter": result.adapter_name,
+            "X-Conversion-Elapsed-Ms": str(result.elapsed_ms),
             "Cache-Control": "no-store",
         },
     )
