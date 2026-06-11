@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
 import { getAllPosts } from "@/lib/blog";
+import { feedDiscoveryLinks } from "@/lib/feeds";
 import {
   SITE_NAME,
   SITE_URL,
@@ -14,7 +15,21 @@ export const metadata: Metadata = {
   title: `Blog — ${SITE_NAME}`,
   description:
     "Practical, sourced writing on PDFs and the tools that work with them. Merge, split, compress, format primer, and honest comparisons.",
-  alternates: { canonical: "/blog" },
+  alternates: {
+    canonical: "/blog",
+    types: {
+      "application/rss+xml": [
+        { url: "/rss.xml", title: `${SITE_NAME} Blog (RSS 2.0)` },
+      ],
+      "application/atom+xml": [
+        { url: "/atom.xml", title: `${SITE_NAME} Blog (Atom 1.0)` },
+        { url: "/feed.xml", title: `${SITE_NAME} Blog (Atom — feed.xml)` },
+      ],
+      "application/feed+json": [
+        { url: "/feed.json", title: `${SITE_NAME} Blog (JSON Feed 1.1)` },
+      ],
+    },
+  },
   openGraph: {
     type: "website",
     url: `${SITE_URL}/blog`,
@@ -36,6 +51,16 @@ export default function BlogIndexPage() {
 
   return (
     <>
+      {/* Auto-discovery link tags for feed readers */}
+      {feedDiscoveryLinks().map((link) => (
+        <link
+          key={link.href}
+          rel={link.rel}
+          type={link.type}
+          title={link.title}
+          href={link.href}
+        />
+      ))}
       <SiteHeader />
       <main>
         <script
