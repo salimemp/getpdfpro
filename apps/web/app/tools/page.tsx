@@ -28,17 +28,17 @@ const tools = [
   },
   {
     name: "Split PDF",
-    description: "Extract pages or split by bookmarks, size, or ranges.",
+    description: "Extract pages or split by custom ranges. ZIP of one-PDF-per-page.",
     icon: Scissors,
     href: "/tools/split",
-    ready: false,
+    ready: true,
   },
   {
     name: "Compress PDF",
-    description: "Shrink files up to 90% with smart quality preservation.",
+    description: "Shrink files up to 70% with smart quality preservation.",
     icon: Minimize2,
     href: "/tools/compress",
-    ready: false,
+    ready: true,
   },
   {
     name: "PDF to Image",

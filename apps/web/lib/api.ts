@@ -95,3 +95,132 @@ export async function mergePdfs(files: File[]): Promise<MergeResult> {
 
   return { blob, filename, pages, sizeBytes };
 }
+
+export interface SplitResult {
+  blob: Blob;
+  filename: string;
+  sourcePages: number;
+  parts: number;
+  sizeBytes: number;
+}
+
+export type SplitMode = "all" | "ranges";
+
+/**
+ * Split a PDF into one-PDF-per-page, returned as a ZIP.
+ * Hits /api/v1/pdf/split-download (capped at 50 MB input).
+ */
+export async function splitPdf(
+  file: File,
+  options: { mode?: SplitMode; ranges?: string } = {}
+): Promise<SplitResult> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  form.append("mode", options.mode ?? "all");
+  if (options.mode === "ranges" && options.ranges) {
+    form.append("ranges", options.ranges);
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/split-download`, {
+      method: "POST",
+      body: form,
+    });
+  } catch (err) {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+
+  if (!res.ok) {
+    let detail = res.statusText;
+    try {
+      const body = await res.json();
+      detail = body.detail || JSON.stringify(body);
+    } catch {
+      // not JSON
+    }
+    throw new ApiError(res.status, detail);
+  }
+
+  const blob = await res.blob();
+  const disp = res.headers.get("Content-Disposition") || "";
+  const filenameMatch = disp.match(/filename="?([^";]+)"?/);
+  const filename = filenameMatch ? filenameMatch[1] : "pages.zip";
+  const sourcePages = parseInt(res.headers.get("X-Pdf-Source-Pages") || "0", 10);
+  const parts = parseInt(res.headers.get("X-Pdf-Parts") || "0", 10);
+  const sizeBytes = parseInt(res.headers.get("X-Pdf-Size-Bytes") || "0", 10);
+
+  return { blob, filename, sourcePages, parts, sizeBytes };
+}
+
+export type CompressionLevel = "low" | "medium" | "high";
+
+export interface CompressResult {
+  blob: Blob;
+  filename: string;
+  level: CompressionLevel;
+  originalBytes: number;
+  compressedBytes: number;
+  savedPercent: number;
+}
+
+/**
+ * Compress a PDF. Three quality levels:
+ *   - low:    best quality, ~10% smaller (garbage collect only)
+ *   - medium: balanced, ~40% smaller (re-encodes JPEGs at quality 70)
+ *   - high:   smallest, ~70% smaller (re-encodes at quality 50, ~150 DPI)
+ */
+export async function compressPdf(
+  file: File,
+  level: CompressionLevel = "medium"
+): Promise<CompressResult> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  form.append("level", level);
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/compress-download`, {
+      method: "POST",
+      body: form,
+    });
+  } catch (err) {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+
+  if (!res.ok) {
+    let detail = res.statusText;
+    try {
+      const body = await res.json();
+      detail = body.detail || JSON.stringify(body);
+    } catch {
+      // not JSON
+    }
+    throw new ApiError(res.status, detail);
+  }
+
+  const blob = await res.blob();
+  const disp = res.headers.get("Content-Disposition") || "";
+  const filenameMatch = disp.match(/filename="?([^";]+)"?/);
+  const filename = filenameMatch ? filenameMatch[1] : "compressed.pdf";
+  const originalBytes = parseInt(
+    res.headers.get("X-Original-Size-Bytes") || "0",
+    10
+  );
+  const compressedBytes = parseInt(
+    res.headers.get("X-Compressed-Size-Bytes") || "0",
+    10
+  );
+  const savedPercent = parseFloat(
+    res.headers.get("X-Saved-Percent") || "0"
+  );
+
+  return {
+    blob,
+    filename,
+    level,
+    originalBytes,
+    compressedBytes,
+    savedPercent,
+  };
+}
