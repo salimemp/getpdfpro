@@ -16,6 +16,22 @@ export const metadata: Metadata = {
     "Practical, sourced writing on PDFs and the tools that work with them. Merge, split, compress, format primer, and honest comparisons.",
   alternates: {
     canonical: "/blog",
+    // Feed auto-discovery for RSS, Atom, and JSON Feed readers.
+    // Next emits one <link rel="alternate" type="..."> tag per entry.
+    // Note: the value MUST be an array of {url, title} objects.
+    // See: https://nextjs.org/docs/app/api-reference/functions/generate-metadata#alternates
+    types: {
+      "application/rss+xml": [
+        { url: "/rss.xml", title: `${SITE_NAME} Blog (RSS 2.0)` },
+      ],
+      "application/atom+xml": [
+        { url: "/atom.xml", title: `${SITE_NAME} Blog (Atom 1.0)` },
+        { url: "/feed.xml", title: `${SITE_NAME} Blog (Atom — feed.xml)` },
+      ],
+      "application/feed+json": [
+        { url: "/feed.json", title: `${SITE_NAME} Blog (JSON Feed 1.1)` },
+      ],
+    },
   },
   openGraph: {
     type: "website",

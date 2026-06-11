@@ -29,7 +29,23 @@ export function generateMetadata({
   return {
     title: post.title,
     description: post.description,
-    alternates: { canonical: `/blog/${post.slug}` },
+    alternates: {
+      canonical: `/blog/${post.slug}`,
+      // Feed auto-discovery — every post page emits the same 4 links
+      // so a feed reader visiting any post can find the blog feed.
+      types: {
+        "application/rss+xml": [
+          { url: "/rss.xml", title: `${SITE_NAME} Blog (RSS 2.0)` },
+        ],
+        "application/atom+xml": [
+          { url: "/atom.xml", title: `${SITE_NAME} Blog (Atom 1.0)` },
+          { url: "/feed.xml", title: `${SITE_NAME} Blog (Atom — feed.xml)` },
+        ],
+        "application/feed+json": [
+          { url: "/feed.json", title: `${SITE_NAME} Blog (JSON Feed 1.1)` },
+        ],
+      },
+    },
     openGraph: {
       type: "article",
       url: `${SITE_URL}/blog/${post.slug}`,
