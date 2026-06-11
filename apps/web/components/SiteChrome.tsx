@@ -149,15 +149,21 @@ export function SiteFooter() {
             </div>
             <span>© {new Date().getFullYear()} GetPDFPro</span>
           </div>
-          <nav className="flex gap-6 text-sm text-slate-600 dark:text-slate-400">
+          <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-slate-600 dark:text-slate-400">
+            <Link href="/pricing" className="hover:text-slate-900 dark:hover:text-white">
+              Pricing
+            </Link>
+            <Link href="/about" className="hover:text-slate-900 dark:hover:text-white">
+              About
+            </Link>
+            <Link href="/contact" className="hover:text-slate-900 dark:hover:text-white">
+              Contact
+            </Link>
             <Link href="/privacy" className="hover:text-slate-900 dark:hover:text-white">
               Privacy
             </Link>
             <Link href="/terms" className="hover:text-slate-900 dark:hover:text-white">
               Terms
-            </Link>
-            <Link href="/contact" className="hover:text-slate-900 dark:hover:text-white">
-              Contact
             </Link>
           </nav>
         </div>

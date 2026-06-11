@@ -20,10 +20,10 @@ export default function PricingPage() {
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
               Pricing that doesn&apos;t try to trap you.
             </h1>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600 dark:text-slate-400">
-              50 free tasks a day — more than every competitor combined.
-              Pro is $2.99/month if you need more. Cancel anytime.
-            </p>
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600 dark:text-slate-400">
+            50 free tasks a day for signed-in users. Pro is
+            $3.99/month if you need more. Cancel anytime, 30-day refund.
+          </p>
           </div>
 
           <PricingTiers />

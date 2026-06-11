@@ -1,0 +1,19 @@
+# ads.txt for Google AdSense
+#
+# We use this file to declare which advertising systems are
+# authorized to sell ads on our domain. Google crawls this file
+# regularly to verify authorized sellers.
+#
+# Format: <domain>, <publisher ID>, <relationship>, <cert authority>
+#
+# Notes for Salim:
+# 1. After applying for AdSense, Google will give you a
+#    ca-pub-XXXXXXXXXXXXXXXX publisher ID. Replace the placeholder
+#    below with your actual ID.
+# 2. Place this file at the ROOT of the public web (which Vercel
+#    serves from /public by default in Next.js).
+# 3. Once your account is approved and you have the real pub ID,
+#    update this file and redeploy. Until then, you can leave the
+#    placeholder — AdSense won't serve ads without verification.
+
+google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0

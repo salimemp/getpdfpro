@@ -1,6 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth";
+import {
+  organizationLd,
+  websiteLd,
+  softwareApplicationLd,
+  ldJson,
+  SITE_URL,
+} from "@/lib/seo";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
@@ -67,6 +74,34 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/*
+          Site-wide JSON-LD structured data. Per-page data (FAQ, breadcrumb,
+          etc.) gets added inside the page component itself. These three
+          are global because they describe the site as a whole, not a
+          specific page.
+        */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={ldJson(organizationLd())}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={ldJson(websiteLd())}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={ldJson(softwareApplicationLd())}
+        />
+        {/* Preconnect to the API so the first tool call is fast */}
+        {SITE_URL.includes("app.getpdfpro.com") && (
+          <link
+            rel="preconnect"
+            href="https://api.getpdfpro.com"
+            crossOrigin="anonymous"
+          />
+        )}
+      </head>
       <body className="min-h-screen bg-white font-sans text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100">
         <AuthProvider>{children}</AuthProvider>
       </body>

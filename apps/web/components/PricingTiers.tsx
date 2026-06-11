@@ -33,9 +33,9 @@ export function PricingTiers() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const monthlyPrice = 2.99;
-  const yearlyPrice = 19;
-  const yearlyPerMonth = (yearlyPrice / 12).toFixed(2); // $1.58/mo equivalent
+  const monthlyPrice = 3.99;
+  const yearlyPrice = 24;
+  const yearlyPerMonth = (yearlyPrice / 12).toFixed(2); // $2.00/mo equivalent
   const yearlySavingsPct = Math.round((1 - yearlyPrice / (monthlyPrice * 12)) * 100);
 
   const onUpgrade = async () => {
@@ -227,14 +227,22 @@ export function PricingTiers() {
         </div>
       </div>
 
-      {/* Comparison note */}
+      {/* Honest positioning — we only compare on what we can source.
+          We don't put competitor prices on this page because we don't
+          want to be wrong about them. The /vs/ilovepdf page has a
+          sourced comparison for users who want to dig deeper. */}
       <p className="mt-8 text-center text-sm text-slate-500">
-        Pro at $2.99/mo is lower than{" "}
-        <span className="line-through">iLovePDF ($7)</span>,{" "}
-        <span className="line-through">Smallpdf ($9)</span>,{" "}
-        <span className="line-through">Adobe ($19.99)</span>,{" "}
-        <span className="line-through">Soda PDF ($7.50)</span>. We just
-        priced it on the math.
+        Pro at <strong>$3.99/mo</strong> is built on the same pay-what-you-need
+        principle as the rest of GetPDFPro: enough margin to keep the
+        service running, not enough to gate everyday work behind a
+        paywall. For a sourced feature comparison, see{" "}
+        <a
+          href="/vs/ilovepdf"
+          className="font-medium text-brand-600 hover:text-brand-700"
+        >
+          GetPDFPro vs iLovePDF
+        </a>
+        .
       </p>
     </div>
   );
