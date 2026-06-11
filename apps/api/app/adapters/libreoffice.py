@@ -120,6 +120,28 @@ class LibreOfficeAdapter:
                 profile_dir = tmppath / "profile"
                 profile_dir.mkdir()
 
+                # Build env. soffice on a slim Docker image (no GUI,
+                # no X) needs:
+                #   - HOME writable (so it can put lock files there)
+                #   - TMPDIR writable (so it can put tmp files there)
+                #   - JAVA_HOME pointing at the JRE (else javaldx
+                #     probe fails and DOCX save aborts with 0xc10)
+                # Without these, soffice silently writes no output and
+                # the cascade falls through to Local — which is
+                # exactly the bug we just spent hours debugging.
+                run_env = os.environ.copy()
+                run_env["TMPDIR"] = str(tmppath)
+                run_env["HOME"] = str(tmppath)  # profile lives under tmppath
+                # JAVA_HOME: prefer the standard Debian default-jvm path.
+                # If it's not there, fall back to wherever java is.
+                java_home = (
+                    run_env.get("JAVA_HOME")
+                    or "/usr/lib/jvm/default-java"
+                    or str(Path(shutil.which("java") or "/usr/bin/java").parent.parent)
+                )
+                if Path(java_home).exists():
+                    run_env["JAVA_HOME"] = java_home
+
                 cmd = [
                     soffice,
                     "--headless",
@@ -135,12 +157,15 @@ class LibreOfficeAdapter:
 
                 # Use subprocess.run with a hard timeout. We catch
                 # TimeoutExpired and re-raise as ConversionError so
-                # the cascade can fall through.
+                # the cascade can fall through. Pass `env=run_env` so
+                # soffice sees the writable HOME/TMPDIR/JAVA_HOME we
+                # set above.
                 result = subprocess.run(
                     cmd,
                     capture_output=True,
                     timeout=self._timeout_s,
                     check=False,
+                    env=run_env,
                 )
                 if result.returncode != 0:
                     err = result.stderr.decode("utf-8", errors="replace")[:500]
