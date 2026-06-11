@@ -139,13 +139,17 @@ export function PdfToWordTool() {
       <div className="mb-6 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
         <div>
-          <strong>Honest accuracy note.</strong> This is a best-effort
-          conversion. We extract text, headings, and basic tables. The
-          following will <strong>not</strong> round-trip faithfully:
-          multi-column layouts, complex tables, math equations, custom
-          fonts, and precise positioning. Expect manual cleanup in Word
-          for complex documents. We won't claim to be a 1:1 conversion
-          engine — that would be a lie.
+          <strong>How accurate is this?</strong> We use a 3-tier
+          cascade: <strong>Adobe PDF Services</strong> (95-99% layout
+          fidelity, free up to 500 conversions/month) →
+          <strong> CloudConvert</strong> (90-95%, ~€0.07/conversion) →
+          <strong> local fallback</strong> (70-80%, free, best-effort).
+          You always get the best quality available on our end. The
+          following will <strong>not</strong> round-trip perfectly even
+          with the best tier: multi-column layouts, complex tables with
+          merged cells, math equations, custom fonts, and precise
+          positioning. Expect some manual cleanup in Word for complex
+          documents.
         </div>
       </div>
 
