@@ -36,6 +36,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         tesseract-ocr-eng \
         libreoffice-core \
         libreoffice-writer \
+        libreoffice-impress \
         libreoffice-common \
         # Fonts — common ones that headless LibreOffice needs to render
         # Office files without missing-font fallback.
