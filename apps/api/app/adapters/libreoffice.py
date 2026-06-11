@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import subprocess
 import tempfile
 from pathlib import Path
 
@@ -135,7 +136,6 @@ class LibreOfficeAdapter:
                 # Use subprocess.run with a hard timeout. We catch
                 # TimeoutExpired and re-raise as ConversionError so
                 # the cascade can fall through.
-                import subprocess
                 result = subprocess.run(
                     cmd,
                     capture_output=True,
@@ -148,20 +148,33 @@ class LibreOfficeAdapter:
                         f"soffice exited {result.returncode}: {err}"
                     )
 
-                # soffice names output after input basename + new ext
+                # soffice names the output after the input basename
+                # + new extension. With our cmd line, that's
+                # `input{ext}` in out_dir. But older soffice versions
+                # may behave differently, so fall back to glob.
                 ext_map = {"docx": ".docx", "xlsx": ".xlsx", "pptx": ".pptx"}
-                out_file = out_dir / f"input{ext_map[output_format]}"
+                expected_ext = ext_map[output_format]
+
+                # First: exact match (most common case)
+                out_file = out_dir / f"input{expected_ext}"
                 if not out_file.exists():
-                    # Try to find any matching file
-                    candidates = [
+                    # Second: any file with the expected extension
+                    candidates = sorted(
                         f for f in out_dir.iterdir()
-                        if f.suffix == ext_map[output_format]
-                    ]
-                    if not candidates:
+                        if f.suffix.lower() == expected_ext
+                    )
+                    if candidates:
+                        out_file = candidates[0]
+                    else:
+                        # Last resort: list what soffice DID write,
+                        # raise a useful error so the cascade can
+                        # fall through to Local.
+                        actual = [f.name for f in out_dir.iterdir()]
                         raise RuntimeError(
-                            f"soffice succeeded but output file not found in {out_dir}"
+                            f"soffice exited 0 but no {expected_ext} file "
+                            f"found in {out_dir}. soffice wrote: {actual}. "
+                            f"stderr: {result.stderr.decode('utf-8', errors='replace')[:200]}"
                         )
-                    out_file = candidates[0]
                 return out_file.read_bytes()
 
         try:
