@@ -18,19 +18,77 @@
 
 FROM python:3.12-slim
 
-# System dependencies
-# - tesseract-ocr: OCR engine (apt package)
-# - tesseract-ocr-eng: English language data (add more langs as needed)
+# System dependencies.
+#
+# Tier 1: tesseract for OCR
+#   - tesseract-ocr + -eng: OCR engine + English language data
+#
+# Tier 2: LibreOffice for PDF→Office (UNO bridge from python3-uno)
+#   - libreoffice: the full metapackage (core + writer + calc + impress
+#     + draw + math + base + common + ure + all helpers). We tried the
+#     slim subset before and the DOCX save path aborted with 0xc10. The
+#     full set includes components that the DOCX writer needs to do
+#     its in-process OLE-package save.
+#   - libreoffice-script-provider-python + python3-uno: the UNO bridge
+#     client library. Lets Python connect to a soffice listener over
+#     its socket protocol and use the in-process UNO API to load+save
+#     documents. This bypasses the broken `soffice --headless --convert-to`
+#     CLI save path entirely.
+#   - unoconv: a small Python wrapper around the UNO API. Useful as a
+#     fallback CLI invoker (calls into the same UNO listener the
+#     adapter does).
+#
+# Tier 3: fonts. Headless LibreOffice needs a LOT of fonts to render
+# Office files without missing-font fallback. The slim set
+# (dejavu/liberation/noto) was insufficient — the 0xc10 save error
+# turned out to be triggered by missing glyphs in the ODT→DOCX render
+# pipeline. Adding the extended font set from the well-known
+# hdejager/libreoffice-api recipe (67 stars, proven working).
+#
+# Tier 4: hyphenation. hyphen-* dicts for line-breaking.
+#
+# Tier 5: JRE. soffice wants a JRE on PATH at startup; without it
+# the javaldx probe fails (warnings only, but the 0xc10 cascades).
+# We install JRE regardless of CLI vs UNO because the startup probe
+# is shared.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         curl \
         ca-certificates \
         tesseract-ocr \
         tesseract-ocr-eng \
-        # Clean up the apt cache to keep the image small
+        # LibreOffice (full set)
+        libreoffice \
+        libreoffice-script-provider-python \
+        python3-uno \
+        unoconv \
+        # Fonts — hdejager/libreoffice-api recipe
+        fonts-dejavu \
+        fonts-dejavu-core \
+        fonts-dejavu-extra \
+        fonts-droid-fallback \
+        fonts-dustin \
+        fonts-f500 \
+        fonts-fanwood \
+        fonts-freefont-ttf \
+        fonts-liberation \
+        fonts-lmodern \
+        fonts-lyx \
+        fonts-sil-gentium \
+        fonts-texgyre \
+        fonts-tlwg-purisa \
+        fonts-opensymbol \
+        fonts-noto-core \
+        # Hyphenation
+        hyphen-af \
+        hyphen-en-us \
+        # JRE
+        default-jre-headless \
     && rm -rf /var/lib/apt/lists/*
 
-# Verify Tesseract is installed and reachable.
-RUN tesseract --version && which tesseract
+# Verify Tesseract + soffice + java are all reachable.
+RUN tesseract --version && which tesseract \
+    && soffice --version && which soffice \
+    && java -version 2>&1 | head -1 && which java
 
 WORKDIR /srv/app
 
