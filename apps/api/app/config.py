@@ -22,8 +22,15 @@ class Settings(BaseSettings):
     port: int = 8000
     log_level: str = "info"
 
-    # CORS
-    cors_origins: str = "http://localhost:3000"
+    # CORS — comma-separated list of allowed origins. In dev this
+    # includes the local web app ports. In prod, set CORS_ORIGINS env
+    # var to the public Vercel domain (and the marketing site once
+    # it's live).
+    cors_origins: str = (
+        "http://localhost:3000,http://localhost:5173,"
+        "https://getpdfpro.com,https://app.getpdfpro.com,"
+        "https://getpdfpro-web.vercel.app"
+    )
 
     # Supabase
     supabase_url: str = ""
