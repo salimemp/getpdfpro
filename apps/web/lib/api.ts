@@ -224,3 +224,52 @@ export async function compressPdf(
     savedPercent,
   };
 }
+
+export type BillingInterval = "monthly" | "yearly";
+
+export interface CheckoutResult {
+  url: string;
+  sessionId: string;
+}
+
+/**
+ * Create a Stripe Checkout session for Pro.
+ * The API returns a hosted Stripe URL; the caller should redirect
+ * the browser to it. If Stripe isn't configured (no env vars), the
+ * API returns 503 and we throw an ApiError with a helpful message.
+ */
+export async function createCheckoutSession(
+  interval: BillingInterval,
+  user: { id: string; email: string }
+): Promise<CheckoutResult> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/billing/create-checkout-session`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        // The API trusts these headers for now. Once we add Supabase
+        // JWT verification on the API side, this header pair goes
+        // away and the API reads user identity from the JWT instead.
+        "X-User-Id": user.id,
+        "X-User-Email": user.email,
+      },
+      body: JSON.stringify({ interval, plan: "pro" }),
+    });
+  } catch (err) {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+
+  if (!res.ok) {
+    let detail = res.statusText;
+    try {
+      const body = await res.json();
+      detail = body.detail || JSON.stringify(body);
+    } catch {
+      // not JSON
+    }
+    throw new ApiError(res.status, detail);
+  }
+
+  return res.json();
+}

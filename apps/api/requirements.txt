@@ -36,3 +36,6 @@ structlog==24.4.0
 # Utils
 python-dotenv==1.0.1
 tenacity==9.0.0
+
+# Billing (lazy-imported in app/routers/billing.py)
+stripe==11.0.0

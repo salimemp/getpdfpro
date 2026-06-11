@@ -4,9 +4,10 @@ import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "./auth";
 
 /**
- * Per-user daily quota, client-side. Two tiers:
+ * Per-user daily quota, client-side. Three tiers:
  *   - anonymous:  1 task per day, keyed by a stable per-browser UUID
- *   - signed-in:  50 tasks per day, keyed by Supabase user ID
+ *   - free:       50 tasks per day, keyed by Supabase user ID
+ *   - pro/beta:   1000 tasks per day (synced from Supabase user metadata)
  *
  * Storage: localStorage. Schema:
  *   key:   getpdfpro:quota:<userKey>:<YYYY-MM-DD>
@@ -22,7 +23,8 @@ import { useAuth } from "./auth";
  */
 
 const ANON_LIMIT = 1;
-const SIGNED_IN_LIMIT = 50;
+const FREE_LIMIT = 50;
+const PRO_LIMIT = 1000;
 
 const STORAGE_PREFIX = "getpdfpro:quota:";
 
@@ -76,6 +78,8 @@ function migrateAnonToUser(anonKey: string, userKey: string) {
   localStorage.setItem(migratedFlag, "1");
 }
 
+type Tier = "anon" | "free" | "pro";
+
 type QuotaState = {
   /** Unique key for the current user (anon-uuid or supabase user id). */
   userKey: string;
@@ -83,6 +87,8 @@ type QuotaState = {
   used: number;
   /** Daily limit. */
   limit: number;
+  /** Current plan tier. */
+  tier: Tier;
   /** Whether the user can run a tool right now. */
   canRun: boolean;
   /** Remaining tasks today. */
@@ -93,22 +99,34 @@ type QuotaState = {
   reset: () => void;
 };
 
+/**
+ * Read the user's plan tier from Supabase user metadata.
+ * The Stripe webhook (or a beta-claim flow) writes to
+ * auth.users.user_metadata.plan = 'pro' | 'free'.
+ * Until that's wired, defaults to 'free' for any signed-in user.
+ */
+function getUserTier(user: { user_metadata?: Record<string, unknown> } | null | undefined): Tier {
+  if (!user) return "anon";
+  const plan = (user.user_metadata?.plan as string | undefined) ?? "free";
+  if (plan === "pro" || plan === "beta") return "pro";
+  return "free";
+}
+
 export function useQuota(): QuotaState {
   const auth = useAuth();
   const [userKey, setUserKey] = useState<string>("anon");
   const [used, setUsed] = useState<number>(0);
-  const [limit, setLimit] = useState<number>(ANON_LIMIT);
+  const [tier, setTier] = useState<Tier>("anon");
   const [hydrated, setHydrated] = useState(false);
 
-  // Compute the user key (anon vs supabase user id) + hydrate count
+  // Compute the user key (anon vs supabase user id) + tier + hydrate count
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const isSignedIn = !!auth.user;
-    const newLimit = isSignedIn ? SIGNED_IN_LIMIT : ANON_LIMIT;
-    setLimit(newLimit);
+    const newTier = getUserTier(auth.user);
+    setTier(newTier);
 
-    if (isSignedIn && auth.user) {
+    if (auth.user) {
       const newKey = `user-${auth.user.id}`;
       const anonKey = getAnonymousUserKey();
       migrateAnonToUser(anonKey, newKey);
@@ -121,6 +139,10 @@ export function useQuota(): QuotaState {
     }
     setHydrated(true);
   }, [auth.user]);
+
+  // Derive the limit from the tier — no separate state needed.
+  const limit =
+    tier === "pro" ? PRO_LIMIT : tier === "free" ? FREE_LIMIT : ANON_LIMIT;
 
   const consume = useCallback(() => {
     const next = readCount(userKey) + 1;
@@ -140,6 +162,7 @@ export function useQuota(): QuotaState {
       userKey: "anon",
       used: 0,
       limit: ANON_LIMIT,
+      tier: "anon",
       canRun: true,
       remaining: ANON_LIMIT,
       consume: () => {},
@@ -152,6 +175,7 @@ export function useQuota(): QuotaState {
     userKey,
     used,
     limit,
+    tier,
     remaining,
     canRun: remaining > 0,
     consume,

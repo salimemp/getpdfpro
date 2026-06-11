@@ -96,9 +96,11 @@ export default function AccountPage() {
                   <Sparkles className="h-5 w-5" />
                 </span>
                 <div>
-                  <p className="font-semibold">Plan: Free</p>
+                  <p className="font-semibold">
+                    Plan: {quota.tier === "pro" ? "Pro" : "Free"}
+                  </p>
                   <p className="text-sm text-slate-600 dark:text-slate-400">
-                    {quota.limit} tasks per day
+                    {quota.limit.toLocaleString()} tasks per day
                   </p>
                 </div>
               </div>
@@ -118,15 +120,21 @@ export default function AccountPage() {
                   />
                 </div>
                 <p className="mt-2 text-xs text-slate-500">
-                  Resets daily. Pro gives 1,000 tasks/day + larger files.
+                  Resets daily. Pro gives 1,000 tasks/day + 4 GB files + AI.
                 </p>
               </div>
-              <Link
-                href="/pricing"
-                className="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
-              >
-                Upgrade to Pro →
-              </Link>
+              {quota.tier !== "pro" ? (
+                <Link
+                  href="/pricing"
+                  className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
+                >
+                  Upgrade to Pro — $2.99/mo
+                </Link>
+              ) : (
+                <p className="mt-4 text-xs text-green-700 dark:text-green-300">
+                  ✨ You&apos;re on Pro. Thanks for supporting us.
+                </p>
+              )}
             </div>
           </div>
 
