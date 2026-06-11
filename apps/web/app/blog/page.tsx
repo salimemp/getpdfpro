@@ -16,18 +16,6 @@ export const metadata: Metadata = {
     "Practical, sourced writing on PDFs and the tools that work with them. Merge, split, compress, format primer, and honest comparisons.",
   alternates: {
     canonical: "/blog",
-    types: {
-      "application/rss+xml": [
-        { url: "/rss.xml", title: `${SITE_NAME} Blog (RSS 2.0)` },
-      ],
-      "application/atom+xml": [
-        { url: "/atom.xml", title: `${SITE_NAME} Blog (Atom 1.0)` },
-        { url: "/feed.xml", title: `${SITE_NAME} Blog (Atom — feed.xml)` },
-      ],
-      "application/feed+json": [
-        { url: "/feed.json", title: `${SITE_NAME} Blog (JSON Feed 1.1)` },
-      ],
-    },
   },
   openGraph: {
     type: "website",
