@@ -151,6 +151,80 @@ def debug_soffice() -> dict:
         dpkg_err = f"{type(e).__name__}: {e}"
 
     # 6. Image / build fingerprint
+    # 7. Java probe — `javaldx` is the soffice helper that looks for
+    #    a JRE at startup. If it can't find one, DOCX save fails with
+    #    0xc10. We need to know:
+    #    - is `java` on PATH?
+    #    - is it executable by appuser (we run as UID 1000)?
+    #    - does the soffice-bundled javaldx find it?
+    java_path = shutil.which("java")
+    java_subprocess_path = None
+    java_subprocess_err = None
+    try:
+        sp = subprocess.run(
+            ["which", "java"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+        java_subprocess_path = sp.stdout.strip() or None
+        java_subprocess_err = sp.stderr.strip() or None
+    except Exception as e:
+        java_subprocess_err = f"{type(e).__name__}: {e}"
+
+    java_version = None
+    java_version_err = None
+    if java_path:
+        try:
+            jv = subprocess.run(
+                [java_path, "-version"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+                check=False,
+            )
+            # java -version prints to stderr
+            java_version = (jv.stderr or jv.stdout).strip()
+        except Exception as e:
+            java_version_err = f"{type(e).__name__}: {e}"
+
+    # Common JDK install locations on Debian
+    java_common_paths = [
+        "/usr/bin/java",
+        "/usr/lib/jvm/default-java/bin/java",
+        "/usr/lib/jvm/java-17-openjdk-amd64/bin/java",
+        "/usr/lib/jvm/java-11-openjdk-amd64/bin/java",
+    ]
+    java_common_path_results = {}
+    for p in java_common_paths:
+        path_obj = Path(p)
+        java_common_path_results[p] = {
+            "exists": path_obj.exists(),
+            "is_file": path_obj.is_file() if path_obj.exists() else None,
+        }
+
+    # Try running the soffice-bundled javaldx to see what it reports
+    javaldx_output = None
+    javaldx_err = None
+    if soffice_path:
+        try:
+            # javaldx lives next to the soffice binary
+            javaldx_path = str(Path(soffice_path).parent / "javaldx")
+            if Path(javaldx_path).exists():
+                jx = subprocess.run(
+                    [javaldx_path],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                    check=False,
+                )
+                javaldx_output = (jx.stdout or jx.stderr).strip()[:500]
+            else:
+                javaldx_err = f"javaldx not found at {javaldx_path}"
+        except Exception as e:
+            javaldx_err = f"{type(e).__name__}: {e}"
+
     return {
         "soffice_path": soffice_path,
         "soffice_path_via_subprocess_which": sp_which,
@@ -160,11 +234,20 @@ def debug_soffice() -> dict:
         "soffice_version_error": version_err,
         "dpkg_installed": dpkg_output,
         "dpkg_error": dpkg_err,
+        "java_path": java_path,
+        "java_path_via_subprocess_which": java_subprocess_path,
+        "java_path_via_subprocess_stderr": java_subprocess_err,
+        "java_version": java_version,
+        "java_version_error": java_version_err,
+        "java_common_paths": java_common_path_results,
+        "javaldx_output": javaldx_output,
+        "javaldx_error": javaldx_err,
         "env": {
             "PATH": os.environ.get("PATH", "<unset>"),
             "HOME": os.environ.get("HOME", "<unset>"),
             "LANG": os.environ.get("LANG", "<unset>"),
             "LC_ALL": os.environ.get("LC_ALL", "<unset>"),
+            "JAVA_HOME": os.environ.get("JAVA_HOME", "<unset>"),
             "LIBREOFFICE_TIMEOUT_S": os.environ.get("LIBREOFFICE_TIMEOUT_S", "<unset>"),
         },
         "container_id": os.environ.get("HOSTNAME", "<unknown>"),
