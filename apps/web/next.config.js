@@ -2,10 +2,8 @@
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  experimental: {
-    // typed routes — catches broken links at build time
-    typedRoutes: true,
-  },
+  // typed routes (Next 15.5+) — catches broken links at build time
+  typedRoutes: true,
   // CORS-safe headers for the API
   async headers() {
     return [
