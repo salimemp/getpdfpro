@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
 import { getAllPosts } from "@/lib/blog";
-import { feedDiscoveryLinks } from "@/lib/feeds";
 import {
   SITE_NAME,
   SITE_URL,
@@ -51,16 +50,6 @@ export default function BlogIndexPage() {
 
   return (
     <>
-      {/* Auto-discovery link tags for feed readers */}
-      {feedDiscoveryLinks().map((link) => (
-        <link
-          key={link.href}
-          rel={link.rel}
-          type={link.type}
-          title={link.title}
-          href={link.href}
-        />
-      ))}
       <SiteHeader />
       <main>
         <script
