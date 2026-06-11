@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import Link from "next/link";
 import {
   Scissors,
   Upload,
@@ -10,8 +11,11 @@ import {
   AlertCircle,
   CheckCircle2,
   FileText,
+  Sparkles,
 } from "lucide-react";
 import { splitPdf, ApiError } from "@/lib/api";
+import { useQuota } from "@/lib/quota";
+import { useAuth } from "@/lib/auth";
 
 type SplitMode = "all" | "ranges";
 
@@ -35,6 +39,8 @@ function formatBytes(n: number): string {
 }
 
 export function SplitTool() {
+  const auth = useAuth();
+  const quota = useQuota();
   const [file, setFile] = useState<File | null>(null);
   const [mode, setMode] = useState<SplitMode>("all");
   const [ranges, setRanges] = useState<string>("1-3,5,7-9");
@@ -82,12 +88,22 @@ export function SplitTool() {
       });
       return;
     }
+    if (!quota.canRun) {
+      setState({
+        kind: "error",
+        message: auth.user
+          ? `You've used all ${quota.limit} of today's tasks. Resets at midnight.`
+          : "You've used today's free task. Sign up free for 50 tasks/day.",
+      });
+      return;
+    }
     setState({ kind: "splitting", filename: file.name });
     try {
       const result = await splitPdf(file, {
         mode,
         ranges: mode === "ranges" ? ranges : undefined,
       });
+      quota.consume();
       setState({
         kind: "done",
         filename: result.filename,
@@ -283,10 +299,27 @@ export function SplitTool() {
 
       {/* Action */}
       <div className="mt-8 flex flex-col items-center gap-4">
+        <div className="flex items-center gap-2 text-xs text-slate-500">
+          <Sparkles className="h-3.5 w-3.5 text-brand-600" />
+          <span>
+            {auth.user
+              ? `${quota.remaining} of ${quota.limit} free tasks left today`
+              : `${quota.remaining} of ${quota.limit} free task left today`}{" "}
+            {!auth.user && (
+              <Link
+                href="/signup"
+                className="font-medium text-brand-600 hover:text-brand-700"
+              >
+                · Sign up free
+              </Link>
+            )}
+          </span>
+        </div>
+
         <button
           type="button"
           onClick={onSplit}
-          disabled={!file || isSplitting}
+          disabled={!file || isSplitting || !quota.canRun}
           className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSplitting ? (

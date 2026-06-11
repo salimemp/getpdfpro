@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import Link from "next/link";
 import {
   Minimize2,
   Upload,
@@ -17,6 +18,8 @@ import {
   type CompressionLevel,
   ApiError,
 } from "@/lib/api";
+import { useQuota } from "@/lib/quota";
+import { useAuth } from "@/lib/auth";
 
 type CompressState =
   | { kind: "idle" }
@@ -65,6 +68,8 @@ const LEVELS: {
 ];
 
 export function CompressTool() {
+  const auth = useAuth();
+  const quota = useQuota();
   const [file, setFile] = useState<File | null>(null);
   const [level, setLevel] = useState<CompressionLevel>("medium");
   const [dragging, setDragging] = useState(false);
@@ -104,9 +109,19 @@ export function CompressTool() {
       setState({ kind: "error", message: "Choose a PDF first." });
       return;
     }
+    if (!quota.canRun) {
+      setState({
+        kind: "error",
+        message: auth.user
+          ? `You've used all ${quota.limit} of today's tasks. Resets at midnight.`
+          : "You've used today's free task. Sign up free for 50 tasks/day.",
+      });
+      return;
+    }
     setState({ kind: "compressing", filename: file.name });
     try {
       const result = await compressPdf(file, level);
+      quota.consume();
       setState({
         kind: "done",
         filename: result.filename,
@@ -261,10 +276,27 @@ export function CompressTool() {
 
       {/* Action */}
       <div className="mt-8 flex flex-col items-center gap-4">
+        <div className="flex items-center gap-2 text-xs text-slate-500">
+          <Sparkles className="h-3.5 w-3.5 text-brand-600" />
+          <span>
+            {auth.user
+              ? `${quota.remaining} of ${quota.limit} free tasks left today`
+              : `${quota.remaining} of ${quota.limit} free task left today`}{" "}
+            {!auth.user && (
+              <Link
+                href="/signup"
+                className="font-medium text-brand-600 hover:text-brand-700"
+              >
+                · Sign up free
+              </Link>
+            )}
+          </span>
+        </div>
+
         <button
           type="button"
           onClick={onCompress}
-          disabled={!file || isCompressing}
+          disabled={!file || isCompressing || !quota.canRun}
           className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isCompressing ? (

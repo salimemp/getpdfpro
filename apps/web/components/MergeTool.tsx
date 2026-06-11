@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import Link from "next/link";
 import {
   Combine,
   Upload,
@@ -11,8 +12,11 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle2,
+  Sparkles,
 } from "lucide-react";
 import { mergePdfs, ApiError } from "@/lib/api";
+import { useQuota } from "@/lib/quota";
+import { useAuth } from "@/lib/auth";
 
 type FileItem = {
   id: string;
@@ -36,6 +40,8 @@ function newId() {
 }
 
 export function MergeTool() {
+  const auth = useAuth();
+  const quota = useQuota();
   const [items, setItems] = useState<FileItem[]>([]);
   const [dragging, setDragging] = useState(false);
   const [state, setState] = useState<MergeState>({ kind: "idle" });
@@ -95,9 +101,19 @@ export function MergeTool() {
       setState({ kind: "error", message: "Add at least 2 PDFs to merge." });
       return;
     }
+    if (!quota.canRun) {
+      setState({
+        kind: "error",
+        message: auth.user
+          ? `You've used all ${quota.limit} of today's tasks. Resets at midnight.`
+          : "You've used today's free task. Sign up free for 50 tasks/day.",
+      });
+      return;
+    }
     setState({ kind: "uploading", filename: "merged.pdf" });
     try {
       const result = await mergePdfs(items.map((i) => i.file));
+      quota.consume();
       setState({
         kind: "done",
         filename: result.filename,
@@ -256,10 +272,27 @@ export function MergeTool() {
 
       {/* Action */}
       <div className="mt-8 flex flex-col items-center gap-4">
+        <div className="flex items-center gap-2 text-xs text-slate-500">
+          <Sparkles className="h-3.5 w-3.5 text-brand-600" />
+          <span>
+            {auth.user
+              ? `${quota.remaining} of ${quota.limit} free tasks left today`
+              : `${quota.remaining} of ${quota.limit} free task left today`}{" "}
+            {!auth.user && (
+              <Link
+                href="/signup"
+                className="font-medium text-brand-600 hover:text-brand-700"
+              >
+                · Sign up free
+              </Link>
+            )}
+          </span>
+        </div>
+
         <button
           type="button"
           onClick={onMerge}
-          disabled={!canMerge}
+          disabled={!canMerge || !quota.canRun}
           className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {state.kind === "uploading" ? (
