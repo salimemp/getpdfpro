@@ -31,6 +31,15 @@ export const metadata: Metadata = {
   authors: [{ name: "GetPDFPro" }],
   creator: "GetPDFPro",
   publisher: "GetPDFPro",
+  // favicon.ico is auto-served from /app/favicon.ico by Next.js.
+  // The apple-touch-icon and high-res icon are declared below.
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
+  },
   openGraph: {
     type: "website",
     locale: "en_US",
