@@ -110,10 +110,19 @@ async def unlock_pdf(
     # the PDF isn't actually encrypted, fall back to a no-password
     # open + just re-save.
     import tempfile
-    pdf = None
+    # pikepdf 9.x's open(blob, ...) and open(path, ...) both work
+    # but pikepdf's save() can fail with 'embedded null byte' on
+    # AES-256 encrypted files when accessed via a BytesIO path.
+    # The reliable path is: write blob to a temp file, open from
+    # path with password, then save_to_bytes() (which goes through
+    # qpdf's in-memory serializer and is the only save() that
+    # works for our re-encrypted cases).
+    fd_in, path_in = tempfile.mkstemp(suffix=".pdf")
     try:
+        with os.fdopen(fd_in, "wb") as f:
+            f.write(blob)
         try:
-            pdf = pikepdf.open(blob, password=(password or ""))
+            pdf = pikepdf.open(path_in, password=(password or ""))
         except pikepdf.PasswordError as exc:
             raise HTTPException(
                 400,
@@ -121,36 +130,22 @@ async def unlock_pdf(
                 "the supplied password didn't open it.",
             ) from exc
         except Exception:
-            # Likely "PDF is not encrypted" — try opening without password.
-            pdf = pikepdf.open(blob)
-        # Re-save without encryption. pikepdf 9.x's save_to_bytes()
-        # is the cleanest path: returns bytes, no temp files.
+            # Likely "PDF is not encrypted" — re-open without
+            # password.
+            pdf = pikepdf.open(path_in)
         try:
             out_bytes = pdf.save_to_bytes()
-        except Exception as exc:
-            logger.warning("save_to_bytes failed (%s); trying file roundtrip", exc)
-            # Fallback: temp-file roundtrip. pikepdf's save() to a
-            # file path doesn't have the BytesIO bug.
-            fd_in, path_in = tempfile.mkstemp(suffix=".pdf")
-            try:
-                with os.fdopen(fd_in, "wb") as f:
-                    f.write(blob)
-                # Re-open from the path so pikepdf's mmap accessor
-                # works.
-                with pikepdf.open(path_in, password=(password or "")) as pdf2:
-                    out_bytes = pdf2.save_to_bytes()
-            finally:
-                try: os.unlink(path_in)
-                except OSError: pass
+        finally:
+            try: pdf.close()
+            except Exception: pass
     except HTTPException:
         raise
     except Exception as exc:
         logger.exception("unlock failed")
         raise HTTPException(400, f"Could not unlock PDF: {exc}") from exc
     finally:
-        if pdf is not None:
-            try: pdf.close()
-            except Exception: pass
+        try: os.unlink(path_in)
+        except OSError: pass
 
     return StreamingResponse(
         io.BytesIO(out_bytes),
