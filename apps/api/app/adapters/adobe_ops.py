@@ -128,7 +128,7 @@ async def _upload_asset(token: str, pdf_bytes: bytes, filename: str = "input.pdf
             f"{ADOBE_API_BASE}/assets",
             headers={
                 "Authorization": f"Bearer {token}",
-                "X-API-Key": _client_id or "",
+                "x-api-key": _client_id or "",
                 "Content-Type": "application/json",
             },
             content=json.dumps({"mediaType": mime_type}),
@@ -192,12 +192,20 @@ async def _submit_and_poll(
             f"{ADOBE_API_BASE}{op_path}",
             headers={
                 "Authorization": f"Bearer {token}",
-                "X-API-Key": _client_id or "",
+                # Lowercase header names — Adobe's gateway is
+                # case-sensitive. The official SDK uses lowercase.
+                "x-api-key": _client_id or "",
                 "Content-Type": "application/json",
-                # The header Adobe uses to route the request.
-                # Without it, the request is treated as
-                # 'external storage' and rejected.
-                "X-DCSDK-OPS-INFO": op_info,
+                "Accept": "application/json, text/plain, */*",
+                # Identifies us as the official Python SDK.
+                # Without this, Adobe treats the request as
+                # an unknown client and routes it to the
+                # 'external storage' fallback which expects
+                # different field names.
+                "x-api-app-info": "python-pdfservices-sdk-4.2.0",
+                # The header Adobe uses to route the request
+                # to the right internal handler.
+                "x-dcsdk-ops-info": op_info,
             },
             content=json.dumps(body),
         )
@@ -229,7 +237,7 @@ async def _submit_and_poll(
                 poll_url,
                 headers={
                     "Authorization": f"Bearer {token}",
-                    "X-API-Key": _client_id or "",
+                    "x-api-key": _client_id or "",
                 },
             )
             if poll.status_code == 200:
