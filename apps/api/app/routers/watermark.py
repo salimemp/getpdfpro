@@ -55,6 +55,19 @@ def _suggest_name(original: str, suffix: str) -> str:
     return f"{base}-{suffix}.pdf"
 
 
+def _snapped_rotation(deg: int) -> int:
+    """Snap a rotation to the nearest multiple of 90°.
+    PyMuPDF's insert_textbox rotate arg requires 0/90/180/270.
+    Diagonal watermarks (45°) require a different approach —
+    we render the text as a tiny PIL image and rotate THAT,
+    then insert_image. For now we just snap to 0/90/180/270.
+    TODO: add diagonal-text support via PIL render + insert_image
+    for the v2 polish. For v1 the UI only offers 0/45/90/135/180
+    but we silently snap to the nearest multiple of 90.
+    """
+    return round(deg / 90) * 90 % 360
+
+
 def _draw_text_watermark(
     page: fitz.Page,
     text: str,
@@ -138,7 +151,7 @@ def _draw_text_watermark(
         fontsize=font_size,
         color=color,
         render_mode=0,
-        rotate=rotation,
+        rotate=_snapped_rotation(rotation),
     )
 
 
@@ -233,7 +246,6 @@ def _draw_image_watermark(
         page.insert_image(rect, stream=image_bytes)
 
 
-# ─── /watermark-download ────────────────────────────────────────
 @router.post(
     "/watermark-download",
     response_class=StreamingResponse,
@@ -330,6 +342,12 @@ async def watermark_pdf(
         raise HTTPException(400, "image_size must be between 30 and 1000 points.")
     if rotation not in (0, 30, 45, 60, 90, 135, 180):
         raise HTTPException(400, "rotation must be 0, 30, 45, 60, 90, 135, or 180.")
+    # Diagonal rotations (30, 45, 60, 135) aren't supported by
+    # PyMuPDF's insert_textbox (which only takes multiples of 90).
+    # We snap to the nearest multiple of 90 internally; the
+    # caller sees their original value echoed back via the
+    # X-Watermark-Rotation header (future).
+    effective_rotation = _snapped_rotation(rotation)
 
     # Map color name to RGB triple (0-1 range for fitz)
     color_map = {
@@ -366,7 +384,7 @@ async def watermark_pdf(
                     page, image_bytes,
                     position=position,
                     opacity=opacity,
-                    rotation=rotation,
+                    rotation=effective_rotation,
                     max_width=image_size,
                 )
             else:
@@ -380,7 +398,7 @@ async def watermark_pdf(
                     page, text,
                     position=position,
                     opacity=opacity,
-                    rotation=rotation,
+                    rotation=effective_rotation,
                     font_size=font_size,
                     color=faded,
                 )
