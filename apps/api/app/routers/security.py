@@ -110,14 +110,13 @@ async def unlock_pdf(
     # the PDF isn't actually encrypted, fall back to a no-password
     # open + just re-save.
     import tempfile
-    # pikepdf 9.x's open(blob, ...) and open(path, ...) both work
-    # but pikepdf's save() can fail with 'embedded null byte' on
-    # AES-256 encrypted files when accessed via a BytesIO path.
-    # The reliable path is: write blob to a temp file, open from
-    # path with password, then save_to_bytes() (which goes through
-    # qpdf's in-memory serializer and is the only save() that
-    # works for our re-encrypted cases).
+    # pikepdf 9.4.0 doesn't have save_to_bytes(). It has:
+    #   pdf.save()                 -> save to a temp file, return path
+    #   pdf.save(stream_or_path)   -> save to that target
+    #   pdf.save_to_bytes()        -> not in 9.4.0
+    # We use save() to a real temp file path, then read it back.
     fd_in, path_in = tempfile.mkstemp(suffix=".pdf")
+    fd_out, path_out = tempfile.mkstemp(suffix=".pdf")
     try:
         with os.fdopen(fd_in, "wb") as f:
             f.write(blob)
@@ -134,10 +133,15 @@ async def unlock_pdf(
             # password.
             pdf = pikepdf.open(path_in)
         try:
-            out_bytes = pdf.save_to_bytes()
+            # Save to a real file path. pikepdf's save() to a path
+            # is the only call that consistently works for encrypted
+            # inputs in 9.4.0. We pass a path string.
+            pdf.save(path_out)
         finally:
             try: pdf.close()
             except Exception: pass
+        with open(path_out, "rb") as f:
+            out_bytes = f.read()
     except HTTPException:
         raise
     except Exception as exc:
@@ -145,6 +149,8 @@ async def unlock_pdf(
         raise HTTPException(400, f"Could not unlock PDF: {exc}") from exc
     finally:
         try: os.unlink(path_in)
+        except OSError: pass
+        try: os.unlink(path_out)
         except OSError: pass
 
     return StreamingResponse(
