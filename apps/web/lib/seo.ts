@@ -68,11 +68,11 @@ export function softwareApplicationLd() {
       {
         "@type": "Offer",
         name: "Pro (Monthly)",
-        price: "3.99",
+        price: "5.99",
         priceCurrency: "USD",
         priceSpecification: {
           "@type": "UnitPriceSpecification",
-          price: "3.99",
+          price: "5.99",
           priceCurrency: "USD",
           unitCode: "MON",
         },
@@ -81,11 +81,11 @@ export function softwareApplicationLd() {
       {
         "@type": "Offer",
         name: "Pro (Yearly)",
-        price: "24.00",
+        price: "53.88",
         priceCurrency: "USD",
         priceSpecification: {
           "@type": "UnitPriceSpecification",
-          price: "24.00",
+          price: "53.88",
           priceCurrency: "USD",
           unitCode: "ANN",
         },
