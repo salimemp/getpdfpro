@@ -37,7 +37,7 @@ export function SiteHeader() {
           <Link href="/beta" className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 hover:bg-amber-200 dark:bg-amber-950 dark:text-amber-200 dark:hover:bg-amber-900">
             {t("beta")}
           </Link>
-          <Link href="/vs/ilovepdf" className="hover:text-slate-900 dark:hover:text-white">
+          <Link href="/vs" className="hover:text-slate-900 dark:hover:text-white">
             {t("vs")}
           </Link>
         </nav>
@@ -167,8 +167,14 @@ export function SiteFooter() {
             <Link href="/pricing" className="hover:text-slate-900 dark:hover:text-white">
               {nav("pricing")}
             </Link>
+            <Link href="/tools" className="hover:text-slate-900 dark:hover:text-white">
+              {nav("tools")}
+            </Link>
             <Link href="/blog" className="hover:text-slate-900 dark:hover:text-white">
               {nav("blog")}
+            </Link>
+            <Link href="/vs" className="hover:text-slate-900 dark:hover:text-white">
+              {nav("vs")}
             </Link>
             <Link href="/about" className="hover:text-slate-900 dark:hover:text-white">
               {nav("about")}

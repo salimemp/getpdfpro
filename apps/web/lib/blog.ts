@@ -687,6 +687,11 @@ export const posts: BlogPost[] = [
         type: "p",
         text: "iLovePDF is a fine default for casual use, especially if you want a mobile app. For privacy-sensitive workflows, batch processing, or predictable pricing, the alternatives are worth a look. We built GetPDFPro for users who want a no-ads, transparent-pricing, immediate-discard alternative — but whichever tool you pick, use the checklist above to make sure it actually meets your needs.",
       },
+      {
+        type: "callout",
+        tone: "info",
+        text: "Want a side-by-side breakdown? Read the full GetPDFPro vs iLovePDF comparison at /vs/ilovepdf — every claim sourced, every row in the comparison table cited, last verified 12 June 2026. We also have similar pages for Adobe Acrobat, Smallpdf, PDF24, Sejda, and Soda PDF — see the /vs index.",
+      },
     ],
     sources: [
       {

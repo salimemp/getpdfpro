@@ -7,7 +7,7 @@
       "pricing": "Pricing",
       "blog": "Blog",
       "beta": "Beta",
-      "vs": "vs iLovePDF",
+      "vs": "vs alternatives",
       "account": "Account",
       "signOut": "Sign out",
       "signIn": "Sign in"
@@ -15,8 +15,10 @@
     "footer": {
       "copyright": "© {year} GetPDFPro",
       "links": {
+        "tools": "Tools",
         "pricing": "Pricing",
         "blog": "Blog",
+        "vs": "vs alternatives",
         "about": "About",
         "contact": "Contact",
         "privacy": "Privacy",
