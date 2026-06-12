@@ -1187,3 +1187,107 @@ function headerFilename(res: Response, fallback: string): string {
   const m = disp.match(/filename="?([^";]+)"?/);
   return m ? m[1] : fallback;
 }
+
+// ─── PDF AI Tools ────────────────────────────────────────────
+
+/** Summarize a PDF using Gemini. Returns the summary as a string. */
+export async function summarizePdf(
+  file: File,
+  options: {
+    length?: "short" | "medium" | "long" | "bullets";
+    language?: string;
+    format?: "text" | "markdown";
+  } = {}
+): Promise<{
+  text: string;
+  filename: string;
+  sourcePages: number;
+  length: string;
+  language: string;
+  format: string;
+  model: string;
+  elapsedMs: number;
+}> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  form.append("length", options.length ?? "medium");
+  form.append("language", options.language ?? "en");
+  form.append("format", options.format ?? "markdown");
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/summarize-download`, {
+      method: "POST",
+      body: form,
+    });
+  } catch {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+  if (!res.ok) {
+    const detail = await errorDetail(res);
+    throw new ApiError(res.status, detail);
+  }
+  const text = await res.text();
+  return {
+    text,
+    filename: headerFilename(res, "summary.md"),
+    sourcePages: parseInt(res.headers.get("X-Pdf-Source-Pages") || "0", 10),
+    length: res.headers.get("X-Summary-Length") || (options.length ?? "medium"),
+    language: res.headers.get("X-Summary-Language") || (options.language ?? "en"),
+    format: res.headers.get("X-Summary-Format") || (options.format ?? "markdown"),
+    model: res.headers.get("X-Ai-Model") || "unknown",
+    elapsedMs: parseInt(res.headers.get("X-Ai-Elapsed-Ms") || "0", 10),
+  };
+}
+
+/** Translate a PDF using Gemini. */
+export async function translatePdf(
+  file: File,
+  options: {
+    targetLang: string;
+    sourceLang?: string;
+    outputFormat?: "pdf" | "text";
+  }
+): Promise<{
+  blob: Blob;
+  filename: string;
+  sourcePages: number;
+  outputPages: number;
+  sizeBytes: number;
+  targetLang: string;
+  sourceLang: string;
+  model: string;
+  elapsedMs: number;
+  outputFormat: string;
+}> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  form.append("target_lang", options.targetLang);
+  if (options.sourceLang) form.append("source_lang", options.sourceLang);
+  form.append("output_format", options.outputFormat ?? "pdf");
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/translate-download`, {
+      method: "POST",
+      body: form,
+    });
+  } catch {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+  if (!res.ok) {
+    const detail = await errorDetail(res);
+    throw new ApiError(res.status, detail);
+  }
+  const blob = await res.blob();
+  return {
+    blob,
+    filename: headerFilename(res, "translated.pdf"),
+    sourcePages: parseInt(res.headers.get("X-Pdf-Source-Pages") || "0", 10),
+    outputPages: parseInt(res.headers.get("X-Pdf-Output-Pages") || "0", 10),
+    sizeBytes: parseInt(res.headers.get("X-Pdf-Size-Bytes") || "0", 10),
+    targetLang: res.headers.get("X-Target-Lang") || options.targetLang,
+    sourceLang: res.headers.get("X-Source-Lang") || options.sourceLang || "auto",
+    model: res.headers.get("X-Ai-Model") || "unknown",
+    elapsedMs: parseInt(res.headers.get("X-Ai-Elapsed-Ms") || "0", 10),
+    outputFormat: res.headers.get("X-Output-Format") || (options.outputFormat ?? "pdf"),
+  };
+}

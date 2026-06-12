@@ -25,13 +25,15 @@ import {
   Lock,
   Unlock,
   Edit3,
+  Sparkles,
+  Languages,
 } from "lucide-react";
 import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
 
 export const metadata: Metadata = {
   title: "All PDF tools",
   description:
-    "24 PDF tools: merge, split, compress, convert, OCR, rotate, crop, repair, sign, redact, and more — all private, all in your browser.",
+    "26 PDF tools: merge, split, compress, convert, OCR, rotate, crop, repair, sign, redact, AI summarize, AI translate, and more — all private.",
   alternates: { canonical: "/tools" },
 };
 
@@ -205,6 +207,20 @@ const tools = [
     description: "Edit metadata, cover a region, stamp a text label.",
     icon: Edit3,
     href: "/tools/edit-pdf",
+    ready: true,
+  },
+  {
+    name: "AI Summarize",
+    description: "Get a concise summary of a PDF using Gemini. Inline results.",
+    icon: Sparkles,
+    href: "/tools/summarize",
+    ready: true,
+  },
+  {
+    name: "AI Translate",
+    description: "Translate a PDF into 12+ languages. PDF or text output.",
+    icon: Languages,
+    href: "/tools/translate",
     ready: true,
   },
 ];

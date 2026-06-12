@@ -28,6 +28,7 @@ import {
   ListChecks,
   Unlock,
   Edit3,
+  Languages,
 } from "lucide-react";
 import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
 
@@ -176,6 +177,18 @@ const tools = [
     description: "Edit metadata, cover regions, stamp labels.",
     icon: Edit3,
     href: "/tools/edit-pdf",
+  },
+  {
+    name: "AI Summarize",
+    description: "Summarize any PDF with Gemini. Inline results.",
+    icon: Sparkles,
+    href: "/tools/summarize",
+  },
+  {
+    name: "AI Translate",
+    description: "Translate a PDF into 12+ languages.",
+    icon: Languages,
+    href: "/tools/translate",
   },
 ];
 
