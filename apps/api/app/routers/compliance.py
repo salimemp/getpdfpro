@@ -389,20 +389,24 @@ async def compare_pdfs(
                 if i < pages_a:
                     text_a = doc_a[i].get_text("text").strip()
                     page_data["chars_a"] = len(text_a)
-                    page_data["words_a"] = set(text_a.split())
+                    page_data["words_a_count"] = len(text_a.split())
                 else:
                     page_data["chars_a"] = 0
-                    page_data["words_a"] = set()
+                    page_data["words_a_count"] = 0
                 if i < pages_b:
                     text_b = doc_b[i].get_text("text").strip()
                     page_data["chars_b"] = len(text_b)
-                    page_data["words_b"] = set(text_b.split())
+                    page_data["words_b_count"] = len(text_b.split())
                 else:
                     page_data["chars_b"] = 0
-                    page_data["words_b"] = set()
-                common = page_data["words_a"] & page_data["words_b"]
-                only_a = page_data["words_a"] - page_data["words_b"]
-                only_b = page_data["words_b"] - page_data["words_a"]
+                    page_data["words_b_count"] = 0
+                # Word diff — use sets, then convert to sorted lists
+                # at the end (sets aren't JSON-serializable).
+                words_a = set(text_a.split()) if i < pages_a else set()
+                words_b = set(text_b.split()) if i < pages_b else set()
+                common = words_a & words_b
+                only_a = words_a - words_b
+                only_b = words_b - words_a
                 page_data["words_common"] = len(common)
                 page_data["words_only_in_a"] = sorted(only_a)[:200]  # cap to keep response small
                 page_data["words_only_in_b"] = sorted(only_b)[:200]
