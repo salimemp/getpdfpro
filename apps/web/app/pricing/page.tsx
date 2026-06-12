@@ -6,7 +6,7 @@ import { PricingTiers } from "@/components/PricingTiers";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "The most generous free tier of any PDF tool. Pro starts at $2.99/month — lower than iLovePDF, Smallpdf, Adobe, anyone.",
+    "The most generous free tier of any PDF tool. Pro starts at $5.99/month, or $4.49/month on the annual plan (save 25%) — lower than iLovePDF, Smallpdf, Adobe, anyone.",
   alternates: { canonical: "/pricing" },
 };
 
@@ -22,7 +22,8 @@ export default function PricingPage() {
             </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600 dark:text-slate-400">
             50 free tasks a day for signed-in users. Pro is
-            $3.99/month if you need more. Cancel anytime, 30-day refund.
+            $5.99/month — or $4.49/month on the annual plan (save 25%) —
+            if you need more. Cancel anytime, 30-day refund.
           </p>
           </div>
 

@@ -128,7 +128,7 @@ export const posts: BlogPost[] = [
       { type: "h2", text: "Limits to know about" },
       {
         type: "p",
-        text: "On the free tier, each file can be up to 50 MB and you get 50 merges per day (signed in) or 1 per day (anonymous). Pro ($3.99/mo or $24/yr) raises the file cap to 4 GB and the daily cap to 1,000. Files larger than 4 GB are a real engineering problem — see our post on splitting large PDFs for the why.",
+        text: "On the free tier, each file can be up to 50 MB and you get 50 merges per day (signed in) or 1 per day (anonymous). Pro ($5.99/mo, or $4.49/mo on the annual plan) raises the file cap to 4 GB and the daily cap to 1,000. Files larger than 4 GB are a real engineering problem — see our post on splitting large PDFs for the why.",
       },
       { type: "h2", text: "Common merge problems (and the fix)" },
       {

@@ -128,7 +128,7 @@ export default function AccountPage() {
                   href="/pricing"
                   className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
                 >
-                  Upgrade to Pro — $3.99/mo
+                  Upgrade to Pro — from $4.49/mo
                 </Link>
               ) : (
                 <p className="mt-4 text-xs text-green-700 dark:text-green-300">

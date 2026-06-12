@@ -48,9 +48,10 @@ export default function AboutPage() {
                 free.
               </li>
               <li>
-                <strong>Honest pricing.</strong> $3.99/mo or $24/year
-                for Pro. No dark patterns, no annual-only traps, no
-                surprise charges. 30-day money-back.
+                <strong>Honest pricing.</strong> $5.99/mo or
+                $4.49/mo on the annual plan (save 25%) for Pro. No
+                dark patterns, no annual-only traps, no surprise
+                charges. 30-day money-back.
               </li>
               <li>
                 <strong>Open about limits.</strong> The fast track caps

@@ -99,7 +99,8 @@ export default function TermsPage() {
 
           <h3>Pro</h3>
           <p>
-            $3.99/month or $24/year. 1,000 tasks per day, up to 4 GB
+            $5.99/month, or $4.49/month on the annual plan
+            ($53.88/year — save 25%). 1,000 tasks per day, up to 4 GB
             per file, AI features, batch processing, priority
             support. Billed via Stripe. Cancel anytime, 30-day money-back.
           </p>

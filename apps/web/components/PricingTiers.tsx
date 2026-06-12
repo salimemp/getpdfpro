@@ -33,9 +33,11 @@ export function PricingTiers() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const monthlyPrice = 3.99;
-  const yearlyPrice = 24;
-  const yearlyPerMonth = (yearlyPrice / 12).toFixed(2); // $2.00/mo equivalent
+  const monthlyPrice = 5.99;
+  const yearlyPerMonth = "4.49"; // displayed per-month equivalent for the yearly plan
+  // The yearly price is $4.49 × 12 = $53.88/yr. Billed monthly would be
+  // $5.99 × 12 = $71.88/yr. Savings = (1 - 53.88/71.88) ≈ 25%.
+  const yearlyPrice = 53.88;
   const yearlySavingsPct = Math.round((1 - yearlyPrice / (monthlyPrice * 12)) * 100);
 
   const onUpgrade = async () => {
@@ -232,10 +234,11 @@ export function PricingTiers() {
           want to be wrong about them. The /vs/ilovepdf page has a
           sourced comparison for users who want to dig deeper. */}
       <p className="mt-8 text-center text-sm text-slate-500">
-        Pro at <strong>$3.99/mo</strong> is built on the same pay-what-you-need
-        principle as the rest of GetPDFPro: enough margin to keep the
-        service running, not enough to gate everyday work behind a
-        paywall. For a sourced feature comparison, see{" "}
+        Pro at <strong>$5.99/mo</strong> (or $4.49/mo on the annual plan,
+        saving 25%) is built on the same pay-what-you-need principle as
+        the rest of GetPDFPro: enough margin to keep the service
+        running, not enough to gate everyday work behind a paywall. For
+        a sourced feature comparison, see{" "}
         <a
           href="/vs/ilovepdf"
           className="font-medium text-brand-600 hover:text-brand-700"
