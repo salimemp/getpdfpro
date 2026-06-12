@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.config import get_settings
-from app.routers import ai_tools, billing, compliance, debug, jobs, ocr, organize, pdf, render, repair, security
+from app.routers import ai_tools, billing, compliance, debug, jobs, ocr, organize, pdf, render, repair, security, watermark
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +54,7 @@ def create_app() -> FastAPI:
     app.include_router(compliance.router, prefix="/api/v1/pdf", tags=["compliance"])
     app.include_router(security.router, prefix="/api/v1/pdf", tags=["security"])
     app.include_router(ai_tools.router, prefix="/api/v1/pdf", tags=["ai"])
+    app.include_router(watermark.router, prefix="/api/v1/pdf", tags=["watermark"])
     app.include_router(jobs.router, prefix="/api/v1", tags=["jobs"])
     app.include_router(billing.router, prefix="/api/v1", tags=["billing"])
     app.include_router(debug.router, prefix="/api/v1", tags=["debug"])

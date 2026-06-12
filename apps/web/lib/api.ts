@@ -1291,3 +1291,52 @@ export async function translatePdf(
     outputFormat: res.headers.get("X-Output-Format") || (options.outputFormat ?? "pdf"),
   };
 }
+
+// ─── PDF Watermark ─────────────────────────────────────────────
+
+/** Add a text or image watermark to every page of a PDF. */
+export async function watermarkPdf(
+  file: File,
+  options: {
+    text?: string;
+    image?: File;
+    position?: "center" | "tile" | "top-left" | "top-center" | "top-right" | "bottom-left" | "bottom-center" | "bottom-right";
+    rotation?: 0 | 30 | 45 | 60 | 90 | 135 | 180;
+    opacity?: number;
+    fontSize?: number;
+    color?: "red" | "gray" | "black" | "blue";
+    pages?: string;
+    imageSize?: number;
+  } = {}
+): Promise<{ blob: Blob; filename: string; sizeBytes: number; pages: number; mode: string; position: string }> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  if (options.image) form.append("image", options.image, options.image.name);
+  if (options.text) form.append("text", options.text);
+  form.append("position", options.position ?? "center");
+  form.append("rotation", String(options.rotation ?? 45));
+  form.append("opacity", String(options.opacity ?? 0.3));
+  form.append("font_size", String(options.fontSize ?? 48));
+  form.append("color", options.color ?? "red");
+  if (options.pages) form.append("pages", options.pages);
+  if (options.imageSize) form.append("image_size", String(options.imageSize));
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/watermark-download`, { method: "POST", body: form });
+  } catch {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+  if (!res.ok) {
+    const detail = await errorDetail(res);
+    throw new ApiError(res.status, detail);
+  }
+  const blob = await res.blob();
+  return {
+    blob,
+    filename: headerFilename(res, "watermarked.pdf"),
+    sizeBytes: parseInt(res.headers.get("X-Pdf-Size-Bytes") || "0", 10),
+    pages: parseInt(res.headers.get("X-Pdf-Source-Pages") || "0", 10),
+    mode: res.headers.get("X-Watermark-Mode") || "text",
+    position: res.headers.get("X-Watermark-Position") || (options.position ?? "center"),
+  };
+}

@@ -250,7 +250,7 @@ const CATEGORIES: Category[] = [
         description: "Stamp a text or image watermark on every page. DRAFT, CONFIDENTIAL, logo.",
         icon: Stamp,
         href: "/tools/watermark",
-        ready: false,
+        ready: true,
       },
       {
         name: "Crop PDF",
