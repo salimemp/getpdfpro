@@ -1340,3 +1340,140 @@ export async function watermarkPdf(
     position: res.headers.get("X-Watermark-Position") || (options.position ?? "center"),
   };
 }
+
+// ─── Office Conversions (Wave C) ──────────────────────────────
+
+/** Convert a .docx file to PDF. */
+export async function wordToPdf(
+  file: File,
+): Promise<{ blob: Blob; filename: string; sizeBytes: number; sourceFormat: string; targetFormat: string; elapsedMs: number }> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/word-to-pdf-download`, { method: "POST", body: form });
+  } catch {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+  if (!res.ok) {
+    const detail = await errorDetail(res);
+    throw new ApiError(res.status, detail);
+  }
+  const blob = await res.blob();
+  return {
+    blob,
+    filename: headerFilename(res, "converted.pdf"),
+    sizeBytes: parseInt(res.headers.get("X-Pdf-Size-Bytes") || "0", 10),
+    sourceFormat: res.headers.get("X-Office-Source-Format") || "docx",
+    targetFormat: res.headers.get("X-Office-Target-Format") || "pdf",
+    elapsedMs: parseInt(res.headers.get("X-Ai-Elapsed-Ms") || "0", 10),
+  };
+}
+
+/** Convert a .pptx file to PDF. */
+export async function powerpointToPdf(
+  file: File,
+): Promise<{ blob: Blob; filename: string; sizeBytes: number; sourceFormat: string; targetFormat: string; elapsedMs: number }> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/powerpoint-to-pdf-download`, { method: "POST", body: form });
+  } catch {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+  if (!res.ok) {
+    const detail = await errorDetail(res);
+    throw new ApiError(res.status, detail);
+  }
+  const blob = await res.blob();
+  return {
+    blob,
+    filename: headerFilename(res, "converted.pdf"),
+    sizeBytes: parseInt(res.headers.get("X-Pdf-Size-Bytes") || "0", 10),
+    sourceFormat: res.headers.get("X-Office-Source-Format") || "pptx",
+    targetFormat: res.headers.get("X-Office-Target-Format") || "pdf",
+    elapsedMs: parseInt(res.headers.get("X-Ai-Elapsed-Ms") || "0", 10),
+  };
+}
+
+/** Convert a .xlsx file to PDF. */
+export async function excelToPdf(
+  file: File,
+): Promise<{ blob: Blob; filename: string; sizeBytes: number; sourceFormat: string; targetFormat: string; elapsedMs: number }> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/excel-to-pdf-download`, { method: "POST", body: form });
+  } catch {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+  if (!res.ok) {
+    const detail = await errorDetail(res);
+    throw new ApiError(res.status, detail);
+  }
+  const blob = await res.blob();
+  return {
+    blob,
+    filename: headerFilename(res, "converted.pdf"),
+    sizeBytes: parseInt(res.headers.get("X-Pdf-Size-Bytes") || "0", 10),
+    sourceFormat: res.headers.get("X-Office-Source-Format") || "xlsx",
+    targetFormat: res.headers.get("X-Office-Target-Format") || "pdf",
+    elapsedMs: parseInt(res.headers.get("X-Ai-Elapsed-Ms") || "0", 10),
+  };
+}
+
+/** Convert a PDF to .pptx via Adobe. */
+export async function pdfToPowerpoint(
+  file: File,
+): Promise<{ blob: Blob; filename: string; sizeBytes: number; sourceFormat: string; targetFormat: string; elapsedMs: number }> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/pdf-to-powerpoint-download`, { method: "POST", body: form });
+  } catch {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+  if (!res.ok) {
+    const detail = await errorDetail(res);
+    throw new ApiError(res.status, detail);
+  }
+  const blob = await res.blob();
+  return {
+    blob,
+    filename: headerFilename(res, "presentation.pptx"),
+    sizeBytes: parseInt(res.headers.get("X-Office-Size-Bytes") || "0", 10),
+    sourceFormat: res.headers.get("X-Office-Source-Format") || "pdf",
+    targetFormat: res.headers.get("X-Office-Target-Format") || "pptx",
+    elapsedMs: parseInt(res.headers.get("X-Ai-Elapsed-Ms") || "0", 10),
+  };
+}
+
+/** Convert a PDF to .xlsx via Adobe. */
+export async function pdfToExcel(
+  file: File,
+): Promise<{ blob: Blob; filename: string; sizeBytes: number; sourceFormat: string; targetFormat: string; elapsedMs: number }> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/pdf-to-excel-download`, { method: "POST", body: form });
+  } catch {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+  if (!res.ok) {
+    const detail = await errorDetail(res);
+    throw new ApiError(res.status, detail);
+  }
+  const blob = await res.blob();
+  return {
+    blob,
+    filename: headerFilename(res, "spreadsheet.xlsx"),
+    sizeBytes: parseInt(res.headers.get("X-Office-Size-Bytes") || "0", 10),
+    sourceFormat: res.headers.get("X-Office-Source-Format") || "pdf",
+    targetFormat: res.headers.get("X-Office-Target-Format") || "xlsx",
+    elapsedMs: parseInt(res.headers.get("X-Ai-Elapsed-Ms") || "0", 10),
+  };
+}

@@ -269,7 +269,7 @@ export default function HomePage() {
           <div className="container-narrow">
             <div className="text-center">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                31 PDF tools, organized by what you want to do
+                36 PDF tools, organized by what you want to do
               </h2>
               <p className="mt-3 text-slate-600 dark:text-slate-400">
                 Organize, optimize, convert, edit, secure, and AI-powered
@@ -281,7 +281,7 @@ export default function HomePage() {
                   href="/tools"
                   className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-600 hover:underline dark:text-brand-400"
                 >
-                  Browse all 31 tools by category
+                  Browse all 36 tools by category
                   <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </div>

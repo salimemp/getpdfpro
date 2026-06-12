@@ -36,7 +36,7 @@ import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
 export const metadata: Metadata = {
   title: "All PDF tools",
   description:
-    "31 PDF tools organized by what you want to do: organize, optimize, convert to/from PDF, edit, secure, and AI-powered. All private, all in your browser.",
+    "36 PDF tools organized by what you want to do: organize, optimize, convert to/from PDF, edit, secure, and AI-powered. All private, all in your browser.",
   alternates: { canonical: "/tools" },
 };
 
@@ -164,21 +164,21 @@ const CATEGORIES: Category[] = [
         description: "Convert .docx to PDF with Adobe PDF Services. Fonts, layout preserved.",
         icon: FileType,
         href: "/tools/word-to-pdf",
-        ready: false,
+        ready: true,
       },
       {
         name: "PowerPoint to PDF",
         description: "Convert .pptx to PDF. Slides and notes preserved.",
         icon: Presentation,
         href: "/tools/powerpoint-to-pdf",
-        ready: false,
+        ready: true,
       },
       {
         name: "Excel to PDF",
         description: "Convert .xlsx to PDF. Sheets, formulas, and formatting preserved.",
         icon: FileSpreadsheet,
         href: "/tools/excel-to-pdf",
-        ready: false,
+        ready: true,
       },
     ],
   },
@@ -207,14 +207,14 @@ const CATEGORIES: Category[] = [
         description: "Convert PDF to .pptx. Slide-by-slide layout.",
         icon: Presentation,
         href: "/tools/pdf-to-powerpoint",
-        ready: false,
+        ready: true,
       },
       {
         name: "PDF to Excel",
         description: "Convert PDF tables to .xlsx. Best-effort cell-level extraction.",
         icon: FileSpreadsheet,
         href: "/tools/pdf-to-excel",
-        ready: false,
+        ready: true,
       },
       {
         name: "PDF to PDF/A",
@@ -352,7 +352,7 @@ export default function ToolsIndexPage() {
             All PDF tools
           </h1>
           <p className="mt-2 text-slate-600 dark:text-slate-400">
-            31 PDF tools. One at a time. Each runs in your browser and is
+            36 PDF tools. One at a time. Each runs in your browser and is
             free forever for the basics. Use the categories below to find
             what you need.
           </p>
