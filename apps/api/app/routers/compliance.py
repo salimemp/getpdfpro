@@ -140,18 +140,29 @@ async def pdf_to_pdfa(
         try:
             with os.fdopen(fd_in, "wb") as f:
                 f.write(blob)
-            with pikepdf.open(path_in) as pdf:
-                if conformance == "PDF_A_1_B":
-                    pdf.pdf_version = "1.4"
-                else:
-                    pdf.pdf_version = "1.7"
+            with pikepdf.open(path_in, allow_overwriting_input=True) as pdf:
+                # pikepdf 9.x made pdf_version read-only. To set
+                # the version, we have to use the lowest-level API:
+                # patch the /Root object to point to a fresh Version,
+                # then save. Simpler: just call save with the
+                # desired min_version.
+                # In pikepdf 9, min_version is a save() parameter.
+                min_ver = "1.4" if conformance == "PDF_A_1_B" else "1.7"
                 with pdf.open_metadata(set_pikepdf_as_editor=False) as meta:
                     meta["dc:title"] = meta.get("dc:title", "Document")
                     meta["pdf:Producer"] = "GetPDFPro (pikepdf fallback)"
                 fd_out, path_out = tempfile.mkstemp(suffix=".pdf")
                 try:
                     with os.fdopen(fd_out, "wb") as f:
-                        pdf.save(f, linearize=False, fix_metadata_version=True)
+                        # min_version pins the /Root entry to at
+                        # least the requested PDF version. This is
+                        # the pikepdf 9.x replacement for the
+                        # removed pdf_version setter.
+                        try:
+                            pdf.save(f, linearize=False, min_version=min_ver)
+                        except TypeError:
+                            # Older pikepdf without min_version kwarg
+                            pdf.save(f, linearize=False)
                     with open(path_out, "rb") as f:
                         out_bytes = f.read()
                 finally:
