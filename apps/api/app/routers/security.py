@@ -104,53 +104,44 @@ async def unlock_pdf(
     except ImportError as exc:
         raise HTTPException(500, "pikepdf is not installed.") from exc
 
-    # pikepdf's open() takes a password. If the PDF has only an
-    # owner password, empty string works. If user-passworded, the
-    # supplied password is needed.
+    # Try the most likely path first: open with the password (or
+    # empty for owner-password-only PDFs). If that fails because
+    # the PDF isn't actually encrypted, fall back to a no-password
+    # open + just re-save.
+    import tempfile
+    pdf = None
     try:
-        with pikepdf.open(blob, password=(password or "")) as pdf:
-            # Re-save without encryption. pikepdf's save() does NOT
-            # re-encrypt by default — it strips the encryption. We
-            # use a temp file to dodge the linearize-BytesIO bug.
-            import os
-            import tempfile
-            fd_out, path_out = tempfile.mkstemp(suffix=".pdf")
-            try:
-                with os.fdopen(fd_out, "wb") as f:
-                    pdf.save(f)
-                with open(path_out, "rb") as f:
-                    out_bytes = f.read()
-            finally:
-                try: os.unlink(path_out)
-                except OSError: pass
-    except pikepdf.PasswordError as exc:
-        raise HTTPException(
-            400,
-            "Wrong password. The PDF is encrypted with a user password and "
-            "the supplied password didn't open it.",
-        ) from exc
+        try:
+            pdf = pikepdf.open(blob, password=(password or ""))
+        except pikepdf.PasswordError as exc:
+            raise HTTPException(
+                400,
+                "Wrong password. The PDF is encrypted with a user password and "
+                "the supplied password didn't open it.",
+            ) from exc
+        except Exception:
+            # Likely "PDF is not encrypted" — try opening without password.
+            pdf = pikepdf.open(blob)
+        # Re-save without encryption. Use a temp file to dodge
+        # pikepdf's BytesIO bug for save() with options that
+        # trigger a qpdf roundtrip.
+        fd_out, path_out = tempfile.mkstemp(suffix=".pdf")
+        try:
+            with os.fdopen(fd_out, "wb") as f:
+                pdf.save(f)
+            with open(path_out, "rb") as f:
+                out_bytes = f.read()
+        finally:
+            try: os.unlink(path_out)
+            except OSError: pass
+    except HTTPException:
+        raise
     except Exception as exc:
-        # Could be a non-encrypted PDF (pikepdf may raise on
-        # password= for non-encrypted files). Re-try without a
-        # password.
-        if "password" in str(exc).lower() and not password:
-            try:
-                with pikepdf.open(blob) as pdf:
-                    import os
-                    import tempfile
-                    fd_out, path_out = tempfile.mkstemp(suffix=".pdf")
-                    try:
-                        with os.fdopen(fd_out, "wb") as f:
-                            pdf.save(f)
-                        with open(path_out, "rb") as f:
-                            out_bytes = f.read()
-                    finally:
-                        try: os.unlink(path_out)
-                        except OSError: pass
-            except Exception as exc2:
-                raise HTTPException(400, f"Could not unlock PDF: {exc2}") from exc2
-        else:
-            raise HTTPException(400, f"Could not unlock PDF: {exc}") from exc
+        raise HTTPException(400, f"Could not unlock PDF: {exc}") from exc
+    finally:
+        if pdf is not None:
+            try: pdf.close()
+            except Exception: pass
 
     return StreamingResponse(
         io.BytesIO(out_bytes),
@@ -221,27 +212,40 @@ async def protect_pdf(
     if not owner_password:
         owner_password = user_password
 
-    # Parse permissions whitelist
-    allowed = {p.strip().lower() for p in permissions.split(",") if p.strip()}
-    # Map permission name -> pikepdf flag
-    perm_map = {
-        "print": pikepdf.Permissions.print_lowres,  # print_lowres for low-quality print; full print = print_highres
-        "print_highres": pikepdf.Permissions.print_highres,
-        "modify": pikepdf.Permissions.modify,
-        "copy": pikepdf.Permissions.extract,  # 'extract' = copy/extract
-        "annotate": pikepdf.Permissions.add_notes,
-        "forms": pikepdf.Permissions.fill_form,
-        "accessibility": pikepdf.Permissions.extract_accessibility,
+    # Parse permissions whitelist. pikepdf's Permissions IntFlag
+    # names changed between versions. We build the flags integer
+    # manually using the public PDF /P bitfield values, which
+    # have been stable since PDF 1.7.
+    #
+    # Bit definitions (PDF 1.7 spec, Table 22):
+    #   bit 3 (4):  print
+    #   bit 4 (8):  modify
+    #   bit 5 (16): copy/extract
+    #   bit 6 (32): add/modify annotations
+    #   bit 9 (256): fill form fields
+    #   bit 10 (512): extract for accessibility
+    #   bit 11 (1024): assemble
+    #   bit 12 (2048): print high quality
+    PERM_BITS = {
+        "print": 4,
+        "modify": 8,
+        "copy": 16,
+        "annotate": 32,
+        "forms": 256,
+        "accessibility": 512,
+        "assemble": 1024,
+        "print_highres": 2048,
     }
+    allowed = {p.strip().lower() for p in permissions.split(",") if p.strip()}
     flags = 0
     for p in allowed:
-        if p in perm_map:
-            flags |= int(perm_map[p])
-    # Default: deny everything except accessibility (which
-    # is required by section 508 / WCAG / EU accessibility laws
-    # — screen readers need to be able to extract text).
+        if p in PERM_BITS:
+            flags |= PERM_BITS[p]
+    # Default: deny everything except accessibility (required by
+    # section 508 / WCAG / EU accessibility laws — screen
+    # readers need to extract text).
     if not allowed:
-        flags = int(pikepdf.Permissions.extract_accessibility)
+        flags = PERM_BITS["accessibility"]
 
     import os
     import tempfile
