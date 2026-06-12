@@ -600,11 +600,9 @@ async def edit_pdf(
         if has_metadata:
             meta["creator"] = meta.get("creator") or "GetPDFPro"
             meta["producer"] = "GetPDFPro"
+            # PyMuPDF uses src.set_metadata() to set XMP + Info
+            # dict atomically. No separate docinfo access.
             src.set_metadata(meta)
-            src.docinfo["Title"] = title or meta.get("title", "")
-            src.docinfo["Author"] = author or meta.get("author", "")
-            src.docinfo["Subject"] = subject or meta.get("subject", "")
-            src.docinfo["Keywords"] = keywords or meta.get("keywords", "")
 
         # 2. Whiteout (PyMuPDF uses top-left origin, page is in points)
         if has_whiteout:
