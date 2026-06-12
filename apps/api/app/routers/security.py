@@ -123,18 +123,34 @@ async def unlock_pdf(
         except Exception:
             # Likely "PDF is not encrypted" — try opening without password.
             pdf = pikepdf.open(blob)
-        # Re-save without encryption. Use a temp file to dodge
-        # pikepdf's BytesIO bug for save() with options that
-        # trigger a qpdf roundtrip.
-        fd_out, path_out = tempfile.mkstemp(suffix=".pdf")
+        # Re-save without encryption. pikepdf 9.x's plain
+        # save(f) sometimes triggers a qpdf internal that
+        # errors out on file streams with the linearize-BytesIO
+        # pattern. Workaround: open the source from a temp file
+        # path (not bytes) and save to a temp file path. The
+        # .save_to_bytes() method also works in 9.x and is
+        # simpler than the file roundtrip.
         try:
-            with os.fdopen(fd_out, "wb") as f:
-                pdf.save(f)
-            with open(path_out, "rb") as f:
-                out_bytes = f.read()
-        finally:
-            try: os.unlink(path_out)
-            except OSError: pass
+            out_bytes = pdf.save_to_bytes()
+        except Exception:
+            # Fallback: temp-file roundtrip
+            fd_in, path_in = tempfile.mkstemp(suffix=".pdf")
+            try:
+                with os.fdopen(fd_in, "wb") as f:
+                    f.write(blob)
+                with pikepdf.open(path_in, password=(password or "")) as pdf2:
+                    fd_out, path_out = tempfile.mkstemp(suffix=".pdf")
+                    try:
+                        with os.fdopen(fd_out, "wb") as f:
+                            pdf2.save(f)
+                        with open(path_out, "rb") as f:
+                            out_bytes = f.read()
+                    finally:
+                        try: os.unlink(path_out)
+                        except OSError: pass
+            finally:
+                try: os.unlink(path_in)
+                except OSError: pass
     except HTTPException:
         raise
     except Exception as exc:
