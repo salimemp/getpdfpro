@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { getLocale } from "next-intl/server";
+import { getLocale, getMessages } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth";
@@ -82,10 +82,14 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Resolve the active locale for this request. For v1 with only
-  // English, this is always "en". When you add more locales to
-  // LOCALES in src/i18n/config.ts, this picks them up automatically.
+  // Resolve the active locale + message catalog for this request.
+  // For v1 with only English, both are always 'en'. When you add
+  // more locales to LOCALES in src/i18n/config.ts, this picks
+  // them up automatically. We pass messages to the client
+  // provider so client components (under "use client") can call
+  // useTranslations() and get the same strings.
   const locale = await getLocale();
+  const messages = await getMessages();
 
   return (
     <html lang={locale} suppressHydrationWarning>
@@ -118,7 +122,7 @@ export default async function RootLayout({
         )}
       </head>
       <body className="min-h-screen bg-white font-sans text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100">
-        <NextIntlClientProvider locale={locale}>
+        <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider>
             <AuthProvider>{children}</AuthProvider>
           </ThemeProvider>
