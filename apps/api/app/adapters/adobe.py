@@ -30,9 +30,37 @@ from app.config import get_settings
 from . import AdapterResult, ConversionAdapter, ConversionError, OutputFormat
 
 
-# Adobe's public OAuth + PDF Services endpoints
-ADOBE_AUTH_URL = "https://ims-na1.adobelogin.com/ims/token/v3"
+# Adobe's PDF Services API endpoint. The official Python SDK
+# (pdfservices-sdk 4.2.0) defaults to the US regional host
+# `pdf-services-ue1.adobe.io` (us-east-1). The global/unscoped
+# host `pdf-services.adobe.io` ALSO serves the token endpoint
+# and asset creation, and serves the legacy PDF/A, redact,
+# compare, and extractpdf operations. But the Office-conversion
+# operations (`/operation/createpdf`, `/operation/exportpdf`)
+# are ONLY routed on the regional host — the legacy host
+# returns 400 INVALID_REQUEST_FORMAT with
+# "input/inputs is a required parameter for external storage
+# requests" (a misleading message that actually means
+# "we routed your request to the legacy/regional-fallback
+# handler" — see adobe_ops.py for the v2 helper).
+#
+# We default to the LEGACY host here for backward compatibility
+# with the 4 working operations. The 5 Office endpoints in
+# `adobe_ops.py` use a separate `ADOBE_V2_API_BASE` constant
+# pointing at the regional host.
+#
+# Reference: SDK source
+# `adobe/pdfservices/operation/internal/constants/pdf_services_uri.py`
+# — `URI = "https://pdf-services.adobe.io"` (legacy, no region),
+#   `US_URI = "https://pdf-services-ue1.adobe.io"` (default in SDK),
+#   `EU_URI = "https://pdf-services-ew1.adobe.io"` (Region.EU).
 ADOBE_API_BASE = "https://pdf-services.adobe.io"
+ADOBE_AUTH_URL = "https://ims-na1.adobelogin.com/ims/token/v3"
+# V2 regional host (US East 1) — used by the 5 Office conversion
+# operations (createpdf, exportpdf) which are NOT routed on the
+# legacy host. Same OAuth flow as the legacy auth endpoint.
+ADOBE_V2_API_BASE = "https://pdf-services-ue1.adobe.io"
+ADOBE_V2_AUTH_URL = f"{ADOBE_V2_API_BASE}/token"
 
 # Per-output-format Adobe format enum. (xlsx + pptx are in the
 # "EXPORT_PDF_TO" enum group, see Adobe docs.)

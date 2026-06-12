@@ -37,7 +37,12 @@ import httpx
 
 from app.config import get_settings
 
-from .adobe import ADOBE_API_BASE, ADOBE_AUTH_URL
+from .adobe import (
+    ADOBE_API_BASE,
+    ADOBE_AUTH_URL,
+    ADOBE_V2_API_BASE,
+    ADOBE_V2_AUTH_URL,
+)
 
 
 @dataclass
@@ -69,6 +74,10 @@ class AdobeOpError(Exception):
 # ─── Auth (module-level, shared with AdobeAdapter) ──────────────
 _token: str | None = None
 _token_expires_at: float = 0.0
+# V2 (regional) auth — separate cache so tokens issued by
+# different hosts don't share a slot. See `_get_access_token_v2`.
+_v2_token: str | None = None
+_v2_token_expires_at: float = 0.0
 _client_id: str | None = None
 _client_secret: str | None = None
 
@@ -122,10 +131,29 @@ async def _get_access_token() -> str:
     return token
 
 
-async def _upload_asset(token: str, pdf_bytes: bytes, filename: str = "input.pdf", mime_type: str = "application/pdf") -> str:
+async def _upload_asset(
+    token: str,
+    pdf_bytes: bytes,
+    filename: str = "input.pdf",
+    mime_type: str = "application/pdf",
+    host: str = ADOBE_API_BASE,
+) -> str:
+    """Upload bytes to Adobe asset storage. Both the legacy and
+    V2 (regional) hosts expose `/assets` and use the same
+    presigned-S3 upload flow. The presigned URL itself is on
+    AWS S3, not Adobe's host, so the actual PUT is
+    host-agnostic.
+
+    `host` defaults to the legacy `ADOBE_API_BASE`. V2 callers
+    (the 5 Office conversions) pass `ADOBE_V2_API_BASE` so the
+    asset is created in the same region as the operation that
+    will use it. Asset IDs are global (URNs like
+    `urn:aaid:AS:UE1:...`) so the cross-host case technically
+    works, but keeping host = token-host is safer.
+    """
     async with httpx.AsyncClient(timeout=60) as client:
         resp = await client.post(
-            f"{ADOBE_API_BASE}/assets",
+            f"{host}/assets",
             headers={
                 "Authorization": f"Bearer {token}",
                 "x-api-key": _client_id or "",
@@ -275,6 +303,164 @@ async def _download(download_uri: str) -> bytes:
 async def _sleep(seconds: float) -> None:
     import asyncio
     await asyncio.sleep(seconds)
+
+
+async def _get_access_token_v2() -> str:
+    """OAuth 2.0 client-credentials grant against the V2 regional
+    host (`pdf-services-ue1.adobe.io`). Used by the Office
+    conversion operations (createpdf, exportpdf) which are NOT
+    routed on the legacy host.
+
+    NOTE: unlike the legacy IMS endpoint
+    (`ims-na1.adobelogin.com/ims/token/v3`), the V2 endpoint
+    is stricter about what it accepts in the POST body. The
+    official SDK only sends `client_id` and `client_secret`
+    — no `grant_type`, no `scope`. Adding those fields
+    returns 400 INVALID_REQUEST_FORMAT. Source:
+    `adobe/pdfservices/operation/internal/auth/service_principal_authenticator.py`
+    line 71-72:
+        access_token_request_payload = {"client_id": ...,
+                                        "client_secret": ...}
+
+    The token is cached separately from the legacy `_token`
+    since tokens issued by different hosts can have different
+    scopes (in practice they don't, but we keep them separate
+    to be safe). The SDK does the same — one token cache per
+    ExecutionContext, never mixed across regions.
+    """
+    global _v2_token, _v2_token_expires_at
+    if _v2_token and time.time() < _v2_token_expires_at:
+        return _v2_token
+    if not is_configured():
+        raise AdobeOpError(
+            "Adobe PDF Services is not configured. Set ADOBE_CLIENT_ID and "
+            "ADOBE_CLIENT_SECRET in your environment.",
+            retryable=False,
+        )
+    async with httpx.AsyncClient(timeout=30) as client:
+        resp = await client.post(
+            ADOBE_V2_AUTH_URL,
+            data={
+                "client_id": _client_id,
+                "client_secret": _client_secret,
+            },
+            headers={"Accept": "application/json, text/plain, */*"},
+        )
+    if resp.status_code != 200:
+        raise AdobeOpError(
+            f"Adobe V2 auth failed ({resp.status_code}): {resp.text[:200]}",
+            retryable=True,
+        )
+    body = resp.json()
+    token = body.get("access_token")
+    expires_in = body.get("expires_in", 3600)
+    if not token:
+        raise AdobeOpError(
+            f"Adobe V2 auth returned no access_token: {body}",
+            retryable=True,
+        )
+    _v2_token = token
+    _v2_token_expires_at = time.time() + max(60, expires_in - 60)
+    return token
+
+
+async def _submit_v2_and_poll(
+    token: str,
+    op_path: str,
+    body: dict,
+    ops_info: str,
+    timeout_s: int = 180,
+) -> dict:
+    """Submit an operation against the V2 regional host and poll.
+
+    This is the V2 (regional) counterpart of `_submit_and_poll`.
+    Two material differences from the legacy helper:
+
+    1. **Host**: uses `ADOBE_V2_API_BASE` (`pdf-services-ue1.adobe.io`).
+       The legacy host (`pdf-services.adobe.io`) returns
+       400 INVALID_REQUEST_FORMAT for `/operation/createpdf` and
+       `/operation/exportpdf` because those routes are not
+       registered on the legacy gateway.
+
+    2. **Body shape**: params are at the TOP LEVEL of the JSON
+       body, not nested in `params: {...}` or wrapped in
+       `json: "{...}"`. The official SDK's
+       `CreatePDFInternalAssetRequest.to_json()` and
+       `ExportPDFInternalAssetRequest.to_json()` produce exactly
+       this flat shape (see the SDK's `JSONHintEncoder`).
+
+    The `ops_info` argument is the EXACT string the SDK sends
+    in the `x-dcsdk-ops-info` header for this operation. From
+    the SDK source `service_constants.py`:
+      CREATE_PDF               = "CREATE_PDF"
+      EXPORT_PDF_OPERATION_NAME = "EXPORT_PDF"
+    These are the enum-name strings, NOT the human-readable
+    values from `OperationHeaderInfoEndpointMap` (which has
+    "Create PDF Operation" / "Export PDF Operation" — those
+    are used for logging only, NOT the wire header).
+    """
+    async with httpx.AsyncClient(timeout=60) as client:
+        resp = await client.post(
+            f"{ADOBE_V2_API_BASE}{op_path}",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "x-api-key": _client_id or "",
+                "Content-Type": "application/json",
+                "Accept": "application/json, text/plain, */*",
+                # Identifies us as the official Python SDK.
+                "x-api-app-info": "python-pdfservices-sdk-4.2.0",
+                # The header Adobe uses to route the request to
+                # the right internal handler. Value MUST match
+                # the constant in `service_constants.py` exactly.
+                "x-dcsdk-ops-info": ops_info,
+            },
+            content=json.dumps(body),
+        )
+    if resp.status_code not in (200, 201, 202):
+        text = resp.text[:200]
+        if resp.status_code in (402, 429):
+            raise AdobeOpError(
+                f"Adobe V2 free tier exhausted ({resp.status_code}): {text}",
+                retryable=False,
+            )
+        raise AdobeOpError(
+            f"Adobe V2 op {op_path} failed ({resp.status_code}): {text}",
+            retryable=True,
+        )
+    poll_url = resp.headers.get("location") or resp.headers.get("Location")
+    if not poll_url:
+        try:
+            return resp.json()
+        except Exception:
+            raise AdobeOpError(
+                f"Adobe V2 op {op_path} returned no polling URL: {resp.text[:200]}",
+                retryable=True,
+            )
+    deadline = time.time() + timeout_s
+    async with httpx.AsyncClient(timeout=30) as client:
+        while time.time() < deadline:
+            poll = await client.get(
+                poll_url,
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "x-api-key": _client_id or "",
+                },
+            )
+            if poll.status_code == 200:
+                body = poll.json()
+                status = (body.get("status") or "").upper()
+                if status in ("DONE", "COMPLETED", "SUCCEEDED"):
+                    return body
+                if status in ("FAILED", "ERROR"):
+                    raise AdobeOpError(
+                        f"Adobe V2 op {op_path} job failed: {body}",
+                        retryable=False,
+                    )
+            await _sleep(2)
+    raise AdobeOpError(
+        f"Adobe V2 op {op_path} timed out after {timeout_s}s",
+        retryable=True,
+    )
 
 
 # ─── Operations ────────────────────────────────────────────────
@@ -510,6 +696,12 @@ async def create_pdf_from_office(
     asset's MIME type.
 
     Returns AdobeOpResult with bytes=PDF, mime_type=application/pdf.
+
+    Uses the V2 (regional) host and the SDK's flat body shape:
+    `{assetID, createTaggedPDF, documentLanguage}`. The legacy
+    host returns 400 INVALID_REQUEST_FORMAT for this operation
+    and the legacy `json/params` wrapper body is not accepted
+    on the regional host.
     """
     mime = ADOBE_CREATE_PDF_MIME.get(source_format)
     if not mime:
@@ -519,16 +711,20 @@ async def create_pdf_from_office(
             retryable=False,
         )
     t0 = time.time()
-    token = await _get_access_token()
-    asset_id = await _upload_asset(token, input_bytes, f"{filename}.{source_format}", mime)
-    body = await _submit_and_poll(
+    token = await _get_access_token_v2()
+    asset_id = await _upload_asset(
+        token, input_bytes, f"{filename}.{source_format}", mime,
+        host=ADOBE_V2_API_BASE,
+    )
+    body = await _submit_v2_and_poll(
         token,
         "/operation/createpdf",
         {
             "assetID": asset_id,
-            "json": "{}",
-            "params": {},
+            "createTaggedPDF": False,
+            "documentLanguage": "en-US",
         },
+        ops_info="CREATE_PDF",  # ServiceConstants.CREATE_OPERATION_NAME
         timeout_s=180,
     )
     asset = body.get("asset") or {}
@@ -559,6 +755,10 @@ async def export_pdf_to_office(
     "pptx", or "xlsx". Note: PDF → Word uses the same code path
     as our existing pdf-to-word (kept for backward compat) —
     we add PDF → PPT and PDF → Excel here.
+
+    Uses the V2 (regional) host and the SDK's flat body shape:
+    `{assetID, targetFormat, ocrLang}`. Same reasoning as
+    `create_pdf_from_office` above.
     """
     if target_format not in ("docx", "pptx", "xlsx"):
         raise AdobeOpError(
@@ -567,16 +767,20 @@ async def export_pdf_to_office(
             retryable=False,
         )
     t0 = time.time()
-    token = await _get_access_token()
-    asset_id = await _upload_asset(token, pdf_bytes)
-    body = await _submit_and_poll(
+    token = await _get_access_token_v2()
+    asset_id = await _upload_asset(
+        token, pdf_bytes, "input.pdf", "application/pdf",
+        host=ADOBE_V2_API_BASE,
+    )
+    body = await _submit_v2_and_poll(
         token,
         "/operation/exportpdf",
         {
             "assetID": asset_id,
-            "json": "{}",
-            "params": {"targetFormat": target_format},
+            "targetFormat": target_format,
+            "ocrLang": "en-US",
         },
+        ops_info="EXPORT_PDF",  # ServiceConstants.EXPORT_PDF_OPERATION_NAME
         timeout_s=240,  # exportpdf can be slow for large PDFs
     )
     asset = body.get("asset") or {}

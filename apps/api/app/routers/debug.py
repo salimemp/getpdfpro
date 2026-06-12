@@ -277,6 +277,8 @@ async def adobe_trace(
         "filename": file.filename,
         "file_size": len(file_bytes),
         "steps": [],
+        "v2": True,  # the V2 (regional) host is the only host that
+                     # routes /operation/createpdf and /operation/exportpdf
     }
 
     # Step 1: Token fetch — manually re-do to capture
@@ -284,21 +286,19 @@ async def adobe_trace(
     settings = get_settings()
     async with _httpx.AsyncClient(timeout=30) as client:
         auth_resp = await client.post(
-            "https://ims-na1.adobelogin.com/ims/token/v3",
+            "https://pdf-services-ue1.adobe.io/token",
             data={
                 "client_id": "REDACTED",
                 "client_secret": "REDACTED",
-                "grant_type": "client_credentials",
-                "scope": "openid,AdobeID,DCAPI",
             },
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            headers={"Accept": "application/json, text/plain, */*"},
         )
     trace["steps"].append({
         "step": "1.adobe_auth",
-        "url": "https://ims-na1.adobelogin.com/ims/token/v3",
+        "url": "https://pdf-services-ue1.adobe.io/token",
         "method": "POST",
         "request_body": "(redacted: client_credentials grant)",
-        "request_headers": {"Content-Type": "application/x-www-form-urlencoded"},
+        "request_headers": {"Accept": "application/json, text/plain, */*"},
         "response_status": auth_resp.status_code,
         "response_body": auth_resp.json() if auth_resp.status_code == 200 else auth_resp.text[:500],
     })
@@ -316,7 +316,7 @@ async def adobe_trace(
         asset_ext = "pdf"
     async with _httpx.AsyncClient(timeout=60) as client:
         create_resp = await client.post(
-            "https://pdf-services.adobe.io/assets",
+            "https://pdf-services-ue1.adobe.io/assets",
             headers={
                 "Authorization": f"Bearer {token}",
                 "x-api-key": settings.adobe_client_id,
@@ -326,7 +326,7 @@ async def adobe_trace(
         )
     trace["steps"].append({
         "step": "2.asset_create",
-        "url": "https://pdf-services.adobe.io/assets",
+        "url": "https://pdf-services-ue1.adobe.io/assets",
         "method": "POST",
         "request_body": _json.dumps({"mediaType": mime}),
         "request_headers": {
@@ -362,26 +362,34 @@ async def adobe_trace(
         "response_body": put_resp.text[:500] if put_resp.status_code not in (200, 201, 204) else "(empty success)",
     })
 
-    # Step 4: Operation submit
+    # Step 4: Operation submit (V2 wire format)
+    # Two material changes from the legacy trace:
+    #   1. URL: pdf-services-ue1.adobe.io (regional host, NOT
+    #      pdf-services.adobe.io which returns 400 for these ops)
+    #   2. Body shape: params at top level, NOT wrapped in
+    #      `json: "{}"` or nested in `params: {...}`.
     op_path = "/operation/createpdf" if op == "createpdf" else "/operation/exportpdf"
-    op_info = (
-        "Create PDF Operation" if op == "createpdf" else "Export PDF Operation"
-    )
+    # The SDK uses the enum-name string in `x-dcsdk-ops-info`:
+    #   CREATE_PDF               (ServiceConstants.CREATE_OPERATION_NAME)
+    #   EXPORT_PDF               (ServiceConstants.EXPORT_PDF_OPERATION_NAME)
+    # NOT the human-readable "Create PDF Operation" / "Export PDF
+    # Operation" (those are used for logging only).
+    op_info = "CREATE_PDF" if op == "createpdf" else "EXPORT_PDF"
     if op == "exportpdf":
         body = {
             "assetID": asset_id,
-            "json": "{}",
-            "params": {"targetFormat": target_format},
+            "targetFormat": target_format,
+            "ocrLang": "en-US",
         }
     else:
         body = {
             "assetID": asset_id,
-            "json": "{}",
-            "params": {},
+            "createTaggedPDF": False,
+            "documentLanguage": "en-US",
         }
     async with _httpx.AsyncClient(timeout=60) as client:
         op_resp = await client.post(
-            f"https://pdf-services.adobe.io{op_path}",
+            f"https://pdf-services-ue1.adobe.io{op_path}",
             headers={
                 "Authorization": f"Bearer {token}",
                 "x-api-key": settings.adobe_client_id,
@@ -394,7 +402,7 @@ async def adobe_trace(
         )
     trace["steps"].append({
         "step": "4.operation_submit",
-        "url": f"https://pdf-services.adobe.io{op_path}",
+        "url": f"https://pdf-services-ue1.adobe.io{op_path}",
         "method": "POST",
         "request_body": body,
         "request_headers": {
