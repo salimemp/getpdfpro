@@ -149,7 +149,11 @@ async def _upload_asset(token: str, pdf_bytes: bytes, filename: str = "input.pdf
     async with httpx.AsyncClient(timeout=120) as client:
         put = await client.put(
             upload_uri,
-            headers={"Content-Type": "application/pdf"},
+            # Use the same MIME type we declared when creating
+            # the asset. The presigned URL is generated for this
+            # specific Content-Type, and a mismatch causes
+            # SignatureDoesNotMatch (403).
+            headers={"Content-Type": mime_type},
             content=pdf_bytes,
         )
     if put.status_code not in (200, 201, 204):
