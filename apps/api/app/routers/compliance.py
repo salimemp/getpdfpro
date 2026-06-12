@@ -130,29 +130,42 @@ async def pdf_to_pdfa(
             import pikepdf
         except ImportError as exc2:
             raise HTTPException(503, "pikepdf is not installed.") from exc2
+        # pikepdf 8.x's save() with fix_metadata_version=True
+        # sometimes triggers a qpdf temp-file roundtrip that fails
+        # on BytesIO ("No such file or directory: b'%PDF...'"). Save
+        # to a real temp file path to avoid that.
+        import os
+        import tempfile
+        fd_in, path_in = tempfile.mkstemp(suffix=".pdf")
         try:
-            with pikepdf.open(blob) as pdf:
-                # Set PDF version to 1.7 (PDF/A-2b spec) or 1.4 (PDF/A-1b)
+            with os.fdopen(fd_in, "wb") as f:
+                f.write(blob)
+            with pikepdf.open(path_in) as pdf:
                 if conformance == "PDF_A_1_B":
                     pdf.pdf_version = "1.4"
                 else:
                     pdf.pdf_version = "1.7"
-                # Mark as PDF/A in XMP metadata. The /pdf.py::pdfa
-                # module isn't a real conformance check, but the
-                # metadata is set so archive tools that read XMP
-                # will see it.
                 with pdf.open_metadata(set_pikepdf_as_editor=False) as meta:
                     meta["dc:title"] = meta.get("dc:title", "Document")
                     meta["pdf:Producer"] = "GetPDFPro (pikepdf fallback)"
-                buf = io.BytesIO()
-                pdf.save(buf, linearize=False, fix_metadata_version=True)
-                out_bytes = buf.getvalue()
+                fd_out, path_out = tempfile.mkstemp(suffix=".pdf")
+                try:
+                    with os.fdopen(fd_out, "wb") as f:
+                        pdf.save(f, linearize=False, fix_metadata_version=True)
+                    with open(path_out, "rb") as f:
+                        out_bytes = f.read()
+                finally:
+                    try: os.unlink(path_out)
+                    except OSError: pass
         except Exception as exc2:
             logger.exception("pikepdf PDF/A fallback failed")
             raise HTTPException(
                 503,
                 f"PDF/A conversion failed on both Adobe and self-hosted. Last error: {exc2}",
             ) from exc2
+        finally:
+            try: os.unlink(path_in)
+            except OSError: pass
 
     return StreamingResponse(
         io.BytesIO(out_bytes),
