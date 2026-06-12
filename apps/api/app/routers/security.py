@@ -154,6 +154,7 @@ async def unlock_pdf(
     except HTTPException:
         raise
     except Exception as exc:
+        logger.exception("unlock failed")
         raise HTTPException(400, f"Could not unlock PDF: {exc}") from exc
     finally:
         if pdf is not None:
