@@ -16,7 +16,17 @@
 # runs either way.
 # =============================================================================
 
-FROM python:3.12-slim
+# python:3.11-slim-bullseye (Debian 11) — NOT python:3.12-slim (Debian 12).
+# The python3-uno package on Debian 12 (bookworm) is missing the
+# bundled Python runtime that the UNO bridge needs, so `import uno`
+# works in Python but the underlying `base` C extension can't load,
+# and soffice's save path aborts with 0xc10 silently. This is a
+# well-known issue documented by the Stirling-PDF maintainer
+# (https://github.com/Stirling-Tools/Stirling-PDF/issues/3837).
+# Debian 11 (bullseye) ships python3-uno with a properly bundled
+# Python runtime that matches the system Python, so `import uno`
+# works end-to-end.
+FROM python:3.11-slim-bullseye
 
 # System dependencies
 # - tesseract-ocr: OCR engine (apt package)
