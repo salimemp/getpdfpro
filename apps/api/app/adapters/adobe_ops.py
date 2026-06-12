@@ -122,7 +122,7 @@ async def _get_access_token() -> str:
     return token
 
 
-async def _upload_asset(token: str, pdf_bytes: bytes, filename: str = "input.pdf") -> str:
+async def _upload_asset(token: str, pdf_bytes: bytes, filename: str = "input.pdf", mime_type: str = "application/pdf") -> str:
     async with httpx.AsyncClient(timeout=60) as client:
         resp = await client.post(
             f"{ADOBE_API_BASE}/assets",
@@ -131,7 +131,7 @@ async def _upload_asset(token: str, pdf_bytes: bytes, filename: str = "input.pdf
                 "X-API-Key": _client_id or "",
                 "Content-Type": "application/json",
             },
-            content=json.dumps({"mediaType": "application/pdf"}),
+            content=json.dumps({"mediaType": mime_type}),
         )
     if resp.status_code not in (200, 201):
         raise AdobeOpError(
@@ -433,4 +433,132 @@ async def extract_forms(pdf_bytes: bytes) -> AdobeOpResult:
         file_extension="json",
         elapsed_ms=elapsed_ms,
         extra={"report_kind": "forms"},
+    )
+
+
+# ─── Office Conversions (Wave C) ───────────────────────────────
+#
+# Five new operations:
+#   - create_pdf_from_office(input_bytes, mime_type) -> AdobeOpResult
+#       Used for Word/PPT/Excel → PDF. Adobe's CreatePDFJob
+#       accepts a non-PDF asset and returns a PDF. The MIME
+#       type tells Adobe which Office parser to use.
+#   - export_pdf_to_pptx(pdf_bytes) -> AdobeOpResult
+#   - export_pdf_to_xlsx(pdf_bytes) -> AdobeOpResult
+#       Same as the existing exportpdf path but with targetFormat
+#       set to pptx/xlsx.
+#
+# Reference: https://developer.adobe.com/document-services/docs/apis/
+
+# MIME types Adobe accepts for CreatePDFJob. We map a friendly
+# label to the right mediaType.
+ADOBE_CREATE_PDF_MIME: dict[str, str] = {
+    "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+}
+
+# MIME types returned by exportpdf for each target format.
+ADOBE_EXPORT_MIME: dict[str, str] = {
+    "pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+}
+
+
+async def create_pdf_from_office(
+    input_bytes: bytes,
+    source_format: str,  # "docx" | "pptx" | "xlsx"
+    filename: str = "input",
+) -> AdobeOpResult:
+    """Convert a Word / PowerPoint / Excel file to PDF.
+
+    `source_format` is the lowercase extension without dot.
+    Adobe's CreatePDFJob auto-detects the parser based on the
+    asset's MIME type.
+
+    Returns AdobeOpResult with bytes=PDF, mime_type=application/pdf.
+    """
+    mime = ADOBE_CREATE_PDF_MIME.get(source_format)
+    if not mime:
+        raise AdobeOpError(
+            f"Unsupported source_format: {source_format!r}. "
+            f"Use one of: {list(ADOBE_CREATE_PDF_MIME)}",
+            retryable=False,
+        )
+    t0 = time.time()
+    token = await _get_access_token()
+    asset_id = await _upload_asset(token, input_bytes, f"{filename}.{source_format}", mime)
+    body = await _submit_and_poll(
+        token,
+        "/operation/createpdf",
+        {
+            "assetID": asset_id,
+            "json": "{}",
+            "params": {},
+        },
+        timeout_s=180,
+    )
+    asset = body.get("asset") or {}
+    download_uri = asset.get("downloadUri") or asset.get("downloadURI")
+    if not download_uri:
+        raise AdobeOpError(
+            f"Adobe createPDF: no downloadUri in response: {body}",
+            retryable=True,
+        )
+    out = await _download(download_uri)
+    elapsed_ms = int((time.time() - t0) * 1000)
+    return AdobeOpResult(
+        bytes=out,
+        mime_type="application/pdf",
+        file_extension="pdf",
+        elapsed_ms=elapsed_ms,
+        extra={"source_format": source_format},
+    )
+
+
+async def export_pdf_to_office(
+    pdf_bytes: bytes,
+    target_format: str,  # "docx" | "pptx" | "xlsx"
+) -> AdobeOpResult:
+    """Convert a PDF to Word / PowerPoint / Excel.
+
+    Adobe's exportpdf operation accepts targetFormat = "docx",
+    "pptx", or "xlsx". Note: PDF → Word uses the same code path
+    as our existing pdf-to-word (kept for backward compat) —
+    we add PDF → PPT and PDF → Excel here.
+    """
+    if target_format not in ("docx", "pptx", "xlsx"):
+        raise AdobeOpError(
+            f"Unsupported target_format: {target_format!r}. "
+            f"Use 'docx', 'pptx', or 'xlsx'.",
+            retryable=False,
+        )
+    t0 = time.time()
+    token = await _get_access_token()
+    asset_id = await _upload_asset(token, pdf_bytes)
+    body = await _submit_and_poll(
+        token,
+        "/operation/exportpdf",
+        {
+            "assetID": asset_id,
+            "json": "{}",
+            "params": {"targetFormat": target_format},
+        },
+        timeout_s=240,  # exportpdf can be slow for large PDFs
+    )
+    asset = body.get("asset") or {}
+    download_uri = asset.get("downloadUri") or asset.get("downloadURI")
+    if not download_uri:
+        raise AdobeOpError(
+            f"Adobe exportpdf({target_format}): no downloadUri: {body}",
+            retryable=True,
+        )
+    out = await _download(download_uri)
+    elapsed_ms = int((time.time() - t0) * 1000)
+    return AdobeOpResult(
+        bytes=out,
+        mime_type=ADOBE_EXPORT_MIME[target_format],
+        file_extension=target_format,
+        elapsed_ms=elapsed_ms,
+        extra={"target_format": target_format},
     )
