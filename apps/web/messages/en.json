@@ -1,0 +1,89 @@
+{
+  "Site": {
+    "title": "GetPDFPro",
+    "tagline": "All your PDF tools. Private. Free.",
+    "nav": {
+      "tools": "Tools",
+      "pricing": "Pricing",
+      "blog": "Blog",
+      "beta": "Beta",
+      "vs": "vs iLovePDF",
+      "account": "Account",
+      "signOut": "Sign out",
+      "signIn": "Sign in"
+    },
+    "footer": {
+      "copyright": "© {year} GetPDFPro",
+      "links": {
+        "pricing": "Pricing",
+        "blog": "Blog",
+        "about": "About",
+        "contact": "Contact",
+        "privacy": "Privacy",
+        "terms": "Terms"
+      }
+    }
+  },
+  "Home": {
+    "hero": {
+      "eyebrow": "26 tools. Zero file size limits for Pro.",
+      "title": "All your PDF tools.",
+      "titleAccent": "Private. Free.",
+      "subtitle": "Merge, split, compress, convert, OCR, redact, sign, and more. Browser-first, end-to-end encrypted, no account needed for the basics.",
+      "ctaPrimary": "See all 26 tools",
+      "ctaSecondary": "Read the blog"
+    },
+    "toolsHeading": "26 tools, no upload limit for Pro",
+    "toolsSubheading": "Every tool runs in your browser. End-to-end encrypted. No account needed for the basics.",
+    "features": {
+      "title": "Why GetPDFPro",
+      "encrypted": {
+        "title": "End-to-end encrypted",
+        "body": "Files are encrypted in your browser and decrypted only by you. We can't read them, and neither can anyone else."
+      },
+      "languages": {
+        "title": "25+ languages",
+        "body": "Read and write in your language. AI features and the interface are localized at launch."
+      },
+      "ai": {
+        "title": "AI assistant",
+        "body": "Summarize, translate, rewrite, and answer questions about your PDFs with Gemini under the hood."
+      },
+      "privacy": {
+        "title": "GDPR & CCPA ready",
+        "body": "Built for privacy from day one. SOC 2 controls in place. Your files are auto-deleted in 1 hour."
+      }
+    },
+    "pricing": {
+      "title": "Simple pricing. Cancel anytime.",
+      "subtitle": "Free for the basics. Pro for heavy use. No surprises."
+    }
+  },
+  "Tools": {
+    "indexTitle": "All PDF tools",
+    "indexSubtitle": "26 PDF tools. One at a time. Each runs in your browser and is free forever for the basics.",
+    "openTool": "Open tool",
+    "comingSoon": "Coming soon",
+    "notifyMe": "Notify me"
+  },
+  "Pricing": {
+    "title": "Pricing",
+    "subtitle": "Free for the basics. Pro for serious work. No hidden fees."
+  },
+  "Theme": {
+    "label": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "Language": {
+    "label": "Language",
+    "switchTo": "Switch language"
+  },
+  "Common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "tryAgain": "Try again",
+    "back": "Back"
+  }
+}

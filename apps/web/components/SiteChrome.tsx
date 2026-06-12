@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { FileText, User, LogOut } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/lib/auth";
+import { ThemeToggle } from "./ThemeToggle";
+import { LocaleSwitcher } from "./LocaleSwitcher";
 
 /**
  * Shared chrome for non-landing pages — header + footer.
@@ -11,6 +14,7 @@ import { useAuth } from "@/lib/auth";
  * marketing-oriented hero. Tool pages inherit this.
  */
 export function SiteHeader() {
+  const t = useTranslations("Site.nav");
   return (
     <header className="border-b border-slate-200 dark:border-slate-800">
       <div className="container-narrow flex h-16 items-center justify-between">
@@ -22,22 +26,26 @@ export function SiteHeader() {
         </Link>
         <nav className="hidden gap-6 text-sm text-slate-600 sm:flex dark:text-slate-300">
           <Link href="/tools" className="hover:text-slate-900 dark:hover:text-white">
-            Tools
+            {t("tools")}
           </Link>
           <Link href="/pricing" className="hover:text-slate-900 dark:hover:text-white">
-            Pricing
+            {t("pricing")}
           </Link>
           <Link href="/blog" className="hover:text-slate-900 dark:hover:text-white">
-            Blog
+            {t("blog")}
           </Link>
           <Link href="/beta" className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 hover:bg-amber-200 dark:bg-amber-950 dark:text-amber-200 dark:hover:bg-amber-900">
-            Beta
+            {t("beta")}
           </Link>
           <Link href="/vs/ilovepdf" className="hover:text-slate-900 dark:hover:text-white">
-            vs iLovePDF
+            {t("vs")}
           </Link>
         </nav>
-        <AuthButton />
+        <div className="flex items-center gap-1.5">
+          <LocaleSwitcher />
+          <ThemeToggle />
+          <AuthButton />
+        </div>
       </div>
     </header>
   );
@@ -45,6 +53,7 @@ export function SiteHeader() {
 
 function AuthButton() {
   const auth = useAuth();
+  const t = useTranslations("Site.nav");
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
@@ -74,7 +83,7 @@ function AuthButton() {
         href="/login"
         className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
       >
-        Sign in
+        {t("signIn")}
       </Link>
     );
   }
@@ -122,7 +131,7 @@ function AuthButton() {
             onClick={() => setOpen(false)}
           >
             <User className="h-4 w-4" />
-            Account
+            {t("account")}
           </Link>
           <button
             type="button"
@@ -133,7 +142,7 @@ function AuthButton() {
             className="flex w-full items-center gap-2 border-t border-slate-200 px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
           >
             <LogOut className="h-4 w-4" />
-            Sign out
+            {t("signOut")}
           </button>
         </div>
       )}
@@ -142,6 +151,8 @@ function AuthButton() {
 }
 
 export function SiteFooter() {
+  const t = useTranslations("Site.footer");
+  const nav = useTranslations("Site.footer.links");
   return (
     <footer className="border-t border-slate-200 py-12 dark:border-slate-800">
       <div className="container-narrow">
@@ -150,26 +161,26 @@ export function SiteFooter() {
             <div className="flex h-6 w-6 items-center justify-center rounded bg-brand-600 text-white">
               <FileText className="h-3.5 w-3.5" />
             </div>
-            <span>© {new Date().getFullYear()} GetPDFPro</span>
+            <span>{t("copyright", { year: new Date().getFullYear() })}</span>
           </div>
           <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-slate-600 dark:text-slate-400">
             <Link href="/pricing" className="hover:text-slate-900 dark:hover:text-white">
-              Pricing
+              {nav("pricing")}
             </Link>
             <Link href="/blog" className="hover:text-slate-900 dark:hover:text-white">
-              Blog
+              {nav("blog")}
             </Link>
             <Link href="/about" className="hover:text-slate-900 dark:hover:text-white">
-              About
+              {nav("about")}
             </Link>
             <Link href="/contact" className="hover:text-slate-900 dark:hover:text-white">
-              Contact
+              {nav("contact")}
             </Link>
             <Link href="/privacy" className="hover:text-slate-900 dark:hover:text-white">
-              Privacy
+              {nav("privacy")}
             </Link>
             <Link href="/terms" className="hover:text-slate-900 dark:hover:text-white">
-              Terms
+              {nav("terms")}
             </Link>
           </nav>
         </div>

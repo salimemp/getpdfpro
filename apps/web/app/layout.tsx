@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
+import { getLocale } from "next-intl/server";
+import { NextIntlClientProvider } from "next-intl";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import {
   organizationLd,
   websiteLd,
@@ -31,8 +34,6 @@ export const metadata: Metadata = {
   authors: [{ name: "GetPDFPro" }],
   creator: "GetPDFPro",
   publisher: "GetPDFPro",
-  // favicon.ico is auto-served from /app/favicon.ico by Next.js.
-  // The apple-touch-icon and high-res icon are declared below.
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
@@ -76,13 +77,18 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Resolve the active locale for this request. For v1 with only
+  // English, this is always "en". When you add more locales to
+  // LOCALES in src/i18n/config.ts, this picks them up automatically.
+  const locale = await getLocale();
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         {/*
           Site-wide JSON-LD structured data. Per-page data (FAQ, breadcrumb,
@@ -112,7 +118,11 @@ export default function RootLayout({
         )}
       </head>
       <body className="min-h-screen bg-white font-sans text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100">
-        <AuthProvider>{children}</AuthProvider>
+        <NextIntlClientProvider locale={locale}>
+          <ThemeProvider>
+            <AuthProvider>{children}</AuthProvider>
+          </ThemeProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );
