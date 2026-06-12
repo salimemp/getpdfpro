@@ -7,6 +7,7 @@ import {
   FileImage,
   FileType,
   ScanText,
+  Wrench,
   PenTool,
   Lock,
   Globe,
@@ -48,6 +49,13 @@ const tools = [
     description: "Best-effort PDF to .docx. Text, headings, basic tables.",
     icon: FileType,
     href: "/tools/pdf-to-word",
+  },
+  {
+    name: "Repair PDF",
+    description:
+      "Fix a broken, scanned, locked, or slow-loading PDF in one pass.",
+    icon: Wrench,
+    href: "/tools/repair",
   },
   {
     name: "Image to PDF",

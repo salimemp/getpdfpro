@@ -562,3 +562,85 @@ export async function createCheckoutSession(
 
   return res.json();
 }
+
+// ─── PDF Repair ─────────────────────────────────────────────────────
+//
+// A single endpoint that runs up to 4 repair passes on a PDF:
+// OCR (add text layer if scanned), repair (rebuild xref/trailer),
+// unlock (strip owner password), linearize (Fast Web View).
+
+export interface RepairOptions {
+  ocr?: boolean; // default true
+  repair?: boolean; // default true
+  unlock?: boolean; // default false
+  password?: string; // for user password removal (if any)
+  linearize?: boolean; // default true
+  lang?: string; // Tesseract language, default 'eng'
+  dpi?: number; // render DPI, default 300
+}
+
+export interface RepairResult {
+  blob: Blob;
+  filename: string;
+  pages: number;
+  sizeBytes: number;
+  actionsApplied: string[];
+  needsOcr: boolean;
+  elapsedMs: number;
+}
+
+/**
+ * Repair a PDF and stream the result back. Hits /api/v1/pdf/repair-download.
+ *
+ * Use this from the web UI. The server returns the repaired PDF as a
+ * binary stream with metadata in response headers (X-Repair-Actions,
+ * X-Repair-Needs-Ocr, X-Repair-Output-Bytes).
+ */
+export async function repairPdf(
+  file: File,
+  options: RepairOptions = {}
+): Promise<RepairResult> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  form.append("ocr", String(options.ocr ?? true));
+  form.append("repair", String(options.repair ?? true));
+  form.append("unlock", String(options.unlock ?? false));
+  if (options.password) form.append("password", options.password);
+  form.append("linearize", String(options.linearize ?? true));
+  form.append("lang", options.lang ?? "eng");
+  form.append("dpi", String(options.dpi ?? 300));
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/repair-download`, {
+      method: "POST",
+      body: form,
+    });
+  } catch (err) {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+  if (!res.ok) {
+    let detail = res.statusText;
+    try {
+      const body = await res.json();
+      detail = body.detail || JSON.stringify(body);
+    } catch {
+      // not JSON
+    }
+    throw new ApiError(res.status, detail);
+  }
+  const blob = await res.blob();
+  const disp = res.headers.get("Content-Disposition") || "";
+  const filenameMatch = disp.match(/filename="?([^";]+)"?/);
+  const filename = filenameMatch ? filenameMatch[1] : "repaired.pdf";
+  const actionsHeader = res.headers.get("X-Repair-Actions") || "";
+  return {
+    blob,
+    filename,
+    pages: parseInt(res.headers.get("X-Pdf-Source-Pages") || "0", 10),
+    sizeBytes: parseInt(res.headers.get("X-Repair-Output-Bytes") || "0", 10),
+    actionsApplied: actionsHeader ? actionsHeader.split(",") : [],
+    needsOcr: (res.headers.get("X-Repair-Needs-Ocr") || "true") === "true",
+    elapsedMs: parseInt(res.headers.get("X-Repair-Elapsed-Ms") || "0", 10),
+  };
+}

@@ -8,6 +8,7 @@ import {
   FileText,
   FileType,
   ScanText,
+  Wrench,
   PenTool,
   ArrowRight,
 } from "lucide-react";
@@ -70,6 +71,14 @@ const tools = [
       "Convert PDF to .docx. Best-effort text, headings, and basic tables.",
     icon: FileType,
     href: "/tools/pdf-to-word",
+    ready: true,
+  },
+  {
+    name: "Repair PDF",
+    description:
+      "Fix a broken, scanned, locked, or slow-loading PDF. Repairs structure, OCRs, unlocks, linearizes.",
+    icon: Wrench,
+    href: "/tools/repair",
     ready: true,
   },
   {

@@ -45,6 +45,8 @@ from __future__ import annotations
 
 import io
 import logging
+import os
+import tempfile
 import time
 from typing import Annotated
 
@@ -257,19 +259,44 @@ def _linearize(blob: bytes) -> bytes:
 
     Uses pikepdf's linearize=True option. Re-saves the file with
     object streams (compressed object graphs) for size reduction.
+
+    Implementation note: pikepdf 8.x's linearize=True on a BytesIO
+    fails with a confusing 'No such file or directory' error because
+    qpdf (the underlying C++ lib) does a temp-file roundtrip for
+    linearization and the input must be a real file path, not a
+    BytesIO. So we write the blob to a temp file first, open from
+    that, and clean up.
     """
     try:
         import pikepdf
     except ImportError as exc:
         raise HTTPException(500, "pikepdf is not installed.") from exc
 
+    # Write the input to a temp file because qpdf's linearize path
+    # needs to be able to read the same file twice (two passes).
+    fd_in, path_in = tempfile.mkstemp(suffix=".pdf")
     try:
-        with pikepdf.open(blob) as pdf:
-            buf = io.BytesIO()
-            pdf.save(buf, linearize=True)
-            return buf.getvalue()
+        with os.fdopen(fd_in, "wb") as f:
+            f.write(blob)
+        with pikepdf.open(path_in) as pdf:
+            fd_out, path_out = tempfile.mkstemp(suffix=".pdf")
+            try:
+                with os.fdopen(fd_out, "wb") as f:
+                    pdf.save(f, linearize=True)
+                with open(path_out, "rb") as f:
+                    return f.read()
+            finally:
+                try:
+                    os.unlink(path_out)
+                except OSError:
+                    pass
     except Exception as exc:
         raise HTTPException(400, f"Could not linearize PDF: {exc}") from exc
+    finally:
+        try:
+            os.unlink(path_in)
+        except OSError:
+            pass
 
 
 def _has_text_layer(pdf_bytes: bytes) -> bool:
