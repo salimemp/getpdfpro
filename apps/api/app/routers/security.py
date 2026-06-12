@@ -31,6 +31,7 @@ metadata, cover up regions, and add text stamps."
 from __future__ import annotations
 
 import io
+import json
 import logging
 import os
 import time
@@ -212,40 +213,49 @@ async def protect_pdf(
     if not owner_password:
         owner_password = user_password
 
-    # Parse permissions whitelist. pikepdf's Permissions IntFlag
-    # names changed between versions. We build the flags integer
-    # manually using the public PDF /P bitfield values, which
-    # have been stable since PDF 1.7.
-    #
-    # Bit definitions (PDF 1.7 spec, Table 22):
-    #   bit 3 (4):  print
-    #   bit 4 (8):  modify
-    #   bit 5 (16): copy/extract
-    #   bit 6 (32): add/modify annotations
-    #   bit 9 (256): fill form fields
-    #   bit 10 (512): extract for accessibility
-    #   bit 11 (1024): assemble
-    #   bit 12 (2048): print high quality
-    PERM_BITS = {
-        "print": 4,
-        "modify": 8,
-        "copy": 16,
-        "annotate": 32,
-        "forms": 256,
-        "accessibility": 512,
-        "assemble": 1024,
-        "print_highres": 2048,
-    }
+    # pikepdf 9.x's Encryption is a NamedTuple with `allow` as
+    # a `Permissions` NamedTuple. We build a Permissions object
+    # from the user's whitelist. Each field defaults to its
+    # `Permissions` default, then we override based on the
+    # whitelist.
+    from pikepdf.models.encryption import Permissions as PdfPerms
     allowed = {p.strip().lower() for p in permissions.split(",") if p.strip()}
-    flags = 0
-    for p in allowed:
-        if p in PERM_BITS:
-            flags |= PERM_BITS[p]
-    # Default: deny everything except accessibility (required by
-    # section 508 / WCAG / EU accessibility laws — screen
-    # readers need to extract text).
-    if not allowed:
-        flags = PERM_BITS["accessibility"]
+    # Map our permission names -> PdfPerms field names
+    PERM_FIELD_MAP = {
+        "print": "print_lowres",
+        "print_highres": "print_highres",
+        "modify": "modify_other",
+        "copy": "extract",
+        "annotate": "modify_annotation",
+        "forms": "modify_form",
+        "assemble": "modify_assembly",
+        "accessibility": "accessibility",
+    }
+    # Default permissions: deny everything except accessibility
+    # (required by section 508 / WCAG / EU accessibility laws —
+    # screen readers need to be able to extract text).
+    perm_kwargs: dict = {
+        "accessibility": True,
+        "extract": False,
+        "modify_annotation": False,
+        "modify_assembly": False,
+        "modify_form": False,
+        "modify_other": False,
+        "print_lowres": False,
+        "print_highres": False,
+    }
+    if allowed:
+        # If user provided a whitelist, start from "deny all" and
+        # only enable what they explicitly listed.
+        for p in allowed:
+            field = PERM_FIELD_MAP.get(p)
+            if field:
+                perm_kwargs[field] = True
+    else:
+        # No whitelist = all denied except accessibility. The
+        # perm_kwargs dict above already encodes that.
+        pass
+    allow_perms = PdfPerms(**perm_kwargs)
 
     import os
     import tempfile
@@ -257,16 +267,19 @@ async def protect_pdf(
             fd_out, path_out = tempfile.mkstemp(suffix=".pdf")
             try:
                 with os.fdopen(fd_out, "wb") as f:
-                    # AES-256 with R6 = strongest encryption,
-                    # also enables linearized file structure
+                    # AES-256 with R=6 = strongest encryption.
+                    # Permissions go in the Encryption NamedTuple,
+                    # NOT as a save() kwarg (removed in pikepdf 9.x).
                     pdf.save(
                         f,
                         encryption=pikepdf.Encryption(
                             owner=owner_password,
                             user=user_password,
                             R=6,  # AES-256
+                            allow=allow_perms,
+                            aes=True,
+                            metadata=True,
                         ),
-                        permissions=flags,
                     )
                 with open(path_out, "rb") as f:
                     out_bytes = f.read()
@@ -286,7 +299,7 @@ async def protect_pdf(
         headers={
             "Content-Disposition": f'attachment; filename="{_suggest_name(file.filename or "doc.pdf", "protected")}"',
             "X-Encryption-Algorithm": "AES-256",
-            "X-Permissions-Flags": str(flags),
+            "X-Permissions": json.dumps(perm_kwargs),
             "X-Pdf-Size-Bytes": str(len(out_bytes)),
             "Cache-Control": "no-store",
         },
