@@ -278,34 +278,43 @@ async def crop_pdf(
                     f"Crop values leave zero area on page {idx + 1}.",
                 )
             new_rect = fitz.Rect(new_x0, new_y0, new_x1, new_y1)
-            # Shrink the MediaBox to the new (smaller) rect. If the
-            # page has a CropBox set to a different region, the
-            # strict-spec rule is CropBox ⊆ MediaBox, so we have to
-            # clear/reset it before changing the MediaBox. PyMuPDF
-            # doesn't expose a "delete CropBox" method directly, so
-            # the cleanest approach is to read the existing CropBox
-            # (if any), clip it to the new MediaBox, and write it
-            # back. If the page has no CropBox, we leave it unset
-            # — viewers will then default CropBox = MediaBox.
+            # Shrink the MediaBox. PyMuPDF's set_mediabox has a known
+            # validation issue when the page already has a CropBox:
+            # the new MediaBox is set, but set_cropbox(new_rect)
+            # after set_mediabox(new_rect) rejects the new value
+            # because of stale internal state. The error message is
+            # "CropBox not in MediaBox" even though the values are
+            # correct.
+            #
+            # The cleanest fix is to do the page-mutation through
+            # pikepdf (lower-level, no validation), then save. We
+            # close the fitz document and re-do this whole function
+            # via pikepdf if we hit the bug. But to keep the code
+            # path uniform, just call pikepdf here.
+            #
+            # Actually, a simpler fix: set the CropBox FIRST (to
+            # the existing cropbox coords intersected with the new
+            # MediaBox), THEN set the MediaBox. Order matters for
+            # PyMuPDF's validation.
             try:
-                # Try to access the cropbox. On pages without one,
-                # the property may raise. Default behavior is to
-                # skip the cropbox write.
+                # Read existing CropBox (or fall back to MediaBox).
                 try:
-                    _existing_crop = page.cropbox
+                    existing_crop = page.cropbox
                 except Exception:
-                    _existing_crop = None
+                    existing_crop = page.mediabox
+                # Intersect existing crop with new mediabox.
+                ic_x0 = max(existing_crop.x0, new_x0)
+                ic_y0 = max(existing_crop.y0, new_y0)
+                ic_x1 = min(existing_crop.x1, new_x1)
+                ic_y1 = min(existing_crop.y1, new_y1)
+                if ic_x1 <= ic_x0 or ic_y1 <= ic_y0:
+                    # Existing crop is entirely outside the new
+                    # mediabox. Fall back to using the new mediabox
+                    # as the cropbox.
+                    ic_x0, ic_y0, ic_x1, ic_y1 = new_x0, new_y0, new_x1, new_y1
+                # Set CropBox FIRST (intersected), then MediaBox.
+                page.set_cropbox(fitz.Rect(ic_x0, ic_y0, ic_x1, ic_y1))
                 page.set_mediabox(new_rect)
-                if _existing_crop is not None:
-                    # Clip the existing cropbox to the new mediabox
-                    clipped = fitz.Rect(
-                        max(_existing_crop.x0, new_x0),
-                        max(_existing_crop.y0, new_y0),
-                        min(_existing_crop.x1, new_x1),
-                        min(_existing_crop.y1, new_y1),
-                    )
-                    if clipped.width > 0 and clipped.height > 0:
-                        page.set_cropbox(clipped)
             except Exception as exc:
                 raise HTTPException(500, f"Could not crop page {idx + 1}: {exc}") from exc
 
