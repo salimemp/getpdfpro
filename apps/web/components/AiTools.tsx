@@ -16,6 +16,7 @@ import {
 import { summarizePdf, translatePdf, ApiError } from "@/lib/api";
 import { useQuota } from "@/lib/quota";
 import { useAuth } from "@/lib/auth";
+import { ReadAloudButton } from "@/components/SpeechControls";
 
 const LANGUAGES = [
   { code: "en", label: "English" },
@@ -300,7 +301,12 @@ export function SummarizeTool() {
               <CheckCircle2 className="h-5 w-5" />
               <span className="font-semibold">Summary ready.</span>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <ReadAloudButton
+                text={result.text}
+                shortLang={language}
+                label="Read summary aloud"
+              />
               <button
                 type="button"
                 onClick={onCopy}

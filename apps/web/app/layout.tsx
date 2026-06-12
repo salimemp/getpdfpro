@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from "next-intl";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { SkipNav } from "@/components/SkipNav";
 import {
   organizationLd,
   websiteLd,
@@ -122,6 +123,7 @@ export default async function RootLayout({
         )}
       </head>
       <body className="min-h-screen bg-white font-sans text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100">
+        <SkipNav targetId="main" />
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider>
             <AuthProvider>{children}</AuthProvider>

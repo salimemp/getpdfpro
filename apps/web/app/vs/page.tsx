@@ -109,7 +109,7 @@ export default function VsIndexPage() {
             What you get with {SITE_NAME}
           </h2>
           <p className="mt-4 text-slate-700 dark:text-slate-300">
-            32 free PDF tools, in-memory processing, no analytics, no ad
+            39 free PDF tools, in-memory processing, no analytics, no ad
             networks, no third-party tracking pixels. The free tier gives
             signed-in users 50 PDF tasks per day; the Pro tier is
             $3.99/month and unlocks 1,000 tasks/day, 4 GB files, batch
@@ -122,7 +122,7 @@ export default function VsIndexPage() {
               href="/tools"
               className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-brand-700"
             >
-              See all 32 tools
+              See all 39 tools
             </Link>
             <Link
               href="/pricing"

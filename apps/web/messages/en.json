@@ -28,14 +28,14 @@
   },
   "Home": {
     "hero": {
-      "eyebrow": "26 tools. Zero file size limits for Pro.",
+      "eyebrow": "39 tools. Zero file size limits for Pro.",
       "title": "All your PDF tools.",
       "titleAccent": "Private. Free.",
       "subtitle": "Merge, split, compress, convert, OCR, redact, sign, and more. Browser-first, end-to-end encrypted, no account needed for the basics.",
-      "ctaPrimary": "See all 26 tools",
+      "ctaPrimary": "See all 39 tools",
       "ctaSecondary": "Read the blog"
     },
-    "toolsHeading": "26 tools, no upload limit for Pro",
+    "toolsHeading": "39 tools, no upload limit for Pro",
     "toolsSubheading": "Every tool runs in your browser. End-to-end encrypted. No account needed for the basics.",
     "features": {
       "title": "Why GetPDFPro",

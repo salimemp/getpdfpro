@@ -30,13 +30,16 @@ import {
   Stamp, // watermark
   Presentation, // PowerPoint (lucide-react uses 'Presentation' not 'PresentationChart')
   FileSpreadsheet, // Excel
+  TableProperties, // extract tables
+  Volume2, // read aloud (TTS)
+  Mic, // dictate (STT)
 } from "lucide-react";
 import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
 
 export const metadata: Metadata = {
   title: "All PDF tools",
   description:
-    "36 PDF tools organized by what you want to do: organize, optimize, convert to/from PDF, edit, secure, and AI-powered. All private, all in your browser.",
+    "39 PDF tools organized by what you want to do: organize, optimize, convert to/from PDF, edit, secure, AI-powered, and accessibility. All private, all in your browser.",
   alternates: { canonical: "/tools" },
 };
 
@@ -217,10 +220,18 @@ const CATEGORIES: Category[] = [
         ready: true,
       },
       {
-        name: "PDF to PDF/A",
-        description: "Archival format. Adobe tier or self-hosted fallback.",
+        name: "PDF/A Convert",
+        description: "Export a PDF as PDF/A-2b for long-term archival.",
         icon: FileCheck,
         href: "/tools/pdf-to-pdfa",
+        ready: true,
+      },
+      {
+        name: "Extract Tables",
+        description:
+          "Pull every table out of a PDF as CSV or JSON. Self-hosted, no upload needed.",
+        icon: TableProperties,
+        href: "/tools/extract-tables",
         ready: true,
       },
     ],
@@ -340,6 +351,30 @@ const CATEGORIES: Category[] = [
       },
     ],
   },
+  {
+    id: "accessibility",
+    title: "Accessibility",
+    description:
+      "Text-to-speech, speech-to-text, and other features that make PDFs usable for everyone. Pure Web Speech API — your audio never leaves your device.",
+    tools: [
+      {
+        name: "Read Aloud",
+        description:
+          "Paste any text and have it spoken aloud by your browser. 20+ languages, voice + speed + pitch control.",
+        icon: Volume2,
+        href: "/tools/read-aloud",
+        ready: true,
+      },
+      {
+        name: "Dictate",
+        description:
+          "Speech-to-text. Tap, speak, see your words. 24+ languages, continuous mode, copy or download.",
+        icon: Mic,
+        href: "/tools/dictate",
+        ready: true,
+      },
+    ],
+  },
 ];
 
 export default function ToolsIndexPage() {
@@ -352,7 +387,7 @@ export default function ToolsIndexPage() {
             All PDF tools
           </h1>
           <p className="mt-2 text-slate-600 dark:text-slate-400">
-            36 PDF tools. One at a time. Each runs in your browser and is
+            39 PDF tools. One at a time. Each runs in your browser and is
             free forever for the basics. Use the categories below to find
             what you need.
           </p>

@@ -1024,6 +1024,44 @@ export async function extractForms(
   };
 }
 
+/** Extract tables from a PDF as CSV or JSON. */
+export async function extractTables(
+  file: File,
+  format: "csv" | "json" = "csv"
+): Promise<{
+  blob: Blob;
+  filename: string;
+  tableCount: number;
+  pages: number;
+  elapsedMs: number;
+}> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  form.append("format", format);
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/extract-tables-download`, {
+      method: "POST",
+      body: form,
+    });
+  } catch {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+  if (!res.ok) {
+    const detail = await errorDetail(res);
+    throw new ApiError(res.status, detail);
+  }
+  const blob = await res.blob();
+  const ext = format === "json" ? "json" : "csv";
+  return {
+    blob,
+    filename: headerFilename(res, `tables.${ext}`),
+    tableCount: parseInt(res.headers.get("X-Table-Count") || "0", 10),
+    pages: parseInt(res.headers.get("X-Tables-Pages") || "0", 10),
+    elapsedMs: parseInt(res.headers.get("X-Tables-Elapsed-Ms") || "0", 10),
+  };
+}
+
 // ─── PDF Security (Wave 4) ─────────────────────────────────────
 
 /** Remove passwords from a PDF. */
