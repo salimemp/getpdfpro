@@ -16,6 +16,18 @@ import {
   Zap,
   Check,
   ArrowRight,
+  RotateCw,
+  Crop,
+  FileMinus,
+  ArrowUpDown,
+  Hash,
+  ScanLine,
+  FileCheck,
+  EyeOff,
+  GitCompareArrows,
+  ListChecks,
+  Unlock,
+  Edit3,
 } from "lucide-react";
 import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
 
@@ -51,11 +63,10 @@ const tools = [
     href: "/tools/pdf-to-word",
   },
   {
-    name: "Repair PDF",
-    description:
-      "Fix a broken, scanned, locked, or slow-loading PDF in one pass.",
-    icon: Wrench,
-    href: "/tools/repair",
+    name: "PDF to Image",
+    description: "Convert each page to PNG or JPEG, bundled as a ZIP.",
+    icon: FileImage,
+    href: "/tools/pdf-to-image",
   },
   {
     name: "Image to PDF",
@@ -64,10 +75,107 @@ const tools = [
     href: "/tools/image-to-pdf",
   },
   {
+    name: "Repair PDF",
+    description:
+      "Fix a broken, scanned, locked, or slow-loading PDF in one pass.",
+    icon: Wrench,
+    href: "/tools/repair",
+  },
+  {
+    name: "Rotate PDF",
+    description: "Rotate pages by 90°, 180°, or 270°.",
+    icon: RotateCw,
+    href: "/tools/rotate",
+  },
+  {
+    name: "Crop PDF",
+    description: "Shrink the visible area of pages. PDF-point values.",
+    icon: Crop,
+    href: "/tools/crop",
+  },
+  {
+    name: "Extract Pages",
+    description: "Pull specific pages into a new PDF.",
+    icon: FileMinus,
+    href: "/tools/extract-pages",
+  },
+  {
+    name: "Add / Remove Pages",
+    description: "Delete or keep-only. Trim a PDF before sharing.",
+    icon: Scissors,
+    href: "/tools/add-remove-pages",
+  },
+  {
+    name: "Organize PDF",
+    description: "Reorder and/or duplicate pages in any order.",
+    icon: ArrowUpDown,
+    href: "/tools/organize",
+  },
+  {
+    name: "Add Page Numbers",
+    description: "Stamp 'Page N of M' on every page.",
+    icon: Hash,
+    href: "/tools/page-numbers",
+  },
+  {
+    name: "Scan to PDF",
+    description: "Phone-scanned images to a single searchable PDF.",
+    icon: ScanLine,
+    href: "/tools/scan-to-pdf",
+  },
+  {
+    name: "HTML to PDF",
+    description: "Convert HTML markup or a URL to a PDF.",
+    icon: Globe,
+    href: "/tools/html-to-pdf",
+  },
+  {
+    name: "PDF to PDF/A",
+    description: "Archival format. Adobe tier or self-hosted fallback.",
+    icon: FileCheck,
+    href: "/tools/pdf-to-pdfa",
+  },
+  {
+    name: "Redact PDF",
+    description: "Remove text patterns. Genuine or visual blackout.",
+    icon: EyeOff,
+    href: "/tools/redact",
+  },
+  {
+    name: "Compare PDF",
+    description: "Diff two PDFs. Visual (Adobe) or text (self-hosted).",
+    icon: GitCompareArrows,
+    href: "/tools/compare",
+  },
+  {
+    name: "Form Fields",
+    description: "Extract all form field data as JSON.",
+    icon: ListChecks,
+    href: "/tools/forms-extract",
+  },
+  {
+    name: "Unlock PDF",
+    description: "Remove the user/owner password.",
+    icon: Unlock,
+    href: "/tools/unlock",
+  },
+  {
+    name: "Protect PDF",
+    description: "Encrypt with AES-256 and a password.",
+    icon: Lock,
+    href: "/tools/protect",
+  },
+  {
     name: "Sign PDF",
-    description: "Add your signature, initials, or a date stamp.",
+    description: "Visual signature stamp. NOT PKI.",
     icon: PenTool,
     href: "/tools/sign",
+  },
+  {
+    name: "Edit PDF",
+    description: "Edit metadata, cover regions, stamp labels.",
+    icon: Edit3,
+    href: "/tools/edit-pdf",
   },
 ];
 

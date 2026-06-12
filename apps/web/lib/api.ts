@@ -644,3 +644,546 @@ export async function repairPdf(
     elapsedMs: parseInt(res.headers.get("X-Repair-Elapsed-Ms") || "0", 10),
   };
 }
+
+// ─── PDF Organization (Wave 1) ─────────────────────────────────
+//
+// Six small tools that do page-level operations on a PDF: rotate,
+// crop, extract, add-remove, organize (reorder), and add page
+// numbers. All return a stream response; same shape as repair.
+
+/** Rotate pages of a PDF. */
+export async function rotatePdf(
+  file: File,
+  options: { angle?: 90 | 180 | 270; pages?: string } = {}
+): Promise<{ blob: Blob; filename: string; pages: number; sizeBytes: number; rotatedPages: number; angle: number }> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  form.append("angle", String(options.angle ?? 90));
+  if (options.pages) form.append("pages", options.pages);
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/rotate-download`, { method: "POST", body: form });
+  } catch {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+  if (!res.ok) {
+    const detail = await errorDetail(res);
+    throw new ApiError(res.status, detail);
+  }
+  const blob = await res.blob();
+  return {
+    blob,
+    filename: headerFilename(res, "rotated.pdf"),
+    pages: parseInt(res.headers.get("X-Pdf-Source-Pages") || "0", 10),
+    sizeBytes: parseInt(res.headers.get("X-Pdf-Size-Bytes") || "0", 10),
+    rotatedPages: parseInt(res.headers.get("X-Rotated-Pages") || "0", 10),
+    angle: parseInt(res.headers.get("X-Rotate-Angle") || "0", 10),
+  };
+}
+
+/** Crop pages of a PDF (in PDF points, 1 pt = 1/72 inch). */
+export async function cropPdf(
+  file: File,
+  options: { top?: number; bottom?: number; left?: number; right?: number; pages?: string } = {}
+): Promise<{ blob: Blob; filename: string; pages: number; sizeBytes: number; croppedPages: number }> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  if (options.top) form.append("top", String(options.top));
+  if (options.bottom) form.append("bottom", String(options.bottom));
+  if (options.left) form.append("left", String(options.left));
+  if (options.right) form.append("right", String(options.right));
+  if (options.pages) form.append("pages", options.pages);
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/crop-download`, { method: "POST", body: form });
+  } catch {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+  if (!res.ok) {
+    const detail = await errorDetail(res);
+    throw new ApiError(res.status, detail);
+  }
+  const blob = await res.blob();
+  return {
+    blob,
+    filename: headerFilename(res, "cropped.pdf"),
+    pages: parseInt(res.headers.get("X-Pdf-Source-Pages") || "0", 10),
+    sizeBytes: parseInt(res.headers.get("X-Pdf-Size-Bytes") || "0", 10),
+    croppedPages: parseInt(res.headers.get("X-Cropped-Pages") || "0", 10),
+  };
+}
+
+/** Extract specific pages from a PDF into a new PDF. */
+export async function extractPages(
+  file: File,
+  pages: string
+): Promise<{ blob: Blob; filename: string; sourcePages: number; outputPages: number; sizeBytes: number }> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  form.append("pages", pages);
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/extract-pages-download`, { method: "POST", body: form });
+  } catch {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+  if (!res.ok) {
+    const detail = await errorDetail(res);
+    throw new ApiError(res.status, detail);
+  }
+  const blob = await res.blob();
+  return {
+    blob,
+    filename: headerFilename(res, "extracted.pdf"),
+    sourcePages: parseInt(res.headers.get("X-Pdf-Source-Pages") || "0", 10),
+    outputPages: parseInt(res.headers.get("X-Pdf-Output-Pages") || "0", 10),
+    sizeBytes: parseInt(res.headers.get("X-Pdf-Size-Bytes") || "0", 10),
+  };
+}
+
+/** Add or remove (delete) pages from a PDF. */
+export async function addRemovePages(
+  file: File,
+  options: { delete?: string; keep?: string } = {}
+): Promise<{ blob: Blob; filename: string; sourcePages: number; outputPages: number; removedPages: number; sizeBytes: number }> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  if (options.delete) form.append("delete", options.delete);
+  if (options.keep) form.append("keep", options.keep);
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/add-remove-download`, { method: "POST", body: form });
+  } catch {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+  if (!res.ok) {
+    const detail = await errorDetail(res);
+    throw new ApiError(res.status, detail);
+  }
+  const blob = await res.blob();
+  return {
+    blob,
+    filename: headerFilename(res, "trimmed.pdf"),
+    sourcePages: parseInt(res.headers.get("X-Pdf-Source-Pages") || "0", 10),
+    outputPages: parseInt(res.headers.get("X-Pdf-Output-Pages") || "0", 10),
+    removedPages: parseInt(res.headers.get("X-Pdf-Removed-Pages") || "0", 10),
+    sizeBytes: parseInt(res.headers.get("X-Pdf-Size-Bytes") || "0", 10),
+  };
+}
+
+/** Reorder and/or duplicate pages in a PDF. */
+export async function organizePages(
+  file: File,
+  order: string
+): Promise<{ blob: Blob; filename: string; sourcePages: number; outputPages: number; sizeBytes: number }> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  form.append("order", order);
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/organize-download`, { method: "POST", body: form });
+  } catch {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+  if (!res.ok) {
+    const detail = await errorDetail(res);
+    throw new ApiError(res.status, detail);
+  }
+  const blob = await res.blob();
+  return {
+    blob,
+    filename: headerFilename(res, "organized.pdf"),
+    sourcePages: parseInt(res.headers.get("X-Pdf-Source-Pages") || "0", 10),
+    outputPages: parseInt(res.headers.get("X-Pdf-Output-Pages") || "0", 10),
+    sizeBytes: parseInt(res.headers.get("X-Pdf-Size-Bytes") || "0", 10),
+  };
+}
+
+/** Add "Page N of M" to every page of a PDF. */
+export async function addPageNumbers(
+  file: File,
+  options: {
+    position?: "bottom-center" | "bottom-right" | "bottom-left" | "top-center" | "top-right" | "top-left";
+    start?: number;
+    fontSize?: number;
+    margin?: number;
+    format?: "n-of-m" | "n" | "page-n";
+  } = {}
+): Promise<{ blob: Blob; filename: string; pages: number; sizeBytes: number }> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  form.append("position", options.position ?? "bottom-center");
+  form.append("start", String(options.start ?? 1));
+  if (options.fontSize) form.append("font_size", String(options.fontSize));
+  if (options.margin !== undefined) form.append("margin", String(options.margin));
+  form.append("format", options.format ?? "n-of-m");
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/page-numbers-download`, { method: "POST", body: form });
+  } catch {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+  if (!res.ok) {
+    const detail = await errorDetail(res);
+    throw new ApiError(res.status, detail);
+  }
+  const blob = await res.blob();
+  return {
+    blob,
+    filename: headerFilename(res, "numbered.pdf"),
+    pages: parseInt(res.headers.get("X-Pdf-Source-Pages") || "0", 10),
+    sizeBytes: parseInt(res.headers.get("X-Pdf-Size-Bytes") || "0", 10),
+  };
+}
+
+// ─── PDF Rendering (Wave 2) ────────────────────────────────────
+
+/** Convert scanned images to a searchable PDF (with OCR). */
+export async function scanToPdf(
+  files: File[],
+  options: {
+    pageSize?: "fit" | "a4" | "letter" | "original";
+    lang?: string;
+    dpi?: number;
+    skipOcr?: boolean;
+  } = {}
+): Promise<{ blob: Blob; filename: string; pages: number; sizeBytes: number; sourceImages: number; wordsInserted: number }> {
+  const form = new FormData();
+  files.forEach((f) => form.append("files", f, f.name));
+  form.append("page_size", options.pageSize ?? "fit");
+  form.append("lang", options.lang ?? "eng");
+  if (options.dpi) form.append("dpi", String(options.dpi));
+  form.append("skip_ocr", String(options.skipOcr ?? false));
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/scan-to-pdf-download`, { method: "POST", body: form });
+  } catch {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+  if (!res.ok) {
+    const detail = await errorDetail(res);
+    throw new ApiError(res.status, detail);
+  }
+  const blob = await res.blob();
+  return {
+    blob,
+    filename: headerFilename(res, "scan.pdf"),
+    pages: parseInt(res.headers.get("X-Pdf-Pages") || "0", 10),
+    sizeBytes: parseInt(res.headers.get("X-Pdf-Size-Bytes") || "0", 10),
+    sourceImages: parseInt(res.headers.get("X-Image-Source-Count") || "0", 10),
+    wordsInserted: parseInt(res.headers.get("X-Ocr-Words-Inserted") || "0", 10),
+  };
+}
+
+/** Convert HTML to a PDF. */
+export async function htmlToPdf(
+  options: {
+    html?: string;
+    url?: string;
+    pageSize?: "a4" | "letter";
+    landscape?: boolean;
+  }
+): Promise<{ blob: Blob; filename: string; pages: number; sizeBytes: number; elapsedMs: number; engine: string }> {
+  if (!options.html && !options.url) {
+    throw new ApiError(0, "Provide either 'html' or 'url'.");
+  }
+  const form = new FormData();
+  if (options.html) form.append("html", options.html);
+  if (options.url) form.append("url", options.url);
+  form.append("page_size", options.pageSize ?? "a4");
+  form.append("landscape", String(options.landscape ?? false));
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/html-to-pdf-download`, { method: "POST", body: form });
+  } catch {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+  if (!res.ok) {
+    const detail = await errorDetail(res);
+    throw new ApiError(res.status, detail);
+  }
+  const blob = await res.blob();
+  return {
+    blob,
+    filename: headerFilename(res, "page.pdf"),
+    pages: parseInt(res.headers.get("X-Pdf-Pages") || "0", 10),
+    sizeBytes: parseInt(res.headers.get("X-Pdf-Size-Bytes") || "0", 10),
+    elapsedMs: parseInt(res.headers.get("X-Render-Elapsed-Ms") || "0", 10),
+    engine: res.headers.get("X-Engine") || "xhtml2pdf",
+  };
+}
+
+// ─── PDF Compliance (Wave 3 — Adobe cascade) ───────────────────
+
+/** Convert PDF to PDF/A archival format. */
+export async function pdfToPdfA(
+  file: File,
+  conformance: "PDF_A_1_B" | "PDF_A_2_B" | "PDF_A_3_B" = "PDF_A_2_B"
+): Promise<{ blob: Blob; filename: string; sizeBytes: number; conformance: string; adapter: string }> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  form.append("conformance", conformance);
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/pdf-to-pdfa-download`, { method: "POST", body: form });
+  } catch {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+  if (!res.ok) {
+    const detail = await errorDetail(res);
+    throw new ApiError(res.status, detail);
+  }
+  const blob = await res.blob();
+  return {
+    blob,
+    filename: headerFilename(res, "pdfa.pdf"),
+    sizeBytes: parseInt(res.headers.get("X-Pdf-Size-Bytes") || "0", 10),
+    conformance: res.headers.get("X-Pdf-Conformance") || conformance,
+    adapter: res.headers.get("X-Cascade-Adapter") || "unknown",
+  };
+}
+
+/** Redact text patterns from a PDF. */
+export async function redactPdf(
+  file: File,
+  options: { words?: string; regex?: string }
+): Promise<{ blob: Blob; filename: string; sizeBytes: number; wordsRedacted: number; regexRedacted: number; adapter: string }> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  if (options.words) form.append("words", options.words);
+  if (options.regex) form.append("regex", options.regex);
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/redact-download`, { method: "POST", body: form });
+  } catch {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+  if (!res.ok) {
+    const detail = await errorDetail(res);
+    throw new ApiError(res.status, detail);
+  }
+  const blob = await res.blob();
+  return {
+    blob,
+    filename: headerFilename(res, "redacted.pdf"),
+    sizeBytes: parseInt(res.headers.get("X-Pdf-Size-Bytes") || "0", 10),
+    wordsRedacted: parseInt(res.headers.get("X-Words-Redacted") || "0", 10),
+    regexRedacted: parseInt(res.headers.get("X-Regex-Redacted") || "0", 10),
+    adapter: res.headers.get("X-Cascade-Adapter") || "unknown",
+  };
+}
+
+/** Compare two PDFs. */
+export async function comparePdfs(
+  fileA: File,
+  fileB: File
+): Promise<{ blob: Blob; filename: string; adapter: string }> {
+  const form = new FormData();
+  form.append("file_a", fileA, fileA.name);
+  form.append("file_b", fileB, fileB.name);
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/compare-download`, { method: "POST", body: form });
+  } catch {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+  if (!res.ok) {
+    const detail = await errorDetail(res);
+    throw new ApiError(res.status, detail);
+  }
+  const blob = await res.blob();
+  return {
+    blob,
+    filename: headerFilename(res, "compare.json"),
+    adapter: res.headers.get("X-Cascade-Adapter") || "unknown",
+  };
+}
+
+/** Extract form field data from a PDF. */
+export async function extractForms(
+  file: File
+): Promise<{ blob: Blob; filename: string; adapter: string; fieldCount: number }> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/forms-extract-download`, { method: "POST", body: form });
+  } catch {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+  if (!res.ok) {
+    const detail = await errorDetail(res);
+    throw new ApiError(res.status, detail);
+  }
+  const blob = await res.blob();
+  return {
+    blob,
+    filename: headerFilename(res, "forms.json"),
+    adapter: res.headers.get("X-Cascade-Adapter") || "unknown",
+    fieldCount: parseInt(res.headers.get("X-Form-Field-Count") || "0", 10),
+  };
+}
+
+// ─── PDF Security (Wave 4) ─────────────────────────────────────
+
+/** Remove passwords from a PDF. */
+export async function unlockPdf(
+  file: File,
+  password = ""
+): Promise<{ blob: Blob; filename: string; sizeBytes: number }> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  if (password) form.append("password", password);
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/unlock-download`, { method: "POST", body: form });
+  } catch {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+  if (!res.ok) {
+    const detail = await errorDetail(res);
+    throw new ApiError(res.status, detail);
+  }
+  const blob = await res.blob();
+  return {
+    blob,
+    filename: headerFilename(res, "unlocked.pdf"),
+    sizeBytes: parseInt(res.headers.get("X-Pdf-Size-Bytes") || "0", 10),
+  };
+}
+
+/** Encrypt a PDF with a user/owner password. */
+export async function protectPdf(
+  file: File,
+  options: { userPassword: string; ownerPassword?: string; permissions?: string }
+): Promise<{ blob: Blob; filename: string; sizeBytes: number; algorithm: string }> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  form.append("user_password", options.userPassword);
+  if (options.ownerPassword) form.append("owner_password", options.ownerPassword);
+  if (options.permissions) form.append("permissions", options.permissions);
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/protect-download`, { method: "POST", body: form });
+  } catch {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+  if (!res.ok) {
+    const detail = await errorDetail(res);
+    throw new ApiError(res.status, detail);
+  }
+  const blob = await res.blob();
+  return {
+    blob,
+    filename: headerFilename(res, "protected.pdf"),
+    sizeBytes: parseInt(res.headers.get("X-Pdf-Size-Bytes") || "0", 10),
+    algorithm: res.headers.get("X-Encryption-Algorithm") || "AES-256",
+  };
+}
+
+/** Add a visual signature stamp to a PDF (NOT a PKI signature). */
+export async function signPdf(
+  file: File,
+  options: {
+    signatureImage?: File;
+    name?: string;
+    pages?: string;
+    position?: "bottom-right" | "bottom-left" | "bottom-center" | "top-right" | "top-left" | "top-center";
+    width?: number;
+    height?: number;
+  }
+): Promise<{ blob: Blob; filename: string; sizeBytes: number; signatureKind: string; pages: number }> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  if (options.signatureImage) form.append("signature", options.signatureImage, options.signatureImage.name);
+  if (options.name) form.append("name", options.name);
+  if (options.pages) form.append("pages", options.pages);
+  form.append("position", options.position ?? "bottom-right");
+  if (options.width) form.append("width", String(options.width));
+  if (options.height) form.append("height", String(options.height));
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/sign-download`, { method: "POST", body: form });
+  } catch {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+  if (!res.ok) {
+    const detail = await errorDetail(res);
+    throw new ApiError(res.status, detail);
+  }
+  const blob = await res.blob();
+  return {
+    blob,
+    filename: headerFilename(res, "signed.pdf"),
+    sizeBytes: parseInt(res.headers.get("X-Pdf-Size-Bytes") || "0", 10),
+    signatureKind: res.headers.get("X-Signature-Kind") || "visual-no-pki",
+    pages: parseInt(res.headers.get("X-Signature-Pages") || "0", 10),
+  };
+}
+
+/** Edit PDF metadata, whiteout a region, and/or stamp a text label. */
+export async function editPdf(
+  file: File,
+  options: {
+    title?: string;
+    author?: string;
+    subject?: string;
+    keywords?: string;
+    whiteoutPage?: number;
+    whiteoutX?: number;
+    whiteoutY?: number;
+    whiteoutW?: number;
+    whiteoutH?: number;
+    stampText?: string;
+    stampColor?: "red" | "black" | "gray";
+  } = {}
+): Promise<{ blob: Blob; filename: string; sizeBytes: number; editedMetadata: boolean; editedWhiteout: boolean; editedStamp: boolean }> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  if (options.title) form.append("title", options.title);
+  if (options.author) form.append("author", options.author);
+  if (options.subject) form.append("subject", options.subject);
+  if (options.keywords) form.append("keywords", options.keywords);
+  if (options.whiteoutPage) form.append("whiteout_page", String(options.whiteoutPage));
+  if (options.whiteoutX !== undefined) form.append("whiteout_x", String(options.whiteoutX));
+  if (options.whiteoutY !== undefined) form.append("whiteout_y", String(options.whiteoutY));
+  if (options.whiteoutW) form.append("whiteout_w", String(options.whiteoutW));
+  if (options.whiteoutH) form.append("whiteout_h", String(options.whiteoutH));
+  if (options.stampText) form.append("stamp_text", options.stampText);
+  form.append("stamp_color", options.stampColor ?? "red");
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/v1/pdf/edit-pdf-download`, { method: "POST", body: form });
+  } catch {
+    throw new ApiError(0, `Could not reach the server at ${API_URL}.`);
+  }
+  if (!res.ok) {
+    const detail = await errorDetail(res);
+    throw new ApiError(res.status, detail);
+  }
+  const blob = await res.blob();
+  return {
+    blob,
+    filename: headerFilename(res, "edited.pdf"),
+    sizeBytes: parseInt(res.headers.get("X-Pdf-Size-Bytes") || "0", 10),
+    editedMetadata: (res.headers.get("X-Edited-Metadata") || "false") === "true",
+    editedWhiteout: (res.headers.get("X-Edited-Whiteout") || "false") === "true",
+    editedStamp: (res.headers.get("X-Edited-Stamp") || "false") === "true",
+  };
+}
+
+// ─── helpers ───────────────────────────────────────────────────
+async function errorDetail(res: Response): Promise<string> {
+  try {
+    const body = await res.json();
+    return body.detail || JSON.stringify(body);
+  } catch {
+    return res.statusText;
+  }
+}
+
+function headerFilename(res: Response, fallback: string): string {
+  const disp = res.headers.get("Content-Disposition") || "";
+  const m = disp.match(/filename="?([^";]+)"?/);
+  return m ? m[1] : fallback;
+}
