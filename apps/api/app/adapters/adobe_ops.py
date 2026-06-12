@@ -169,7 +169,24 @@ async def _submit_and_poll(
     """Submit an Adobe operation and poll the result location.
 
     Returns the final JSON body of the result.
+
+    IMPORTANT: the X-DCSDK-OPS-INFO header is required by
+    Adobe's API gateway to route the request to the right
+    internal handler. Without it, Adobe treats the request as
+    an 'external storage' request and rejects it with
+    INVALID_REQUEST_FORMAT. This header is what the official
+    Python SDK sends on every operation call (see
+    OperationHeaderInfoEndpointMap in the SDK source).
     """
+    # Map op_path to the header info string the SDK uses.
+    # createpdf and exportpdf are the only two we need for v1;
+    # the others (createpdfa, redact, compare, extractpdf) use
+    # their own paths and the same header scheme.
+    op_info = {
+        "/operation/createpdf": "Create PDF Operation",
+        "/operation/exportpdf": "Export PDF Operation",
+        "/operation/createpdfa": "PDF Watermark Operation",  # placeholder, not in v1
+    }.get(op_path, "PDF Services Operation")
     async with httpx.AsyncClient(timeout=60) as client:
         resp = await client.post(
             f"{ADOBE_API_BASE}{op_path}",
@@ -177,6 +194,10 @@ async def _submit_and_poll(
                 "Authorization": f"Bearer {token}",
                 "X-API-Key": _client_id or "",
                 "Content-Type": "application/json",
+                # The header Adobe uses to route the request.
+                # Without it, the request is treated as
+                # 'external storage' and rejected.
+                "X-DCSDK-OPS-INFO": op_info,
             },
             content=json.dumps(body),
         )
