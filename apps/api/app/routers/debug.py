@@ -6,6 +6,12 @@ Re-added after the cleanup to investigate /dev/shm + D-Bus
 issues. Now also includes the convert-dry-run endpoint to verify
 the cascade picks LibreOffice after the runtime fixes.
 
+Also includes /adobe-trace which is gated on a separate
+ADOBE_DEBUG_TOKEN env var (not the is_production flag) so we
+can debug the Adobe exportpdf/createpdf bug live in production
+without exposing it to anonymous users. The token is checked
+via the X-Debug-Token header.
+
 Safe to remove once the cascade is verified stable.
 """
 
@@ -17,7 +23,7 @@ import subprocess
 import time
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 
 from app.config import get_settings
@@ -205,3 +211,203 @@ def debug_runtime() -> dict:
         "ulimits": ulimits,
         "container_id": os.environ.get("HOSTNAME", "<unknown>"),
     }
+
+
+# ─── Adobe Wire-Trace Endpoint ──────────────────────────────────
+#
+# Captures the FULL HTTP exchange between us and Adobe for
+# one operation. Returns it as JSON so you can diff our
+# request body against what the official SDK sends.
+#
+# Gated on a separate ADOBE_DEBUG_TOKEN env var (NOT the
+# is_production flag), so we can debug in production without
+# exposing this to anonymous users.
+#
+# Usage:
+#   curl -H "X-Debug-Token: $ADOBE_DEBUG_TOKEN" \
+#        -X POST "https://api.getpdfpro.com/api/v1/_debug/adobe-trace?op=exportpdf" \
+#        -F "file=@/path/to/real.docx" -F "target_format=pptx" > trace.json
+#
+# Then paste the response back to me and I'll diff against the
+# SDK to find the missing piece.
+
+
+@router.post("/adobe-trace", include_in_schema=False)
+async def adobe_trace(
+    request: Request,
+    file: UploadFile = File(...),
+    target_format: str = Form("pptx"),
+    op: str = Form("exportpdf"),  # or "createpdf"
+) -> JSONResponse:
+    """Trace the full Adobe HTTP exchange for one operation.
+
+    Returns JSON with the exact request headers, request body,
+    response status, and response body for every step:
+    1. Token fetch
+    2. Asset create + presigned URL
+    3. PUT to presigned URL
+    4. Operation submit
+    5. Poll (truncated)
+    """
+    expected_token = os.environ.get("ADOBE_DEBUG_TOKEN", "").strip()
+    if not expected_token:
+        raise HTTPException(
+            404, "ADOBE_DEBUG_TOKEN env var not set on server. Cannot debug."
+        )
+    provided_token = request.headers.get("X-Debug-Token", "").strip()
+    if provided_token != expected_token:
+        raise HTTPException(401, "Invalid debug token.")
+
+    if op not in ("exportpdf", "createpdf"):
+        raise HTTPException(400, "op must be 'exportpdf' or 'createpdf'")
+
+    import json as _json
+    from app.adapters import adobe_ops
+    import httpx as _httpx
+
+    if not adobe_ops.is_configured():
+        raise HTTPException(
+            503, "Adobe not configured. Set ADOBE_CLIENT_ID and ADOBE_CLIENT_SECRET."
+        )
+
+    file_bytes = await file.read()
+    trace: dict = {
+        "op": op,
+        "target_format": target_format,
+        "filename": file.filename,
+        "file_size": len(file_bytes),
+        "steps": [],
+    }
+
+    # Step 1: Token fetch — manually re-do to capture
+    from app.config import get_settings
+    settings = get_settings()
+    async with _httpx.AsyncClient(timeout=30) as client:
+        auth_resp = await client.post(
+            "https://ims-na1.adobelogin.com/ims/token/v3",
+            data={
+                "client_id": "REDACTED",
+                "client_secret": "REDACTED",
+                "grant_type": "client_credentials",
+                "scope": "openid,AdobeID,DCAPI",
+            },
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
+    trace["steps"].append({
+        "step": "1.adobe_auth",
+        "url": "https://ims-na1.adobelogin.com/ims/token/v3",
+        "method": "POST",
+        "request_body": "(redacted: client_credentials grant)",
+        "request_headers": {"Content-Type": "application/x-www-form-urlencoded"},
+        "response_status": auth_resp.status_code,
+        "response_body": auth_resp.json() if auth_resp.status_code == 200 else auth_resp.text[:500],
+    })
+    if auth_resp.status_code != 200:
+        return JSONResponse(trace)
+    token = auth_resp.json()["access_token"]
+
+    # Step 2: Asset create
+    # Use the target MIME based on the op
+    if op == "createpdf":
+        mime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        asset_ext = "docx"
+    else:
+        mime = "application/pdf"
+        asset_ext = "pdf"
+    async with _httpx.AsyncClient(timeout=60) as client:
+        create_resp = await client.post(
+            "https://pdf-services.adobe.io/assets",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "x-api-key": settings.adobe_client_id,
+                "Content-Type": "application/json",
+            },
+            content=_json.dumps({"mediaType": mime}),
+        )
+    trace["steps"].append({
+        "step": "2.asset_create",
+        "url": "https://pdf-services.adobe.io/assets",
+        "method": "POST",
+        "request_body": _json.dumps({"mediaType": mime}),
+        "request_headers": {
+            "Authorization": "Bearer <redacted>",
+            "x-api-key": settings.adobe_client_id,
+            "Content-Type": "application/json",
+        },
+        "response_status": create_resp.status_code,
+        "response_body": create_resp.json() if create_resp.status_code in (200, 201) else create_resp.text[:500],
+    })
+    if create_resp.status_code not in (200, 201):
+        return JSONResponse(trace)
+    asset_body = create_resp.json()
+    asset_id = asset_body.get("assetID")
+    upload_uri = asset_body.get("uploadUri")
+    if not (asset_id and upload_uri):
+        return JSONResponse(trace)
+
+    # Step 3: PUT to presigned URL
+    async with _httpx.AsyncClient(timeout=120) as client:
+        put_resp = await client.put(
+            upload_uri,
+            headers={"Content-Type": mime},
+            content=file_bytes,
+        )
+    trace["steps"].append({
+        "step": "3.asset_upload",
+        "url": upload_uri[:80] + '...',  # redact long URL
+        "method": "PUT",
+        "request_headers": {"Content-Type": mime},
+        "request_body_size": len(file_bytes),
+        "response_status": put_resp.status_code,
+        "response_body": put_resp.text[:500] if put_resp.status_code not in (200, 201, 204) else "(empty success)",
+    })
+
+    # Step 4: Operation submit
+    op_path = "/operation/createpdf" if op == "createpdf" else "/operation/exportpdf"
+    op_info = (
+        "Create PDF Operation" if op == "createpdf" else "Export PDF Operation"
+    )
+    if op == "exportpdf":
+        body = {
+            "assetID": asset_id,
+            "json": "{}",
+            "params": {"targetFormat": target_format},
+        }
+    else:
+        body = {
+            "assetID": asset_id,
+            "json": "{}",
+            "params": {},
+        }
+    async with _httpx.AsyncClient(timeout=60) as client:
+        op_resp = await client.post(
+            f"https://pdf-services.adobe.io{op_path}",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "x-api-key": settings.adobe_client_id,
+                "Content-Type": "application/json",
+                "Accept": "application/json, text/plain, */*",
+                "x-api-app-info": "python-pdfservices-sdk-4.2.0",
+                "x-dcsdk-ops-info": op_info,
+            },
+            content=_json.dumps(body),
+        )
+    trace["steps"].append({
+        "step": "4.operation_submit",
+        "url": f"https://pdf-services.adobe.io{op_path}",
+        "method": "POST",
+        "request_body": body,
+        "request_headers": {
+            "Authorization": "Bearer <redacted>",
+            "x-api-key": settings.adobe_client_id,
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/plain, */*",
+            "x-api-app-info": "python-pdfservices-sdk-4.2.0",
+            "x-dcsdk-ops-info": op_info,
+        },
+        "response_status": op_resp.status_code,
+        "response_headers": dict(op_resp.headers),
+        "response_body": op_resp.text[:2000],
+    })
+
+    return JSONResponse(trace)
