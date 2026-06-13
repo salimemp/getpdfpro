@@ -338,7 +338,7 @@ export function OcrTool() {
           </select>
           <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
             Tesseract language code. Only English is pre-installed by
-            default; other languages require apt packages we haven't
+            default; other languages require apt packages we haven&apos;t
             added yet.
           </p>
         </div>

@@ -35,6 +35,7 @@ import {
   Mic, // dictate (STT)
 } from "lucide-react";
 import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
+import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
 
 export const metadata: Metadata = {
   title: "All PDF tools",
@@ -382,6 +383,9 @@ export default function ToolsIndexPage() {
     <>
       <SiteHeader />
       <main>
+        {/* Silent mount: triggers auto-start for signed-in users, no UI
+            for anonymous visitors (the hero button lives on /). */}
+        <OnboardingTour variant="silent" />
         <section className="container-narrow py-16">
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
             All PDF tools
@@ -411,7 +415,7 @@ export default function ToolsIndexPage() {
           </nav>
 
           {/* Category sections — one per group */}
-          <div className="mt-10 space-y-14">
+          <div data-onboarding-target="tools-grid" className="mt-10 space-y-14">
             {CATEGORIES.map((cat) => (
               <section key={cat.id} id={cat.id} className="scroll-mt-20">
                 <div className="border-b border-slate-200 pb-3 dark:border-slate-800">
@@ -427,6 +431,7 @@ export default function ToolsIndexPage() {
                     <Link
                       key={tool.href}
                       href={tool.href}
+                      data-onboarding-target={tool.href === "/tools/merge" ? "tool-merge" : undefined}
                       className="group relative rounded-xl border border-slate-200 bg-white p-5 transition hover:border-brand-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-950 dark:hover:border-brand-700"
                     >
                       {!tool.ready && (

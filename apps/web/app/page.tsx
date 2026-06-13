@@ -31,6 +31,7 @@ import {
   Languages,
 } from "lucide-react";
 import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
+import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
 
 const tools = [
   {
@@ -262,6 +263,9 @@ export default function HomePage() {
               See how we compare
             </Link>
           </div>
+          {/* Anonymous-only "Take the tour" — for signed-in users the
+              trigger hook auto-starts the tour. See OnboardingTour. */}
+          <OnboardingTour />
         </section>
 
         {/* Tools grid */}
