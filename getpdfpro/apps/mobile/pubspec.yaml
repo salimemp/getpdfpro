@@ -4,8 +4,12 @@ publish_to: 'none'
 version: 0.1.0+1
 
 environment:
-  sdk: ">=3.4.0 <4.0.0"
-  flutter: ">=3.24.0"
+  # Bumped from sdk>=3.4 / flutter>=3.24 to satisfy
+  # syncfusion_flutter_pdf 33.x (which requires Dart ^3.7
+  # AND Flutter >=3.35.1). Flutter 3.35+ ships Dart 3.7+
+  # and satisfies the Flutter floor.
+  sdk: ">=3.7.0 <4.0.0"
+  flutter: ">=3.35.1"
 
 dependencies:
   flutter:

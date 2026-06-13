@@ -105,32 +105,30 @@ class _ConfirmEmailPageState extends State<ConfirmEmailPage> {
       // `emailVerified` event. The session's `emailConfirmedAt`
       // is set server-side as part of the PKCE exchange, so we
       // use that as the success signal.
-      _authSub = Supabase.instance.client.auth.onAuthStateChange.listen(
-        (data) {
-          final event = data.event;
-          if (event == AuthChangeEvent.signedIn ||
-              event == AuthChangeEvent.initialSession) {
-            // We just got a session. If the email is confirmed,
-            // show the success state.
-            final user = data.session?.user;
-            if (user != null && user.emailConfirmedAt != null) {
-              if (mounted) {
-                setState(() {
-                  _phase = _Phase.success;
-                  _error = null;
-                });
-              }
-            }
-          } else if (event == AuthChangeEvent.signedOut) {
+      _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+        final event = data.event;
+        if (event == AuthChangeEvent.signedIn ||
+            event == AuthChangeEvent.initialSession) {
+          // We just got a session. If the email is confirmed,
+          // show the success state.
+          final user = data.session?.user;
+          if (user != null && user.emailConfirmedAt != null) {
             if (mounted) {
               setState(() {
-                _phase = _Phase.error;
-                _error = 'confirm.session_expired'.tr();
+                _phase = _Phase.success;
+                _error = null;
               });
             }
           }
-        },
-      );
+        } else if (event == AuthChangeEvent.signedOut) {
+          if (mounted) {
+            setState(() {
+              _phase = _Phase.error;
+              _error = 'confirm.session_expired'.tr();
+            });
+          }
+        }
+      });
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -163,7 +161,9 @@ class _ConfirmEmailPageState extends State<ConfirmEmailPage> {
       builder: (ctx) => _ResendDialog(),
     );
     if (email == null || email.isEmpty || !mounted) return;
-    setState(() { _error = null; });
+    setState(() {
+      _error = null;
+    });
     try {
       await Supabase.instance.client.auth.resend(
         type: OtpType.email,
@@ -171,9 +171,9 @@ class _ConfirmEmailPageState extends State<ConfirmEmailPage> {
         emailRedirectTo: DeepLinkConfig.confirmEmailCallback,
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('confirm.resend_sent'.tr())),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('confirm.resend_sent'.tr())));
       }
     } on AuthException catch (e) {
       setState(() => _error = e.message);
@@ -198,15 +198,17 @@ class _ConfirmEmailPageState extends State<ConfirmEmailPage> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: switch (_phase) {
-            _Phase.verifying => _VerifyingView(message: 'confirm.verifying'.tr()),
+            _Phase.verifying => _VerifyingView(
+              message: 'confirm.verifying'.tr(),
+            ),
             _Phase.success => _SuccessView(
-                onContinue: () => context.go('/dashboard'),
-              ),
+              onContinue: () => context.go('/dashboard'),
+            ),
             _Phase.error => _ErrorView(
-                error: _error ?? 'confirm.invalid_link'.tr(),
-                onResend: _resend,
-                onBackToLogin: () => context.go('/login'),
-              ),
+              error: _error ?? 'confirm.invalid_link'.tr(),
+              onResend: _resend,
+              onBackToLogin: () => context.go('/login'),
+            ),
           },
         ),
       ),
@@ -299,11 +301,7 @@ class _ErrorView extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         const SizedBox(height: 64),
-        Icon(
-          Icons.link_off,
-          size: 64,
-          color: theme.colorScheme.error,
-        ),
+        Icon(Icons.link_off, size: 64, color: theme.colorScheme.error),
         const SizedBox(height: 24),
         Text(
           'confirm.invalid_link'.tr(),

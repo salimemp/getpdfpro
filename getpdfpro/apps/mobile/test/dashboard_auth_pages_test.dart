@@ -102,7 +102,9 @@ void main() {
   });
 
   group('DashboardPage', () {
-    testWidgets('renders the greeting + search bar + first category', (tester) async {
+    testWidgets('renders the greeting + search bar + first category', (
+      tester,
+    ) async {
       await tester.pumpWidget(_wrap(const DashboardPage()));
       // Let the SliverAppBar.large + first frame settle.
       await tester.pumpAndSettle();
@@ -159,8 +161,9 @@ void main() {
 
       // Should show the "invalid link" or "missing code" copy.
       expect(
-        find.textContaining(RegExp(r'invalid|missing|expired|initialized',
-            caseSensitive: false)),
+        find.textContaining(
+          RegExp(r'invalid|missing|expired|initialized', caseSensitive: false),
+        ),
         findsWidgets,
       );
     });
@@ -187,8 +190,9 @@ void main() {
       await tester.pump();
 
       expect(
-        find.textContaining(RegExp(r'invalid|missing|expired|initialized',
-            caseSensitive: false)),
+        find.textContaining(
+          RegExp(r'invalid|missing|expired|initialized', caseSensitive: false),
+        ),
         findsWidgets,
       );
     });
@@ -204,7 +208,9 @@ void main() {
   });
 
   group('ToolRegistry (in-widget context)', () {
-    testWidgets('all 35 tool titleKeys resolve to a translated string', (tester) async {
+    testWidgets('all 35 tool titleKeys resolve to a translated string', (
+      tester,
+    ) async {
       // Render a small slice of the registry — full 35 in a
       // ListView takes longer to build than pumpAndSettle's
       // default timeout. We just want to verify the
@@ -232,9 +238,7 @@ void main() {
             body: ListView(
               children: [
                 for (final id in sampleIds)
-                  ListTile(
-                    title: Text(ToolRegistry.byId(id)!.titleKey.tr()),
-                  ),
+                  ListTile(title: Text(ToolRegistry.byId(id)!.titleKey.tr())),
               ],
             ),
           ),

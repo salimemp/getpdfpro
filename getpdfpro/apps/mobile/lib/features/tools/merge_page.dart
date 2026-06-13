@@ -40,7 +40,8 @@ class _MergePageState extends State<MergePage> {
       await _speech.listen(
         onResult: (result) {
           debugPrint('Heard: ${result.recognizedWords}');
-          if (result.finalResult && result.recognizedWords.toLowerCase().contains('merge')) {
+          if (result.finalResult &&
+              result.recognizedWords.toLowerCase().contains('merge')) {
             // Trigger merge
             _doMerge();
           }
@@ -65,7 +66,10 @@ class _MergePageState extends State<MergePage> {
           children: [
             const Icon(Icons.merge_type, size: 96),
             const SizedBox(height: 24),
-            Text('tools.merge'.tr(), style: Theme.of(context).textTheme.headlineSmall),
+            Text(
+              'tools.merge'.tr(),
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
             const SizedBox(height: 8),
             Text('tools.merge_desc'.tr(), textAlign: TextAlign.center),
             const SizedBox(height: 32),
@@ -79,9 +83,11 @@ class _MergePageState extends State<MergePage> {
               OutlinedButton.icon(
                 onPressed: _toggleListen,
                 icon: Icon(_listening ? Icons.mic : Icons.mic_none),
-                label: Text(_listening
-                    ? 'dashboard.listening'.tr()
-                    : 'common.tap_to_speak'.tr()),
+                label: Text(
+                  _listening
+                      ? 'dashboard.listening'.tr()
+                      : 'common.tap_to_speak'.tr(),
+                ),
               ),
           ],
         ),

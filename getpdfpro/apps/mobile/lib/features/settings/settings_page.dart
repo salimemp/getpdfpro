@@ -84,9 +84,9 @@ class _SettingsPageState extends State<SettingsPage> {
       // just show the user as still signed in until next launch.
     }
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('settings.signed_out'.tr())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('settings.signed_out'.tr())));
     }
   }
 
@@ -115,14 +115,18 @@ class _SettingsPageState extends State<SettingsPage> {
           if (user != null) ...[
             ListTile(
               leading: CircleAvatar(
-                child: Text(
-                  (user.email ?? '?').characters.first.toUpperCase(),
+                child: Text((user.email ?? '?').characters.first.toUpperCase()),
+              ),
+              title: Text(
+                'settings.signed_in_as'.tr(
+                  namedArgs: {'email': user.email ?? '—'},
                 ),
               ),
-              title: Text('settings.signed_in_as'.tr(namedArgs: {
-                'email': user.email ?? '—',
-              })),
-              subtitle: Text(user.id, maxLines: 1, overflow: TextOverflow.ellipsis),
+              subtitle: Text(
+                user.id,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
             ListTile(
               leading: const Icon(Icons.logout),
@@ -176,9 +180,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ListTile(
             leading: const Icon(Icons.translate),
             title: Text('settings.language_system'.tr()),
-            trailing: _localeOverride == null
-                ? const Icon(Icons.check)
-                : null,
+            trailing: _localeOverride == null ? const Icon(Icons.check) : null,
             onTap: () => _setLocale(null),
           ),
           for (final lang in _supportedLanguages)
@@ -202,9 +204,9 @@ class _SettingsPageState extends State<SettingsPage> {
             onTap: () {
               // The web app should be opened externally. There's no
               // url_launcher in pubspec — just show the URL for copy.
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(Env.websiteUrl)),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(Env.websiteUrl)));
             },
           ),
           ListTile(
@@ -212,9 +214,9 @@ class _SettingsPageState extends State<SettingsPage> {
             title: Text('settings.send_feedback'.tr()),
             subtitle: Text(Env.supportEmail),
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(Env.supportEmail)),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(Env.supportEmail)));
             },
           ),
           ListTile(
@@ -239,10 +241,9 @@ class _SettingsPageState extends State<SettingsPage> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Text(
-              'settings.version'.tr(namedArgs: {
-                'version': Env.appVersion,
-                'build': Env.appBuild,
-              }),
+              'settings.version'.tr(
+                namedArgs: {'version': Env.appVersion, 'build': Env.appBuild},
+              ),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -257,23 +258,49 @@ class _SettingsPageState extends State<SettingsPage> {
 
   /// Languages we ship at launch. Mirrors the `supportedLocales` list
   /// in `app.dart`. Add a new locale in both places at once.
-  static const _supportedLanguages = ['en', 'es', 'fr', 'de', 'it', 'pt', 'ja', 'ko', 'zh', 'ru', 'ar', 'hi'];
+  static const _supportedLanguages = [
+    'en',
+    'es',
+    'fr',
+    'de',
+    'it',
+    'pt',
+    'ja',
+    'ko',
+    'zh',
+    'ru',
+    'ar',
+    'hi',
+  ];
 
   String _displayName(String code) {
     switch (code) {
-      case 'en': return 'English';
-      case 'es': return 'Español';
-      case 'fr': return 'Français';
-      case 'de': return 'Deutsch';
-      case 'it': return 'Italiano';
-      case 'pt': return 'Português';
-      case 'ja': return '日本語';
-      case 'ko': return '한국어';
-      case 'zh': return '中文';
-      case 'ru': return 'Русский';
-      case 'ar': return 'العربية';
-      case 'hi': return 'हिन्दी';
-      default: return code;
+      case 'en':
+        return 'English';
+      case 'es':
+        return 'Español';
+      case 'fr':
+        return 'Français';
+      case 'de':
+        return 'Deutsch';
+      case 'it':
+        return 'Italiano';
+      case 'pt':
+        return 'Português';
+      case 'ja':
+        return '日本語';
+      case 'ko':
+        return '한국어';
+      case 'zh':
+        return '中文';
+      case 'ru':
+        return 'Русский';
+      case 'ar':
+        return 'العربية';
+      case 'hi':
+        return 'हिन्दी';
+      default:
+        return code;
     }
   }
 }

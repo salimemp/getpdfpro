@@ -116,9 +116,7 @@ class _ProtectPageState extends State<ProtectPage> {
       setState(() => _error = 'protect.password_too_long'.tr());
       return;
     }
-    final ownerPw = _useSeparateOwner
-        ? _ownerPasswordController.text
-        : userPw;
+    final ownerPw = _useSeparateOwner ? _ownerPasswordController.text : userPw;
     if (_useSeparateOwner && ownerPw.length < 4) {
       setState(() => _error = 'protect.owner_password_too_short'.tr());
       return;
@@ -153,7 +151,9 @@ class _ProtectPageState extends State<ProtectPage> {
       final stem = base.endsWith('.pdf')
           ? base.substring(0, base.length - 4)
           : base;
-      final out = File('${dir.path}/${stem}-protected-${DateTime.now().millisecondsSinceEpoch}.pdf');
+      final out = File(
+        '${dir.path}/${stem}-protected-${DateTime.now().millisecondsSinceEpoch}.pdf',
+      );
       await out.writeAsBytes(response.data as List<int>);
       final size = await out.length();
       if (mounted) {
@@ -181,10 +181,7 @@ class _ProtectPageState extends State<ProtectPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              'protect.subtitle'.tr(),
-              style: theme.textTheme.bodyMedium,
-            ),
+            Text('protect.subtitle'.tr(), style: theme.textTheme.bodyMedium),
             const SizedBox(height: 24),
             FilePickerField(
               file: _source,
@@ -192,10 +189,10 @@ class _ProtectPageState extends State<ProtectPage> {
               onClear: _source == null
                   ? null
                   : () => setState(() {
-                        _source = null;
-                        _resultPath = null;
-                        _error = null;
-                      }),
+                      _source = null;
+                      _resultPath = null;
+                      _error = null;
+                    }),
             ),
             const SizedBox(height: 24),
             TextField(
@@ -208,9 +205,9 @@ class _ProtectPageState extends State<ProtectPage> {
                 helperText: 'protect.password_helper'.tr(),
                 prefixIcon: const Icon(Icons.lock),
                 suffixIcon: IconButton(
-                  icon: Icon(_showUserPassword
-                      ? Icons.visibility_off
-                      : Icons.visibility),
+                  icon: Icon(
+                    _showUserPassword ? Icons.visibility_off : Icons.visibility,
+                  ),
                   onPressed: () =>
                       setState(() => _showUserPassword = !_showUserPassword),
                 ),
@@ -237,11 +234,14 @@ class _ProtectPageState extends State<ProtectPage> {
                   helperText: 'protect.owner_password_helper'.tr(),
                   prefixIcon: const Icon(Icons.admin_panel_settings),
                   suffixIcon: IconButton(
-                    icon: Icon(_showOwnerPassword
-                        ? Icons.visibility_off
-                        : Icons.visibility),
+                    icon: Icon(
+                      _showOwnerPassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                    ),
                     onPressed: () => setState(
-                        () => _showOwnerPassword = !_showOwnerPassword),
+                      () => _showOwnerPassword = !_showOwnerPassword,
+                    ),
                   ),
                   border: const OutlineInputBorder(),
                 ),
@@ -257,15 +257,17 @@ class _ProtectPageState extends State<ProtectPage> {
               ),
             ),
             const SizedBox(height: 8),
-            ..._permissions.entries.map((entry) => SwitchListTile(
-                  value: entry.value,
-                  onChanged: (v) => setState(() {
-                    _permissions[entry.key] = v;
-                  }),
-                  title: Text('protect.perm.${entry.key}'.tr()),
-                  contentPadding: EdgeInsets.zero,
-                  dense: true,
-                )),
+            ..._permissions.entries.map(
+              (entry) => SwitchListTile(
+                value: entry.value,
+                onChanged: (v) => setState(() {
+                  _permissions[entry.key] = v;
+                }),
+                title: Text('protect.perm.${entry.key}'.tr()),
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+              ),
+            ),
             if (_error != null) ...[
               const SizedBox(height: 16),
               Container(
@@ -276,7 +278,10 @@ class _ProtectPageState extends State<ProtectPage> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.error_outline, color: theme.colorScheme.onErrorContainer),
+                    Icon(
+                      Icons.error_outline,
+                      color: theme.colorScheme.onErrorContainer,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(child: Text(_error!)),
                   ],
@@ -288,7 +293,8 @@ class _ProtectPageState extends State<ProtectPage> {
               onPressed: (_busy || _source == null) ? null : _doProtect,
               icon: _busy
                   ? const SizedBox(
-                      width: 16, height: 16,
+                      width: 16,
+                      height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.lock),
@@ -298,7 +304,9 @@ class _ProtectPageState extends State<ProtectPage> {
               const SizedBox(height: 24),
               Card(
                 elevation: 0,
-                color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                color: theme.colorScheme.primaryContainer.withValues(
+                  alpha: 0.3,
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
@@ -308,9 +316,7 @@ class _ProtectPageState extends State<ProtectPage> {
                         children: [
                           const Icon(Icons.check_circle),
                           const SizedBox(width: 8),
-                          Expanded(
-                            child: Text('protect.complete'.tr()),
-                          ),
+                          Expanded(child: Text('protect.complete'.tr())),
                         ],
                       ),
                       const SizedBox(height: 8),

@@ -68,11 +68,7 @@ class ApiClient {
 /// error body. The `detail` field matches the FastAPI convention
 /// (`{"detail": "..."}` or `{"detail": [{"loc": ...}]}`).
 class ApiException implements Exception {
-  ApiException({
-    required this.status,
-    required this.detail,
-    this.endpoint,
-  });
+  ApiException({required this.status, required this.detail, this.endpoint});
 
   final int status;
   final String detail;

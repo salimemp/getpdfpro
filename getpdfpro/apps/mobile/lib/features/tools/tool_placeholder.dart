@@ -42,9 +42,7 @@ class ToolPlaceholderPage extends StatelessWidget {
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12),
-            child: Center(
-              child: _Badge(text: 'common.coming_soon'.tr()),
-            ),
+            child: Center(child: _Badge(text: 'common.coming_soon'.tr())),
           ),
         ],
       ),
@@ -79,12 +77,17 @@ class ToolPlaceholderPage extends StatelessWidget {
               const SizedBox(height: 24),
               Card(
                 elevation: 0,
-                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                color: theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.3,
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Row(
                     children: [
-                      Icon(Icons.info_outline, color: theme.colorScheme.primary),
+                      Icon(
+                        Icons.info_outline,
+                        color: theme.colorScheme.primary,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
@@ -100,9 +103,9 @@ class ToolPlaceholderPage extends StatelessWidget {
               const Spacer(),
               FilledButton.icon(
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Open on web')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('Open on web')));
                 },
                 icon: const Icon(Icons.open_in_browser),
                 label: Text('common.open_in_browser'.tr()),

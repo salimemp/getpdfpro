@@ -116,28 +116,26 @@ class _RecoveryPageState extends State<RecoveryPage> {
       }
 
       // No session yet. Wait for passwordRecovery to fire.
-      _authSub = Supabase.instance.client.auth.onAuthStateChange.listen(
-        (data) {
-          final event = data.event;
-          if (event == AuthChangeEvent.passwordRecovery) {
-            if (mounted) {
-              setState(() {
-                _phase = _Phase.ready;
-                _error = null;
-              });
-            }
-          } else if (event == AuthChangeEvent.signedOut) {
-            // Server-side signed us out (e.g. session expired).
-            // Show the error state.
-            if (mounted) {
-              setState(() {
-                _phase = _Phase.error;
-                _error = 'recovery.session_expired'.tr();
-              });
-            }
+      _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+        final event = data.event;
+        if (event == AuthChangeEvent.passwordRecovery) {
+          if (mounted) {
+            setState(() {
+              _phase = _Phase.ready;
+              _error = null;
+            });
           }
-        },
-      );
+        } else if (event == AuthChangeEvent.signedOut) {
+          // Server-side signed us out (e.g. session expired).
+          // Show the error state.
+          if (mounted) {
+            setState(() {
+              _phase = _Phase.error;
+              _error = 'recovery.session_expired'.tr();
+            });
+          }
+        }
+      });
     } catch (e) {
       // Supabase not initialized (anonymous dev mode, test
       // environment, or a deep-link race). Show error.
@@ -212,29 +210,33 @@ class _RecoveryPageState extends State<RecoveryPage> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: switch (_phase) {
-            _Phase.verifying => _VerifyingView(message: 'recovery.verifying'.tr()),
+            _Phase.verifying => _VerifyingView(
+              message: 'recovery.verifying'.tr(),
+            ),
             _Phase.ready => _ReadyForm(
-                passwordController: _passwordController,
-                confirmController: _confirmController,
-                showPassword: _showPassword,
-                onToggleShow: () => setState(() => _showPassword = !_showPassword),
-                obscureConfirm: _obscureConfirm,
-                onToggleConfirm: () => setState(() => _obscureConfirm = !_obscureConfirm),
-                busy: _busy,
-                onSubmit: _submit,
-                error: _error,
-              ),
+              passwordController: _passwordController,
+              confirmController: _confirmController,
+              showPassword: _showPassword,
+              onToggleShow: () =>
+                  setState(() => _showPassword = !_showPassword),
+              obscureConfirm: _obscureConfirm,
+              onToggleConfirm: () =>
+                  setState(() => _obscureConfirm = !_obscureConfirm),
+              busy: _busy,
+              onSubmit: _submit,
+              error: _error,
+            ),
             _Phase.error => _ErrorView(
-                error: _error ?? 'recovery.invalid_link'.tr(),
-                onBackToLogin: () => context.go('/login'),
-                onTryAgain: () {
-                  setState(() {
-                    _phase = _Phase.verifying;
-                    _error = null;
-                  });
-                  _init();
-                },
-              ),
+              error: _error ?? 'recovery.invalid_link'.tr(),
+              onBackToLogin: () => context.go('/login'),
+              onTryAgain: () {
+                setState(() {
+                  _phase = _Phase.verifying;
+                  _error = null;
+                });
+                _init();
+              },
+            ),
           },
         ),
       ),
@@ -290,11 +292,7 @@ class _ReadyForm extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: 24),
-        Icon(
-          Icons.lock_reset,
-          size: 64,
-          color: theme.colorScheme.primary,
-        ),
+        Icon(Icons.lock_reset, size: 64, color: theme.colorScheme.primary),
         const SizedBox(height: 24),
         Text(
           'recovery.heading'.tr(),
@@ -320,7 +318,9 @@ class _ReadyForm extends StatelessWidget {
             helperText: 'recovery.password_hint'.tr(),
             prefixIcon: const Icon(Icons.lock),
             suffixIcon: IconButton(
-              icon: Icon(showPassword ? Icons.visibility_off : Icons.visibility),
+              icon: Icon(
+                showPassword ? Icons.visibility_off : Icons.visibility,
+              ),
               onPressed: onToggleShow,
             ),
             border: const OutlineInputBorder(),
@@ -336,7 +336,9 @@ class _ReadyForm extends StatelessWidget {
             labelText: 'recovery.confirm_password'.tr(),
             prefixIcon: const Icon(Icons.lock_outline),
             suffixIcon: IconButton(
-              icon: Icon(obscureConfirm ? Icons.visibility_off : Icons.visibility),
+              icon: Icon(
+                obscureConfirm ? Icons.visibility_off : Icons.visibility,
+              ),
               onPressed: onToggleConfirm,
             ),
             border: const OutlineInputBorder(),
@@ -352,7 +354,10 @@ class _ReadyForm extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(Icons.error_outline, color: theme.colorScheme.onErrorContainer),
+                Icon(
+                  Icons.error_outline,
+                  color: theme.colorScheme.onErrorContainer,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -369,7 +374,8 @@ class _ReadyForm extends StatelessWidget {
           onPressed: busy ? null : onSubmit,
           child: busy
               ? const SizedBox(
-                  height: 20, width: 20,
+                  height: 20,
+                  width: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : Text('recovery.update_password'.tr()),
@@ -397,11 +403,7 @@ class _ErrorView extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         const SizedBox(height: 64),
-        Icon(
-          Icons.link_off,
-          size: 64,
-          color: theme.colorScheme.error,
-        ),
+        Icon(Icons.link_off, size: 64, color: theme.colorScheme.error),
         const SizedBox(height: 24),
         Text(
           'recovery.invalid_link'.tr(),

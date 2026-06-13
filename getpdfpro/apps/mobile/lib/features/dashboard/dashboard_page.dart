@@ -180,9 +180,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
           // Show either search results or category-grouped tools
           if (_query.isNotEmpty) ...[
-            SliverToBoxAdapter(
-              child: _ResultsList(tools: _filteredTools()),
-            ),
+            SliverToBoxAdapter(child: _ResultsList(tools: _filteredTools())),
           ] else ...[
             // Quick actions
             if (_quickActions().isNotEmpty) ...[
@@ -215,9 +213,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
             // All categories
             for (final category in ToolRegistry.activeCategories()) ...[
-              SliverToBoxAdapter(
-                child: _CategorySection(category: category),
-              ),
+              SliverToBoxAdapter(child: _CategorySection(category: category)),
             ],
           ],
 
@@ -233,9 +229,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     // Could deep-link to the web app. For now, just
                     // show a snackbar.
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('common.open_in_browser'.tr()),
-                      ),
+                      SnackBar(content: Text('common.open_in_browser'.tr())),
                     );
                   },
                 ),
@@ -339,11 +333,7 @@ class _QuickActionCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(
-                tool.icon,
-                size: 32,
-                color: theme.colorScheme.primary,
-              ),
+              Icon(tool.icon, size: 32, color: theme.colorScheme.primary),
               const SizedBox(height: 8),
               Text(
                 tool.titleKey.tr(),
@@ -374,11 +364,7 @@ class _CategorySection extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                category.icon,
-                size: 20,
-                color: theme.colorScheme.primary,
-              ),
+              Icon(category.icon, size: 20, color: theme.colorScheme.primary),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -437,11 +423,7 @@ class _ToolGridCard extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
-              Icon(
-                tool.icon,
-                size: 22,
-                color: theme.colorScheme.primary,
-              ),
+              Icon(tool.icon, size: 22, color: theme.colorScheme.primary),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
@@ -509,9 +491,9 @@ class _ToolListTile extends StatelessWidget {
 /// them what just happened or what they need to do next.
 void _openTool(BuildContext context, Tool tool) {
   if (tool.comingSoon) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('common.coming_soon'.tr())),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('common.coming_soon'.tr())));
     return;
   }
 

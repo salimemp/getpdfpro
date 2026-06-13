@@ -29,17 +29,20 @@ void main() {
       expect(
         ids.length,
         unique.length,
-        reason: 'Duplicate tool ids: '
+        reason:
+            'Duplicate tool ids: '
             '${ids.where((id) => ids.where((x) => x == id).length > 1).toSet()}',
       );
     });
 
     test('every tool has a non-empty route', () {
       for (final tool in ToolRegistry.all) {
-        expect(tool.route, isNotEmpty,
-            reason: 'Tool ${tool.id} has no route');
-        expect(tool.route, startsWith('/'),
-            reason: 'Tool ${tool.id} route does not start with /');
+        expect(tool.route, isNotEmpty, reason: 'Tool ${tool.id} has no route');
+        expect(
+          tool.route,
+          startsWith('/'),
+          reason: 'Tool ${tool.id} route does not start with /',
+        );
       }
     });
 
@@ -53,8 +56,7 @@ void main() {
 
     test('every tool has a non-empty icon', () {
       for (final tool in ToolRegistry.all) {
-        expect(tool.icon, isNotNull,
-            reason: 'Tool ${tool.id} has no icon');
+        expect(tool.icon, isNotNull, reason: 'Tool ${tool.id} has no icon');
       }
     });
   });
@@ -65,18 +67,18 @@ void main() {
     });
 
     test('loginCallback is well-formed', () {
-      expect(DeepLinkConfig.loginCallback,
-          'getpdfpro://login-callback');
+      expect(DeepLinkConfig.loginCallback, 'getpdfpro://login-callback');
     });
 
     test('resetPasswordCallback is well-formed', () {
-      expect(DeepLinkConfig.resetPasswordCallback,
-          'getpdfpro://reset-password');
+      expect(
+        DeepLinkConfig.resetPasswordCallback,
+        'getpdfpro://reset-password',
+      );
     });
 
     test('confirmEmailCallback is well-formed', () {
-      expect(DeepLinkConfig.confirmEmailCallback,
-          'getpdfpro://confirm-email');
+      expect(DeepLinkConfig.confirmEmailCallback, 'getpdfpro://confirm-email');
     });
   });
 
@@ -91,13 +93,16 @@ void main() {
       expect((action as LoginCallbackAction).accessToken, 'abc');
     });
 
-    test('parses getpdfpro://reset-password?code=xyz as PasswordRecoveryAction', () {
-      final action = handler.parse(
-        Uri.parse('getpdfpro://reset-password?code=xyz123'),
-      );
-      expect(action, isA<PasswordRecoveryAction>());
-      expect((action as PasswordRecoveryAction).code, 'xyz123');
-    });
+    test(
+      'parses getpdfpro://reset-password?code=xyz as PasswordRecoveryAction',
+      () {
+        final action = handler.parse(
+          Uri.parse('getpdfpro://reset-password?code=xyz123'),
+        );
+        expect(action, isA<PasswordRecoveryAction>());
+        expect((action as PasswordRecoveryAction).code, 'xyz123');
+      },
+    );
 
     test('parses getpdfpro://confirm-email?code=abc as ConfirmEmailAction', () {
       final action = handler.parse(
@@ -108,9 +113,7 @@ void main() {
     });
 
     test('unknown scheme returns UnknownDeepLinkAction', () {
-      final action = handler.parse(
-        Uri.parse('https://example.com/'),
-      );
+      final action = handler.parse(Uri.parse('https://example.com/'));
       expect(action, isA<UnknownDeepLinkAction>());
     });
 

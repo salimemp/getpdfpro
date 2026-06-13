@@ -53,7 +53,10 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _signInWithPassword() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       await Supabase.instance.client.auth.signInWithPassword(
         email: _emailController.text.trim(),
@@ -68,7 +71,10 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _signInWithGoogle() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       await Supabase.instance.client.auth.signInWithOAuth(
         OAuthProvider.google,
@@ -84,7 +90,10 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _signInWithGithub() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       await Supabase.instance.client.auth.signInWithOAuth(
         OAuthProvider.github,
@@ -102,16 +111,19 @@ class _LoginPageState extends State<LoginPage> {
       setState(() => _error = 'Enter your email first');
       return;
     }
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       await Supabase.instance.client.auth.signInWithOtp(
         email: _emailController.text.trim(),
         emailRedirectTo: DeepLinkConfig.loginCallback,
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('auth.magic_link_sent'.tr())),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('auth.magic_link_sent'.tr())));
       }
     } on AuthException catch (e) {
       setState(() => _error = e.message);
@@ -133,21 +145,23 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _forgotPassword() async {
     final email = await showDialog<String>(
       context: context,
-      builder: (ctx) => _ForgotPasswordDialog(
-        initialEmail: _emailController.text.trim(),
-      ),
+      builder: (ctx) =>
+          _ForgotPasswordDialog(initialEmail: _emailController.text.trim()),
     );
     if (email == null || email.isEmpty || !mounted) return;
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       await Supabase.instance.client.auth.resetPasswordForEmail(
         email,
         redirectTo: DeepLinkConfig.resetPasswordCallback,
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('login.reset_email_sent'.tr())),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('login.reset_email_sent'.tr())));
       }
     } on AuthException catch (e) {
       setState(() => _error = e.message);
@@ -171,7 +185,9 @@ class _LoginPageState extends State<LoginPage> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                    color: theme.colorScheme.primaryContainer.withValues(
+                      alpha: 0.3,
+                    ),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -224,7 +240,8 @@ class _LoginPageState extends State<LoginPage> {
                 onPressed: _loading ? null : _signInWithPassword,
                 child: _loading
                     ? const SizedBox(
-                        height: 20, width: 20,
+                        height: 20,
+                        width: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : Text('login.sign_in'.tr()),
@@ -274,8 +291,9 @@ class _ForgotPasswordDialog extends StatefulWidget {
 }
 
 class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
-  late final TextEditingController _controller =
-      TextEditingController(text: widget.initialEmail);
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initialEmail,
+  );
 
   @override
   void dispose() {
