@@ -89,9 +89,13 @@ jobs:
 
       - name: Run flutter analyze
         working-directory: getpdfpro/apps/mobile
-        # `--fatal-infos` would also fail on info-level lints;
-        # we leave it off so we don't block on style nits.
-        run: flutter analyze --no-fatal-warnings
+        # `--fatal-infos` is on by default in 3.35+, but we
+        # turn it off — info-level lints (const-constructor
+        # nits, prefer_interpolation, etc.) shouldn't block
+        # CI. We DO keep --fatal-warnings off too for the
+        # same reason. Real bugs (unused vars, unused
+        # imports) still show up as warnings to be fixed.
+        run: flutter analyze --no-fatal-warnings --no-fatal-infos
 
       - name: Run flutter test
         working-directory: getpdfpro/apps/mobile
