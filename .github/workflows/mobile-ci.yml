@@ -48,15 +48,21 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@v2.23.0
         with:
-          # Pinned to the same version our docs recommend.
-          # Bump together with pubspec.yaml's `environment.flutter`.
+          # We use Flutter 3.24.5 (matches pubspec.yaml's
+          # `environment.flutter >=3.24.0`). Newer 3.27+
+          # is also fine — bump together with pubspec.yaml.
+          # 3.44 (the version we tested locally) works
+          # because pubspec only requires >=3.24.
           flutter-version: '3.24.5'
           channel: stable
-          # Cache the pub-cache between runs. Saves ~30s per run.
-          cache: true
-          cache-key: 'flutter-pub-cache-3.24.5'
+          # Note: pub-cache caching is disabled because
+          # restoring an incompatible pub-cache (one built
+          # against a different Flutter version) causes
+          # "Install dependencies" to fail with exit 1.
+          # We pay the 30s install penalty on every run.
+          cache: false
 
       - name: Show Flutter version
         run: flutter --version
