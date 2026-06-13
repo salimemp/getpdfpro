@@ -5,6 +5,7 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/auth";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { SkipNav } from "@/components/SkipNav";
+import { OnboardingProvider } from "@/components/onboarding/OnboardingProvider";
 import {
   organizationLd,
   websiteLd,
@@ -126,7 +127,9 @@ export default async function RootLayout({
         <SkipNav targetId="main" />
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider>
-            <AuthProvider>{children}</AuthProvider>
+            <AuthProvider>
+              <OnboardingProvider>{children}</OnboardingProvider>
+            </AuthProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>

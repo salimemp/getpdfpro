@@ -135,7 +135,10 @@ export function PricingTiers() {
         </div>
 
         {/* Pro (highlighted) */}
-        <div className="relative rounded-2xl border-2 border-brand-600 bg-white p-6 shadow-lg dark:bg-slate-900">
+        <div
+          data-onboarding-target="pricing-cta"
+          className="relative rounded-2xl border-2 border-brand-600 bg-white p-6 shadow-lg dark:bg-slate-900"
+        >
           <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-brand-600 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">
             Most popular
           </span>
