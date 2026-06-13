@@ -94,7 +94,9 @@ class _PdfToImagePageState extends State<PdfToImagePage> {
       final stem = base.endsWith('.pdf')
           ? base.substring(0, base.length - 4)
           : base;
-      final out = File('${dir.path}/${stem}-${_format}-${DateTime.now().millisecondsSinceEpoch}.zip');
+      final out = File(
+        '${dir.path}/${stem}-${_format}-${DateTime.now().millisecondsSinceEpoch}.zip',
+      );
       await out.writeAsBytes(response.data as List<int>);
       final size = await out.length();
       if (mounted) {
@@ -133,10 +135,10 @@ class _PdfToImagePageState extends State<PdfToImagePage> {
               onClear: _source == null
                   ? null
                   : () => setState(() {
-                        _source = null;
-                        _resultPath = null;
-                        _error = null;
-                      }),
+                      _source = null;
+                      _resultPath = null;
+                      _error = null;
+                    }),
             ),
             const SizedBox(height: 24),
             Text('pdf_to_image.format'.tr(), style: theme.textTheme.titleSmall),
@@ -183,7 +185,10 @@ class _PdfToImagePageState extends State<PdfToImagePage> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.error_outline, color: theme.colorScheme.onErrorContainer),
+                    Icon(
+                      Icons.error_outline,
+                      color: theme.colorScheme.onErrorContainer,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(child: Text(_error!)),
                   ],
@@ -195,7 +200,8 @@ class _PdfToImagePageState extends State<PdfToImagePage> {
               onPressed: (_busy || _source == null) ? null : _doConvert,
               icon: _busy
                   ? const SizedBox(
-                      width: 16, height: 16,
+                      width: 16,
+                      height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.image),
@@ -205,7 +211,9 @@ class _PdfToImagePageState extends State<PdfToImagePage> {
               const SizedBox(height: 24),
               Card(
                 elevation: 0,
-                color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                color: theme.colorScheme.primaryContainer.withValues(
+                  alpha: 0.3,
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
@@ -218,7 +226,9 @@ class _PdfToImagePageState extends State<PdfToImagePage> {
                           Expanded(
                             child: Text(
                               _pages != null
-                                  ? 'pdf_to_image.complete'.tr(namedArgs: {'pages': '$_pages'})
+                                  ? 'pdf_to_image.complete'.tr(
+                                      namedArgs: {'pages': '$_pages'},
+                                    )
                                   : 'Saved ${_formatBytes(_bytes!)} ZIP',
                             ),
                           ),
