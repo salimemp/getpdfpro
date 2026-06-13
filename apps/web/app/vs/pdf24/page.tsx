@@ -93,7 +93,7 @@ export default function VsPdf24Page() {
             desktop app (Windows) plus a free online toolset, with zero
             ads and zero telemetry. GetPDFPro is a browser-only tool
             that&apos;s also free (with a generous 50-tasks/day free
-            tier and a $3.99/month Pro upgrade) and works on any
+            tier and a $5.99/month Pro upgrade) and works on any
             device. Choose PDF24 if you have Windows and want a
             desktop app that runs offline. Choose GetPDFPro if you
             want a no-install, browser-based tool with strong
@@ -121,7 +121,7 @@ export default function VsPdf24Page() {
                 />
                 <Row
                   label="Paid tier"
-                  us="$3.99/month or $24/year (Pro, optional)"
+                  us="$5.99/month or $53.88/year (Pro, optional)"
                   them="No paid tier. PDF24 Creator desktop app is free."
                 />
                 <Row

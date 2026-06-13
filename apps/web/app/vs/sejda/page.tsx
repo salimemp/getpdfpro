@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 const faqs = [
   {
     q: "Is GetPDFPro a replacement for Sejda?",
-    a: "For most everyday tasks, yes. Both products cover merge, split, compress, convert PDF ↔ Word/Excel/PPT/JPG, edit, sign, OCR, protect, watermark, page-numbers, rotate, crop, redact, compare, repair. GetPDFPro has a much more generous free tier (50 tasks/day vs Sejda's 3 tasks/hour and 200-page cap), and a Pro tier that costs less than Sejda's Web Monthly ($3.99/month vs $7.50/month). Sejda has a desktop app and slightly more advanced editing features (JavaScript-free fillable forms, Bates numbering, N-up, deskew).",
+    a: "For most everyday tasks, yes. Both products cover merge, split, compress, convert PDF ↔ Word/Excel/PPT/JPG, edit, sign, OCR, protect, watermark, page-numbers, rotate, crop, redact, compare, repair. GetPDFPro has a much more generous free tier (50 tasks/day vs Sejda's 3 tasks/hour and 200-page cap), and a Pro tier that costs less than Sejda's Web Monthly ($5.99/month vs $7.50/month). Sejda has a desktop app and slightly more advanced editing features (JavaScript-free fillable forms, Bates numbering, N-up, deskew).",
   },
   {
     q: "How much does Sejda cost in 2026?",
@@ -27,7 +27,7 @@ const faqs = [
   },
   {
     q: "How much does GetPDFPro cost?",
-    a: "The free tier gives signed-in users 50 PDF tasks per day, anonymous users 1 task/day, 50 MB per file — no time limit. Pro is $3.99/month or $24/year and unlocks 1,000 tasks/day, 4 GB files, batch processing, and AI features. There's a 30-day money-back guarantee on Pro, no questions asked.",
+    a: "The free tier gives signed-in users 50 PDF tasks per day, anonymous users 1 task/day, 50 MB per file — no time limit. Pro is $5.99/month or $53.88/year and unlocks 1,000 tasks/day, 4 GB files, batch processing, and AI features. There's a 30-day money-back guarantee on Pro, no questions asked.",
   },
   {
     q: "How generous is Sejda's free tier?",
@@ -95,7 +95,7 @@ export default function VsSejdaPage() {
             restricted (3 tasks/hour, 200-page cap); paid starts at{" "}
             <strong>$7.50/month</strong> (Web) or $63/year (Desktop+Web
             bundle). GetPDFPro has a more generous free tier (50
-            tasks/day, no page cap), a cheaper Pro tier ($3.99/month
+            tasks/day, no page cap), a cheaper Pro tier ($5.99/month
             vs $7.50/month), and AI features Sejda doesn&apos;t
             offer. Choose Sejda if you need a desktop app or use
             Sejda&apos;s Bates numbering / N-up / deskew features.
@@ -124,12 +124,12 @@ export default function VsSejdaPage() {
                 />
                 <Row
                   label="Paid tier (annual)"
-                  us="$24/year ($2/mo equivalent)"
+                  us="$53.88/year ($4.49/mo equivalent)"
                   them="$63/year (Desktop+Web bundle) or $90/year equivalent for Web Monthly at $7.50/mo"
                 />
                 <Row
                   label="Paid tier (monthly)"
-                  us="$3.99/month"
+                  us="$5.99/month"
                   them="$7.50/month (Web Monthly) or $5 for 7 days (Week Pass)"
                 />
                 <Row
@@ -228,7 +228,7 @@ export default function VsSejdaPage() {
               <h3 className="font-semibold">Choose {SITE_NAME} if you:</h3>
               <ul className="mt-3 space-y-2 text-sm text-slate-600 dark:text-slate-300">
                 <li>• Use the free tier often (50 tasks/day vs Sejda&apos;s 3/hour)</li>
-                <li>• Want a cheaper Pro tier ($3.99 vs $7.50)</li>
+                <li>• Want a cheaper Pro tier ($5.99 vs $7.50)</li>
                 <li>• Process large files (4 GB vs Sejda&apos;s 500 MB)</li>
                 <li>• Need AI features (Summarize, Translate)</li>
                 <li>• Want a 30-day money-back guarantee</li>

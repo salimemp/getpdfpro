@@ -46,8 +46,8 @@ export default function BetaPage() {
                 "Up to 4 GB per file (vs 100 MB for free)",
                 "Every Pro feature unlocked — AI tools, batch processing, priority support",
                 "Direct line to the founder (me) for feature requests, bugs, or just to say hi",
-                "Locked-in pricing: if we ever raise prices, your rate stays the same",
-                "6 months free. After that, downgrade to free or stay on Pro at $2.99/mo — your call",
+                "Early access to new tools and features before public launch",
+                "6 months free. After that, downgrade to free or stay on Pro at $5.99/mo — your call",
               ].map((line) => (
                 <li key={line} className="flex items-start gap-2">
                   <span className="mt-1 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />

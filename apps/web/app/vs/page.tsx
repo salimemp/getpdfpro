@@ -15,13 +15,13 @@ const comparisons = [
     slug: "adobe-acrobat",
     name: "Adobe Acrobat",
     tagline:
-      "Adobe Acrobat Pro is the most complete PDF tool on the market, but it costs $19.99/month. GetPDFPro covers the 90% case for ~$3.99/month.",
+      "Adobe Acrobat Pro is the most complete PDF tool on the market, but it costs $19.99/month. GetPDFPro covers the 90% case for ~$5.99/month.",
   },
   {
     slug: "smallpdf",
     name: "Smallpdf",
     tagline:
-      "Smallpdf is the most popular browser-based PDF tool with a mature desktop and mobile app. GetPDFPro covers the same 90% of everyday tasks for ~$24/year vs $108/year.",
+      "Smallpdf is the most popular browser-based PDF tool with a mature desktop and mobile app. GetPDFPro covers the same 90% of everyday tasks for ~$53.88/year vs $108/year.",
   },
   {
     slug: "ilovepdf",
@@ -39,7 +39,7 @@ const comparisons = [
     slug: "sejda",
     name: "Sejda",
     tagline:
-      "Sejda is a developer-friendly PDF toolset with a desktop app and per-task pricing. GetPDFPro has a more generous free tier and a cheaper Pro tier ($3.99 vs $7.50/month).",
+      "Sejda is a developer-friendly PDF toolset with a desktop app and per-task pricing. GetPDFPro has a more generous free tier and a cheaper Pro tier ($5.99 vs $7.50/month).",
   },
   {
     slug: "soda-pdf",
@@ -112,7 +112,7 @@ export default function VsIndexPage() {
             39 free PDF tools, in-memory processing, no analytics, no ad
             networks, no third-party tracking pixels. The free tier gives
             signed-in users 50 PDF tasks per day; the Pro tier is
-            $3.99/month and unlocks 1,000 tasks/day, 4 GB files, batch
+            $5.99/month and unlocks 1,000 tasks/day, 4 GB files, batch
             processing, and AI features. There&apos;s a 30-day money-back
             guarantee on Pro, no questions asked.
           </p>

@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 const faqs = [
   {
     q: "Is GetPDFPro really free?",
-    a: "Yes. The free tier gives signed-in users 50 PDF tasks per day, anonymous users 1 task per day, and there's no time limit on the account. Pro is $3.99/month and unlocks 1,000 tasks/day, 4 GB files, AI features, and batch processing. iLovePDF's free tier is similar in that it's free, but their Premium starts at ₹200/month (~$2.40/mo) for the annual plan or ₹500/month (~$6/mo) monthly, per their live pricing page on 11 June 2026.",
+    a: "Yes. The free tier gives signed-in users 50 PDF tasks per day, anonymous users 1 task per day, and there's no time limit on the account. Pro is $5.99/month and unlocks 1,000 tasks/day, 4 GB files, AI features, and batch processing. iLovePDF's free tier is similar in that it's free, but their Premium starts at ₹200/month (~$2.40/mo) for the annual plan or ₹500/month (~$6/mo) monthly, per their live pricing page on 11 June 2026.",
   },
   {
     q: "Do you store my files?",
@@ -114,12 +114,12 @@ export default function VsIlovepdfPage() {
                 />
                 <Row
                   label="Pro price (annual)"
-                  us="$24/year ($2/mo equivalent)"
+                  us="$53.88/year ($4.49/mo equivalent)"
                   them="₹2,400/year (~$28.80/year at 11 June 2026 rates)"
                 />
                 <Row
                   label="Pro price (monthly)"
-                  us="$3.99/month"
+                  us="$5.99/month"
                   them="₹500/month (~$6/month at 11 June 2026 rates)"
                 />
                 <Row
