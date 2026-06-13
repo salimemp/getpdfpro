@@ -100,8 +100,7 @@ class StandardToolPage extends StatefulWidget {
   /// Optional validation hook called before the API call. If
   /// it returns a non-null string, the page shows that as an
   /// error and skips the API call.
-  final String? Function(Map<String, dynamic> formValues)?
-      preSubmitValidation;
+  final String? Function(Map<String, dynamic> formValues)? preSubmitValidation;
 
   @override
   State<StandardToolPage> createState() => _StandardToolPageState();
@@ -180,8 +179,9 @@ class _StandardToolPageState extends State<StandardToolPage> {
           break;
         case FieldType.dropdown:
           formValues[f.id] = _dropdownValue;
-          if (f.required && (formValues[f.id] == null ||
-              (formValues[f.id] as String).isEmpty)) {
+          if (f.required &&
+              (formValues[f.id] == null ||
+                  (formValues[f.id] as String).isEmpty)) {
             setState(() => _error = '${f.label} is required');
             return;
           }
@@ -218,7 +218,8 @@ class _StandardToolPageState extends State<StandardToolPage> {
       final stem = base.endsWith('.pdf')
           ? base.substring(0, base.length - 4)
           : base;
-      final outName = '$stem${widget.suggestedFileSuffix}-'
+      final outName =
+          '$stem${widget.suggestedFileSuffix}-'
           '${DateTime.now().millisecondsSinceEpoch}.'
           '${widget.outputExtension}';
       final out = File('${dir.path}/$outName');
@@ -263,16 +264,18 @@ class _StandardToolPageState extends State<StandardToolPage> {
               onClear: _source == null
                   ? null
                   : () => setState(() {
-                        _source = null;
-                        _resultPath = null;
-                        _error = null;
-                      }),
+                      _source = null;
+                      _resultPath = null;
+                      _error = null;
+                    }),
             ),
             const SizedBox(height: 16),
-            ...widget.formFields.map((f) => Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: _buildField(f),
-                )),
+            ...widget.formFields.map(
+              (f) => Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _buildField(f),
+              ),
+            ),
             if (_error != null) ...[
               Container(
                 padding: const EdgeInsets.all(12),
@@ -282,7 +285,10 @@ class _StandardToolPageState extends State<StandardToolPage> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.error_outline, color: theme.colorScheme.onErrorContainer),
+                    Icon(
+                      Icons.error_outline,
+                      color: theme.colorScheme.onErrorContainer,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(child: Text(_error!)),
                   ],
@@ -294,7 +300,8 @@ class _StandardToolPageState extends State<StandardToolPage> {
               onPressed: (_busy || _source == null) ? null : _doSubmit,
               icon: _busy
                   ? const SizedBox(
-                      width: 16, height: 16,
+                      width: 16,
+                      height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : Icon(widget.actionIcon),
@@ -304,7 +311,9 @@ class _StandardToolPageState extends State<StandardToolPage> {
               const SizedBox(height: 24),
               Card(
                 elevation: 0,
-                color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                color: theme.colorScheme.primaryContainer.withValues(
+                  alpha: 0.3,
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
