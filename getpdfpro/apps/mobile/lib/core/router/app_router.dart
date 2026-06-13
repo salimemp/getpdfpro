@@ -129,9 +129,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           // The session is now valid (recovery type). Only
           // navigate if we're not already on the recovery page
           // (avoid the redundant navigation race).
-          final current = refresh.router?.routerDelegate.currentConfiguration.uri.path;
+          final current =
+              refresh.router?.routerDelegate.currentConfiguration.uri.path;
           if (current != '/auth/recovery') {
-            debugPrint('AuthStateChange.passwordRecovery — routing to /auth/recovery');
+            debugPrint(
+              'AuthStateChange.passwordRecovery — routing to /auth/recovery',
+            );
             refresh.notifyAndRoute('/auth/recovery');
           }
         } else if (data.event == AuthChangeEvent.signedIn) {
@@ -144,11 +147,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           // (i.e. we came from an email-verification deep link
           // and the user is now signed in), this is the moment
           // to show the success state.
-          final current = refresh.router?.routerDelegate.currentConfiguration.uri.path;
+          final current =
+              refresh.router?.routerDelegate.currentConfiguration.uri.path;
           if (current == '/auth/confirm' &&
               data.session?.user.emailConfirmedAt != null) {
-            debugPrint('AuthStateChange.signedIn on /auth/confirm — '
-                'treating as email verification success');
+            debugPrint(
+              'AuthStateChange.signedIn on /auth/confirm — '
+              'treating as email verification success',
+            );
             // The page is already mounted and listening for
             // emailVerified; it will see currentSession itself.
             // No navigation needed; the page flips to success
@@ -215,14 +221,8 @@ GoRouter _buildRouter(_RouterRefreshListenable refresh) {
       // Custom-UIX tool pages — each has its own state model
       // (file picker, multi-file, password, etc.) and can't be
       // expressed via the StandardToolPage builder.
-      GoRoute(
-        path: '/tools/merge',
-        builder: (_, __) => const MergePage(),
-      ),
-      GoRoute(
-        path: '/tools/split',
-        builder: (_, __) => const SplitPage(),
-      ),
+      GoRoute(path: '/tools/merge', builder: (_, __) => const MergePage()),
+      GoRoute(path: '/tools/split', builder: (_, __) => const SplitPage()),
       GoRoute(
         path: '/tools/compress',
         builder: (_, __) => const CompressPage(),
@@ -231,10 +231,7 @@ GoRouter _buildRouter(_RouterRefreshListenable refresh) {
         path: '/tools/pdf-to-image',
         builder: (_, __) => const PdfToImagePage(),
       ),
-      GoRoute(
-        path: '/tools/protect',
-        builder: (_, __) => const ProtectPage(),
-      ),
+      GoRoute(path: '/tools/protect', builder: (_, __) => const ProtectPage()),
       GoRoute(
         path: '/tools/organize',
         builder: (_, __) => const OrganizePage(),
@@ -245,7 +242,8 @@ GoRouter _buildRouter(_RouterRefreshListenable refresh) {
         path: '/tools/summarize',
         builder: (_, __) => const TextInputToolPage(
           title: 'AI Summarize',
-          subtitle: 'Get a concise summary of a long block of text using Gemini.',
+          subtitle:
+              'Get a concise summary of a long block of text using Gemini.',
           endpoint: '/api/v1/pdf/summarize-download',
           responseKey: 'summary',
           preSubmitHint: 'Paste or type up to ~10,000 words to summarize.',
@@ -258,14 +256,16 @@ GoRouter _buildRouter(_RouterRefreshListenable refresh) {
           subtitle: 'Translate text to one of 12+ languages using Gemini.',
           endpoint: '/api/v1/pdf/translate-download',
           responseKey: 'translation',
-          preSubmitHint: 'Text to translate. Server picks target language from Accept-Language.',
+          preSubmitHint:
+              'Text to translate. Server picks target language from Accept-Language.',
         ),
       ),
       GoRoute(
         path: '/tools/read-aloud',
         builder: (_, __) => const TextInputToolPage(
           title: 'Read Aloud',
-          subtitle: 'Text-to-speech via the device\'s built-in TTS engine. Free, offline, no upload.',
+          subtitle:
+              'Text-to-speech via the device\'s built-in TTS engine. Free, offline, no upload.',
           endpoint: '/api/v1/pdf/read-aloud',
           responseKey: 'text',
           preSubmitHint: 'Paste text; we\'ll speak it.',
@@ -275,7 +275,8 @@ GoRouter _buildRouter(_RouterRefreshListenable refresh) {
         path: '/tools/dictate',
         builder: (_, __) => const TextInputToolPage(
           title: 'Dictate',
-          subtitle: 'Speech-to-text. Tap the mic, speak, see your words transcribed on-device.',
+          subtitle:
+              'Speech-to-text. Tap the mic, speak, see your words transcribed on-device.',
           endpoint: '/api/v1/pdf/dictate',
           responseKey: 'text',
           preSubmitHint: 'Hold the mic button to dictate.',
@@ -289,7 +290,8 @@ GoRouter _buildRouter(_RouterRefreshListenable refresh) {
       for (final toolId in kSimpleToolPages.keys)
         GoRoute(
           path: '/tools/$toolId',
-          builder: (_, __) => buildSimpleToolPage(toolId) ?? const SizedBox.shrink(),
+          builder: (_, __) =>
+              buildSimpleToolPage(toolId) ?? const SizedBox.shrink(),
         ),
       // Catch-all for any other /tools/<id> — see redirect below.
       GoRoute(
