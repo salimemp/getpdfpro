@@ -57,7 +57,10 @@ class _SignupPageState extends State<SignupPage> {
       return;
     }
     if (email.isEmpty) {
-      setState(() => _error = 'auth.email'.tr() + ' ' + 'errors.empty_file'.tr().toLowerCase());
+      setState(
+        () => _error =
+            'auth.email'.tr() + ' ' + 'errors.empty_file'.tr().toLowerCase(),
+      );
       return;
     }
     if (password.length < 8) {
@@ -79,9 +82,7 @@ class _SignupPageState extends State<SignupPage> {
         // Replace the signup page with a "check your email" screen
         // so back-button doesn't drop the user back into the form.
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => _CheckYourEmailPage(email: email),
-          ),
+          MaterialPageRoute(builder: (_) => _CheckYourEmailPage(email: email)),
         );
       }
     } on AuthException catch (e) {
@@ -104,10 +105,7 @@ class _SignupPageState extends State<SignupPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'signup.heading'.tr(),
-                style: theme.textTheme.headlineSmall,
-              ),
+              Text('signup.heading'.tr(), style: theme.textTheme.headlineSmall),
               const SizedBox(height: 8),
               Text(
                 'signup.subtitle'.tr(),
@@ -148,9 +146,11 @@ class _SignupPageState extends State<SignupPage> {
                   helperText: 'recovery.password_hint'.tr(),
                   prefixIcon: const Icon(Icons.lock),
                   suffixIcon: IconButton(
-                    icon: Icon(_obscurePassword
-                        ? Icons.visibility_off
-                        : Icons.visibility),
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                    ),
                     onPressed: () =>
                         setState(() => _obscurePassword = !_obscurePassword),
                   ),
@@ -167,12 +167,17 @@ class _SignupPageState extends State<SignupPage> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.error_outline, color: theme.colorScheme.onErrorContainer),
+                      Icon(
+                        Icons.error_outline,
+                        color: theme.colorScheme.onErrorContainer,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           _error!,
-                          style: TextStyle(color: theme.colorScheme.onErrorContainer),
+                          style: TextStyle(
+                            color: theme.colorScheme.onErrorContainer,
+                          ),
                         ),
                       ),
                     ],
@@ -184,7 +189,8 @@ class _SignupPageState extends State<SignupPage> {
                 onPressed: _loading ? null : _signUp,
                 child: _loading
                     ? const SizedBox(
-                        height: 20, width: 20,
+                        height: 20,
+                        width: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : Text('signup.create_account'.tr()),
