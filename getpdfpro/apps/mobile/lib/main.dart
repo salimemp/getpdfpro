@@ -49,9 +49,5 @@ Future<void> main() async {
     );
   }
 
-  runApp(
-    const ProviderScope(
-      child: GetPDFProApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: GetPDFProApp()));
 }
