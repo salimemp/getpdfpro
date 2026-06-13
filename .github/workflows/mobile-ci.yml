@@ -1,0 +1,110 @@
+name: Mobile CI
+
+# Runs `flutter analyze` and `flutter test` on the Flutter mobile
+# app. Triggered on:
+#   - Pull requests touching the mobile app
+#   - Direct pushes to main
+#   - Manual dispatch (for re-running after a fix)
+#
+# We use a Dart 3.5+/Flutter 3.24+ matrix (matches the mobile
+# pubspec's `environment` block). macOS is needed if we ever
+# add an iOS build step — kept commented for now since the
+# analyze + test loop is platform-agnostic.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'getpdfpro/apps/mobile/**'
+      - '.github/workflows/mobile-ci.yml'
+  pull_request:
+    paths:
+      - 'getpdfpro/apps/mobile/**'
+  workflow_dispatch:
+
+# Cancel in-progress runs of this same workflow on the same
+# branch. Without this, two consecutive pushes to a PR trigger
+# two full ~5 min builds.
+concurrency:
+  group: mobile-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  analyze-and-test:
+    name: Analyze + test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # We only need the mobile app subdir, but Flutter's
+          # `pub get` reads from pubspec.yaml only — so a full
+          # checkout is fine and faster than subpath filtering.
+          fetch-depth: 0
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          # Pinned to the same version our docs recommend.
+          # Bump together with pubspec.yaml's `environment.flutter`.
+          flutter-version: '3.24.5'
+          channel: stable
+          # Cache the pub-cache between runs. Saves ~30s per run.
+          cache: true
+          cache-key: 'flutter-pub-cache-3.24.5'
+
+      - name: Show Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        working-directory: getpdfpro/apps/mobile
+        # First run: no `pubspec.lock` exists yet, so `flutter
+        # pub get` creates one. We commit it after.
+        # Subsequent runs: this updates the lockfile to the
+        # latest allowed by pubspec.yaml. The diff is visible in
+        # the PR and should be reviewed.
+        run: flutter pub get
+
+      - name: Verify pubspec constraints
+        # Sanity check: did someone update pubspec.yaml but
+        # forget to commit a regenerated pubspec.lock? This
+        # fails if the lockfile is out of sync with pubspec.yaml.
+        # Skipped on the very first run when no lockfile exists.
+        working-directory: getpdfpro/apps/mobile
+        if: hashFiles('getpdfpro/apps/mobile/pubspec.lock') != ''
+        run: dart pub get --enforce-lockfile
+
+      - name: Run flutter analyze
+        working-directory: getpdfpro/apps/mobile
+        # `--fatal-infos` would also fail on info-level lints;
+        # we leave it off so we don't block on style nits.
+        run: flutter analyze --no-fatal-warnings
+
+      - name: Run flutter test
+        working-directory: getpdfpro/apps/mobile
+        # Currently there are no test files — but this command
+        # exists so future PRs adding tests get coverage
+        # automatically. The `--no-pub` flag is redundant with
+        # the explicit `flutter pub get` above, but it makes
+        # the intent clear to future maintainers.
+        run: flutter test --no-pub --reporter=expanded
+
+      - name: Check formatting
+        working-directory: getpdfpro/apps/mobile
+        # `dart format` exits 1 if any file would be reformatted.
+        # Run with `--set-exit-if-changed` to fail the build.
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "### Mobile CI Summary" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Flutter:** $(flutter --version | head -1)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "PRs that fail this check cannot merge to main." >> $GITHUB_STEP_SUMMARY

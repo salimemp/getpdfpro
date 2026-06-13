@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>GetPDFPro</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>getpdfpro_mobile</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(FLUTTER_BUILD_NAME)</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+
+	<!-- ============================================================ -->
+	<!-- Custom URL scheme — deep link back from OAuth/magic links.    -->
+	<!-- Supabase auth uses `getpdfpro://login-callback?...` as the    -->
+	<!-- `redirectTo` parameter. iOS opens our app directly on tap.   -->
+	<!-- ============================================================ -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.getpdfpro.mobile</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>getpdfpro</string>
+			</array>
+		</dict>
+	</array>
+
+	<!-- ============================================================ -->
+	<!-- Universal Links — iOS will open the app for HTTPS URLs       -->
+	<!-- matching the applinks entry on app.getpdfpro.com. This is    -->
+	<!-- preferred over the custom scheme when available because it   -->
+	<!-- survives password-reset emails, Share Sheet opens, and       -->
+	<!-- Universal Link previews. Configure the apple-app-site-        -->
+	<!-- association file at https://app.getpdfpro.com/.well-known/   -->
+	<!-- apple-app-site-association (see platform_setup/README.md).    -->
+	<!-- ============================================================ -->
+	<key>FlutterDeepLinkingEnabled</key>
+	<true/>
+
+	<!-- ============================================================ -->
+	<!-- Speech recognition + microphone — required for the Dictate   -->
+	<!-- tool and voice command in the search bar. Without these, iOS  -->
+	<!-- will hard-fail the first time speech_to_text is invoked.     -->
+	<!-- ============================================================ -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>GetPDFPro needs microphone access to transcribe your speech in the Dictate tool and to accept voice commands.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>GetPDFPro uses on-device speech recognition to power the Dictate tool. Your audio is processed on this device — it is never sent to a server.</string>
+
+	<!-- ============================================================ -->
+	<!-- Camera — used by the Scan-to-PDF tool (camera scanner).      -->
+	<!-- ============================================================ -->
+	<key>NSCameraUsageDescription</key>
+	<string>GetPDFPro uses the camera to scan paper documents into PDFs.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>GetPDFPro needs access to your photo library to attach scanned images to PDFs.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>GetPDFPro needs permission to save generated PDFs to your photo library.</string>
+</dict>
+</plist>

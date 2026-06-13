@@ -1,0 +1,147 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--
+        Permissions
+        ============
+
+        INTERNET — required for all API calls.
+        CAMERA   — used by Scan-to-PDF (camera capture).
+        RECORD_AUDIO — used by Dictate (speech-to-text) and the dashboard's
+                       voice-command search bar.
+        READ_MEDIA_IMAGES (API 33+) — pick images for Image-to-PDF.
+        READ_EXTERNAL_STORAGE (API ≤32) — pick files on older Android.
+        POST_NOTIFICATIONS (API 33+) — for future "conversion complete"
+                                         notifications (not used in MVP).
+    -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
+    <!-- Camera hardware is optional — users without a camera (most
+         Android TV, some tablets) should still be able to install. -->
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false"/>
+    <!-- Microphone hardware is optional for the same reason. -->
+    <uses-feature
+        android:name="android.hardware.microphone"
+        android:required="false"/>
+
+    <application
+        android:label="GetPDFPro"
+        android:name="${applicationName}"
+        android:icon="@mipmap/ic_launcher">
+
+        <!--
+            Flutter's recommended activity block. Do NOT change the
+            android:name — it's the platform glue.
+        -->
+        <activity
+            android:name="${applicationName}.MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:taskAffinity=""
+            android:theme="@style/LaunchTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
+
+            <!--
+                Theme/splash metadata. Set up by `flutter create` —
+                leave these defaults alone.
+            -->
+            <meta-data
+                android:name="io.flutter.embedding.android.NormalTheme"
+                android:resource="@style/NormalTheme"/>
+            <meta-data
+                android:name="io.flutter.embedding.android.SplashScreenDrawable"
+                android:resource="@drawable/launch_background"/>
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+
+            <!--
+                Deep link #1 — custom scheme `getpdfpro://...`
+                ===============================================
+                Supabase auth's `redirectTo` parameter is set to
+                `getpdfpro://login-callback`. When the user completes
+                OAuth or taps a magic link, the OS opens our app at
+                this intent. We declare `BROWSABLE` so the redirect
+                can come from a Custom Tab.
+
+                On Android 12+ (API 31+), `autoVerify="true"` is
+                honored for HTTPS links but ignored for custom-scheme
+                intents, so it's safe to leave on.
+            -->
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="getpdfpro"/>
+            </intent-filter>
+
+            <!--
+                Deep link #2 — App Links (Universal Links) for HTTPS
+                ====================================================
+                `app.getpdfpro.com` is verified via the
+                `/.well-known/assetlinks.json` file deployed at that
+                host. When verified, Android opens our app directly
+                for matching links without showing the disambiguation
+                dialog.
+
+                To set this up:
+                  1. Generate a SHA-256 fingerprint for the signing
+                     key (`./gradlew signingReport`).
+                  2. Add the JSON to app.getpdfpro.com/.well-known/
+                     assetlinks.json (see platform_setup/README.md).
+                  3. Set `autoVerify="true"` after step 2.
+            -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+
+                <data android:scheme="https"/>
+                <data android:host="app.getpdfpro.com"/>
+                <data android:pathPrefix="/auth/"/>
+                <data android:pathPrefix="/reset-password"/>
+            </intent-filter>
+        </activity>
+
+        <!--
+            The Flutter background isolate. Required for the platform
+            channels to work. Leave as-is.
+        -->
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2"/>
+    </application>
+
+    <!--
+        Queries — Android 11+ (API 30+) requires apps to declare which
+        external packages they want to resolve. We declare the
+        browsers and OAuth providers so the OAuth flow can launch
+        Chrome / a Custom Tab without hitting the "no app found" error.
+
+        `tools:node` is used here to allow multiple package entries
+        without triggering a manifest-merge conflict.
+    -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <category android:name="android.intent.category.BROWSABLE"/>
+            <data android:scheme="https"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <category android:name="android.intent.category.BROWSABLE"/>
+            <data android:scheme="http"/>
+        </intent>
+    </queries>
+</manifest>
