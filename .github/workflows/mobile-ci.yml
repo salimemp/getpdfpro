@@ -57,7 +57,7 @@ jobs:
           # ship Dart 3.7. 3.44 (the version we tested
           # locally) also works because pubspec only
           # requires >=3.27.
-          flutter-version: '3.29.0'
+          flutter-version: '3.35.1'
           channel: stable
           # Note: pub-cache caching is disabled because
           # restoring an incompatible pub-cache (one built
