@@ -118,7 +118,9 @@ class _SplitPageState extends State<SplitPage> {
           ? base.substring(0, base.length - 4)
           : base;
       final suffix = _mode == 'all' ? 'pages' : 'split';
-      final out = File('${dir.path}/${stem}-${suffix}-${DateTime.now().millisecondsSinceEpoch}.zip');
+      final out = File(
+        '${dir.path}/${stem}-${suffix}-${DateTime.now().millisecondsSinceEpoch}.zip',
+      );
       await out.writeAsBytes(response.data as List<int>);
       final size = await out.length();
       if (mounted) {
@@ -128,9 +130,7 @@ class _SplitPageState extends State<SplitPage> {
           // Server returns X-Pdf-Parts and X-Pdf-Source-Pages headers
           // (see pdf.py). Surface them to the user so they know
           // how many files to expect.
-          _parts = int.tryParse(
-            response.headers.value('X-Pdf-Parts') ?? '',
-          );
+          _parts = int.tryParse(response.headers.value('X-Pdf-Parts') ?? '');
           _sourcePages = int.tryParse(
             response.headers.value('X-Pdf-Source-Pages') ?? '',
           );
@@ -155,10 +155,7 @@ class _SplitPageState extends State<SplitPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              'split.subtitle'.tr(),
-              style: theme.textTheme.bodyMedium,
-            ),
+            Text('split.subtitle'.tr(), style: theme.textTheme.bodyMedium),
             const SizedBox(height: 24),
             FilePickerField(
               file: _source,
@@ -166,10 +163,10 @@ class _SplitPageState extends State<SplitPage> {
               onClear: _source == null
                   ? null
                   : () => setState(() {
-                        _source = null;
-                        _resultPath = null;
-                        _error = null;
-                      }),
+                      _source = null;
+                      _resultPath = null;
+                      _error = null;
+                    }),
             ),
             const SizedBox(height: 24),
             Text('split.mode'.tr(), style: theme.textTheme.titleSmall),
@@ -215,7 +212,10 @@ class _SplitPageState extends State<SplitPage> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.error_outline, color: theme.colorScheme.onErrorContainer),
+                    Icon(
+                      Icons.error_outline,
+                      color: theme.colorScheme.onErrorContainer,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(child: Text(_error!)),
                   ],
@@ -227,7 +227,8 @@ class _SplitPageState extends State<SplitPage> {
               onPressed: (_busy || _source == null) ? null : _doSplit,
               icon: _busy
                   ? const SizedBox(
-                      width: 16, height: 16,
+                      width: 16,
+                      height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.call_split),
@@ -237,7 +238,9 @@ class _SplitPageState extends State<SplitPage> {
               const SizedBox(height: 24),
               Card(
                 elevation: 0,
-                color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                color: theme.colorScheme.primaryContainer.withValues(
+                  alpha: 0.3,
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
@@ -250,7 +253,9 @@ class _SplitPageState extends State<SplitPage> {
                           Expanded(
                             child: Text(
                               _parts != null
-                                  ? 'split.complete'.tr(namedArgs: {'parts': '$_parts'})
+                                  ? 'split.complete'.tr(
+                                      namedArgs: {'parts': '$_parts'},
+                                    )
                                   : 'Split complete',
                             ),
                           ),
@@ -259,9 +264,9 @@ class _SplitPageState extends State<SplitPage> {
                       if (_sourcePages != null) ...[
                         const SizedBox(height: 8),
                         Text(
-                          'split.source_pages'.tr(namedArgs: {
-                            'pages': '$_sourcePages',
-                          }),
+                          'split.source_pages'.tr(
+                            namedArgs: {'pages': '$_sourcePages'},
+                          ),
                         ),
                       ],
                       const SizedBox(height: 4),
