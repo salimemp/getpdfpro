@@ -2,18 +2,32 @@
 Email service via Resend.
 
 Resend free tier: 3K emails/month, 100/day.
-Templates:
-- Email verification
-- Magic link
-- Password reset
-- Job completion notification
-- Subscription receipt
+
+Templates are in :mod:`app.services.email_templates` and cover:
+- welcome
+- email verification
+- password reset
+- magic link sign-in
+- payment receipt (initial checkout + renewal)
+- payment failed
+- plan upgraded
+- plan cancelled
 """
 
 import structlog
 from pydantic import BaseModel, EmailStr
 
 from app.config import settings
+from app.services.email_templates import (
+    render_magic_link_email,
+    render_password_reset_email,
+    render_payment_failed_email,
+    render_payment_receipt,
+    render_plan_cancelled_email,
+    render_plan_upgraded_email,
+    render_verification_email,
+    render_welcome_email,
+)
 
 logger = structlog.get_logger()
 
@@ -62,45 +76,132 @@ class EmailService:
             logger.error("email_send_failed", error=str(e), to=message.to)
             raise
 
-    # ─── Common templates ─────────────────────────────────────
-    async def send_verification(self, to: str, verification_url: str, locale: str = "en") -> None:
-        subject = {
-            "en": "Verify your GetPDFPro email",
-            "es": "Verifica tu email de GetPDFPro",
-            "ar": "تحقق من بريدك الإلكتروني في GetPDFPro",
-            "hi": "अपना GetPDFPro ईमेल सत्यापित करें",
-        }.get(locale, "Verify your GetPDFPro email")
+    # ─── Transactional templates ───────────────────────────────
+    # Each method takes the recipient, locale, and the template-
+    # specific kwargs. Locale defaults to English.
+    async def send_welcome(
+        self,
+        to: str,
+        locale: str = "en",
+        *,
+        name: str = "",
+        dashboard_url: str = "",
+    ) -> None:
+        subject, html, text = render_welcome_email(
+            name=name, dashboard_url=dashboard_url, locale=locale
+        )
+        await self.send(EmailMessage(to=[to], subject=subject, html=html, text=text))
 
-        await self.send(EmailMessage(
-            to=[to],
-            subject=subject,
-            html=f"""
-                <h1>Welcome to GetPDFPro!</h1>
-                <p>Click the link below to verify your email address:</p>
-                <p><a href="{verification_url}" style="display:inline-block;padding:12px 24px;background:#0ea5e9;color:white;border-radius:8px;text-decoration:none;">Verify Email</a></p>
-                <p>This link expires in 1 hour.</p>
-                <p>If you didn't sign up, please ignore this email.</p>
-            """,
-        ))
+    async def send_verification(
+        self,
+        to: str,
+        locale: str = "en",
+        *,
+        verification_url: str = "",
+    ) -> None:
+        subject, html, text = render_verification_email(
+            verification_url=verification_url, locale=locale
+        )
+        await self.send(EmailMessage(to=[to], subject=subject, html=html, text=text))
 
-    async def send_magic_link(self, to: str, magic_url: str, locale: str = "en") -> None:
-        subject = {
-            "en": "Your GetPDFPro sign-in link",
-            "es": "Tu enlace de inicio de sesión de GetPDFPro",
-            "ar": "رابط تسجيل الدخول إلى GetPDFPro",
-            "hi": "आपका GetPDFPro साइन-इन लिंक",
-        }.get(locale, "Your GetPDFPro sign-in link")
+    async def send_password_reset(
+        self,
+        to: str,
+        locale: str = "en",
+        *,
+        reset_url: str = "",
+        email: str | None = None,
+    ) -> None:
+        subject, html, text = render_password_reset_email(
+            reset_url=reset_url, locale=locale, email=email
+        )
+        await self.send(EmailMessage(to=[to], subject=subject, html=html, text=text))
 
-        await self.send(EmailMessage(
-            to=[to],
-            subject=subject,
-            html=f"""
-                <h1>Sign in to GetPDFPro</h1>
-                <p>Click the link below to sign in. This link expires in 15 minutes.</p>
-                <p><a href="{magic_url}" style="display:inline-block;padding:12px 24px;background:#0ea5e9;color:white;border-radius:8px;text-decoration:none;">Sign In</a></p>
-                <p>If you didn't request this, you can safely ignore this email.</p>
-            """,
-        ))
+    async def send_magic_link(
+        self,
+        to: str,
+        locale: str = "en",
+        *,
+        login_url: str = "",
+    ) -> None:
+        subject, html, text = render_magic_link_email(
+            login_url=login_url, locale=locale
+        )
+        await self.send(EmailMessage(to=[to], subject=subject, html=html, text=text))
+
+    async def send_payment_receipt(
+        self,
+        to: str,
+        locale: str = "en",
+        *,
+        amount: float,
+        currency: str,
+        plan: str,
+        invoice_url: str,
+        receipt_id: str | None = None,
+    ) -> None:
+        subject, html, text = render_payment_receipt(
+            amount=amount,
+            currency=currency,
+            plan=plan,
+            invoice_url=invoice_url,
+            locale=locale,
+            receipt_id=receipt_id,
+        )
+        await self.send(EmailMessage(to=[to], subject=subject, html=html, text=text))
+
+    async def send_payment_failed(
+        self,
+        to: str,
+        locale: str = "en",
+        *,
+        amount: float,
+        currency: str,
+        plan: str,
+        update_payment_url: str,
+    ) -> None:
+        subject, html, text = render_payment_failed_email(
+            amount=amount,
+            currency=currency,
+            plan=plan,
+            update_payment_url=update_payment_url,
+            locale=locale,
+        )
+        await self.send(EmailMessage(to=[to], subject=subject, html=html, text=text))
+
+    async def send_plan_upgraded(
+        self,
+        to: str,
+        locale: str = "en",
+        *,
+        plan: str,
+        next_billing_date,
+        explore_url: str | None = None,
+    ) -> None:
+        subject, html, text = render_plan_upgraded_email(
+            plan=plan,
+            next_billing_date=next_billing_date,
+            locale=locale,
+            explore_url=explore_url,
+        )
+        await self.send(EmailMessage(to=[to], subject=subject, html=html, text=text))
+
+    async def send_plan_cancelled(
+        self,
+        to: str,
+        locale: str = "en",
+        *,
+        period_end,
+        plan: str | None = None,
+        reactivate_url: str | None = None,
+    ) -> None:
+        subject, html, text = render_plan_cancelled_email(
+            period_end=period_end,
+            locale=locale,
+            plan=plan,
+            reactivate_url=reactivate_url,
+        )
+        await self.send(EmailMessage(to=[to], subject=subject, html=html, text=text))
 
 
 # Module-level singleton
