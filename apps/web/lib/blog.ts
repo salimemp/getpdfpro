@@ -536,7 +536,7 @@ export const posts: BlogPost[] = [
       { type: "h2", text: "Try it" },
       {
         type: "p",
-        text: "Drop in a PDF, pick a splitting strategy, get a ZIP of clean files. Free tier handles files up to 50 MB, which is enough for most everyday splits. For multi-GB files, Pro ($3.99/mo) raises the cap to 4 GB and gives you 1,000 tasks per day.",
+        text: "Drop in a PDF, pick a splitting strategy, get a ZIP of clean files. Free tier handles files up to 50 MB, which is enough for most everyday splits. For multi-GB files, Pro ($5.99/mo) raises the cap to 4 GB and gives you 1,000 tasks per day.",
       },
     ],
     sources: [
@@ -632,7 +632,7 @@ export const posts: BlogPost[] = [
       },
       {
         type: "p",
-        text: "Web-only for now (mobile apps on the roadmap). Built on PyMuPDF and FastAPI. Free tier: 50 tasks/day signed-in, 1/day anonymous, 50 MB cap. Pro: $3.99/month or $24/year, 1,000 tasks/day, 4 GB files. Zero ads, zero third-party tracking, in-memory processing with immediate discard. Privacy posture: GDPR, CCPA, HIPAA-aware design, SOC 2 controls in place.",
+        text: "Web-only for now (mobile apps on the roadmap). Built on PyMuPDF and FastAPI. Free tier: 50 tasks/day signed-in, 1/day anonymous, 50 MB cap. Pro: $5.99/month or $53.88/year, 1,000 tasks/day, 4 GB files. Zero ads, zero third-party tracking, in-memory processing with immediate discard. Privacy posture: GDPR, CCPA, HIPAA-aware design, SOC 2 controls in place.",
       },
       {
         type: "h3",

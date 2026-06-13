@@ -27,7 +27,7 @@ const faqs = [
   },
   {
     q: "How much does GetPDFPro cost?",
-    a: "The free tier gives signed-in users 50 PDF tasks per day, anonymous users 1 task/day, and 50 MB per file — no time limit. Pro is $3.99/month or $24/year and unlocks 1,000 tasks/day, 4 GB files, batch processing, and AI features. There's a 30-day money-back guarantee on Pro, no questions asked.",
+    a: "The free tier gives signed-in users 50 PDF tasks per day, anonymous users 1 task/day, and 50 MB per file — no time limit. Pro is $5.99/month or $53.88/year and unlocks 1,000 tasks/day, 4 GB files, batch processing, and AI features. There's a 30-day money-back guarantee on Pro, no questions asked.",
   },
   {
     q: "Do you store my files?",
@@ -35,7 +35,7 @@ const faqs = [
   },
   {
     q: "How do AI features compare?",
-    a: "Smallpdf Pro ships AI tools: Chat with PDF, AI PDF Summarizer, Translate PDF, and AI Question Generator. AI tools have a 50 MB file size limit and a 25-35k word document limit (free tier) or 100k (paid). GetPDFPro Pro includes Summarize and Translate (in beta, Gemini-powered) with similar input limits. Smallpdf's AI is more mature; ours is cheaper and part of a smaller, more focused Pro tier ($3.99/month vs $9/month).",
+    a: "Smallpdf Pro ships AI tools: Chat with PDF, AI PDF Summarizer, Translate PDF, and AI Question Generator. AI tools have a 50 MB file size limit and a 25-35k word document limit (free tier) or 100k (paid). GetPDFPro Pro includes Summarize and Translate (in beta, Gemini-powered) with similar input limits. Smallpdf's AI is more mature; ours is cheaper and part of a smaller, more focused Pro tier ($5.99/month vs $9/month).",
   },
   {
     q: "Do you have a desktop or mobile app?",
@@ -51,7 +51,7 @@ const faqs = [
   },
   {
     q: "Should I switch from Smallpdf Pro to GetPDFPro Pro?",
-    a: "Only if you don't depend on the desktop app, mobile app, or batch upload to cloud storage. If you only need browser-based PDF tools, the savings are real: $24/year vs $108/year ($84/year saved). The 30-day money-back lets you try risk-free. If Smallpdf Pro is part of your team's workflow (Sign.com + shared Team folders), the migration cost is higher and you may want to stay.",
+    a: "Only if you don't depend on the desktop app, mobile app, or batch upload to cloud storage. If you only need browser-based PDF tools, the savings are real: $53.88/year vs $108/year ($54.12/year saved). The 30-day money-back lets you try risk-free. If Smallpdf Pro is part of your team's workflow (Sign.com + shared Team folders), the migration cost is higher and you may want to stay.",
   },
 ];
 
@@ -97,8 +97,8 @@ export default function VsSmallpdfPage() {
             Smallpdf is the most popular browser-based PDF tool, with a
             mature desktop + mobile app and a healthy AI feature set. Pro
             starts at <strong>$9/month</strong> (annual). GetPDFPro is
-            a free + Pro ($3.99/month) alternative that covers the same
-            90% of everyday tasks for ~80% less money. Choose Smallpdf if
+            a free + Pro ($5.99/month) alternative that covers the same
+            90% of everyday tasks for ~33% less money. Choose Smallpdf if
             you need a desktop app, mobile app, or Sign.com bundled in.
             Choose GetPDFPro if you mostly work in the browser and value
             privacy + lower price.
@@ -130,12 +130,12 @@ export default function VsSmallpdfPage() {
                 />
                 <Row
                   label="Paid tier (annual)"
-                  us="$24/year ($2/mo equivalent)"
+                  us="$53.88/year ($4.49/mo equivalent)"
                   them="$108/year ($9/month, annual billing)"
                 />
                 <Row
                   label="Paid tier (monthly)"
-                  us="$3.99/month"
+                  us="$5.99/month"
                   them="$12/month (no annual discount)"
                 />
                 <Row
@@ -170,7 +170,7 @@ export default function VsSmallpdfPage() {
                 />
                 <Row
                   label="AI features — pricing"
-                  us="Included in Pro ($3.99/month)"
+                  us="Included in Pro ($5.99/month)"
                   them="Included in Pro ($9/month)"
                 />
                 <Row
@@ -236,7 +236,7 @@ export default function VsSmallpdfPage() {
                 <li>• Work in the browser and don&apos;t need a native app</li>
                 <li>• Want a strictly private option (no file storage, no analytics)</li>
                 <li>• Process a moderate volume and want a generous free tier</li>
-                <li>• Care about price — $24/yr vs $108/yr</li>
+                <li>• Care about price — $53.88/yr vs $108/yr</li>
                 <li>• Want a 30-day money-back guarantee on paid</li>
               </ul>
             </div>

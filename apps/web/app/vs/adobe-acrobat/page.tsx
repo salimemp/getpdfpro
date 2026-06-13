@@ -27,7 +27,7 @@ const faqs = [
   },
   {
     q: "How much does GetPDFPro cost?",
-    a: "The free tier gives signed-in users 50 PDF tasks per day, anonymous users 1 task per day, and 50 MB per file — no time limit. Pro is $3.99/month or $24/year and unlocks 1,000 tasks/day, 4 GB files, batch processing, and AI features (Summarize, Translate, in beta). There's a 30-day money-back guarantee on Pro, no questions asked.",
+    a: "The free tier gives signed-in users 50 PDF tasks per day, anonymous users 1 task per day, and 50 MB per file — no time limit. Pro is $5.99/month or $53.88/year and unlocks 1,000 tasks/day, 4 GB files, batch processing, and AI features (Summarize, Translate, in beta). There's a 30-day money-back guarantee on Pro, no questions asked.",
   },
   {
     q: "Do you store my files?",
@@ -99,7 +99,7 @@ export default function VsAdobeAcrobatPage() {
           <p className="mt-4 text-slate-700 dark:text-slate-300">
             Adobe Acrobat Pro is the most complete PDF tool on the market,
             and it costs <strong>$19.99/month</strong> (annual). GetPDFPro
-            is a free + Pro ($3.99/month) alternative that covers the 90%
+            is a free + Pro ($5.99/month) alternative that covers the 90%
             case (merge, split, compress, convert, OCR, redact, sign) for
             ~80% less money. Choose Adobe if you need enterprise features
             (XFA forms, certified e-signatures, advanced PDF/A
@@ -134,12 +134,12 @@ export default function VsAdobeAcrobatPage() {
                 />
                 <Row
                   label="Paid tier (annual)"
-                  us="$24/year ($2/mo equivalent)"
+                  us="$53.88/year ($4.49/mo equivalent)"
                   them="$19.99/month × 12 = $239.88/year (Pro, annual paid monthly)"
                 />
                 <Row
                   label="Paid tier (monthly)"
-                  us="$3.99/month"
+                  us="$5.99/month"
                   them="$19.99/month (Pro) or $14.99/month (Standard)"
                 />
                 <Row
@@ -174,7 +174,7 @@ export default function VsAdobeAcrobatPage() {
                 />
                 <Row
                   label="AI features — pricing"
-                  us="Included in Pro ($3.99/month)"
+                  us="Included in Pro ($5.99/month)"
                   them="Included in Pro ($19.99/month)"
                 />
                 <Row

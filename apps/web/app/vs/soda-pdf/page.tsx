@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 const faqs = [
   {
     q: "Is GetPDFPro a replacement for Soda PDF?",
-    a: "For everyday tasks, yes. Both products cover merge, split, compress, convert PDF ↔ Word/Excel/PPT/JPG, edit, sign, OCR, redact, protect. Soda PDF's main differentiator is its Windows desktop app (Soda PDF Desktop) and e-signature (built into the desktop app). GetPDFPro is web-only, has a much more generous free tier (50 tasks/day vs Soda PDF Online's 2 files/day or 3 MB max), and a cheaper Pro tier ($3.99/month vs $7.25-$16.50/month).",
+    a: "For everyday tasks, yes. Both products cover merge, split, compress, convert PDF ↔ Word/Excel/PPT/JPG, edit, sign, OCR, redact, protect. Soda PDF's main differentiator is its Windows desktop app (Soda PDF Desktop) and e-signature (built into the desktop app). GetPDFPro is web-only, has a much more generous free tier (50 tasks/day vs Soda PDF Online's 2 files/day or 3 MB max), and a cheaper Pro tier ($5.99/month vs $7.25-$16.50/month).",
   },
   {
     q: "How much does Soda PDF cost in 2026?",
@@ -27,7 +27,7 @@ const faqs = [
   },
   {
     q: "How much does GetPDFPro cost?",
-    a: "The free tier gives signed-in users 50 PDF tasks per day, anonymous users 1 task/day, 50 MB per file — no time limit. Pro is $3.99/month or $24/year and unlocks 1,000 tasks/day, 4 GB files, batch processing, and AI features. There's a 30-day money-back guarantee on Pro, no questions asked.",
+    a: "The free tier gives signed-in users 50 PDF tasks per day, anonymous users 1 task/day, 50 MB per file — no time limit. Pro is $5.99/month or $53.88/year and unlocks 1,000 tasks/day, 4 GB files, batch processing, and AI features. There's a 30-day money-back guarantee on Pro, no questions asked.",
   },
   {
     q: "What does Soda PDF's free tier actually include?",
@@ -96,7 +96,7 @@ export default function VsSodaPdfPage() {
             <strong>$7.25/month</strong> (annual) or $7/month (Standard,
             Capterra). GetPDFPro is a web-only alternative with a much
             more generous free tier (50 tasks/day vs 2 files/day at
-            Soda PDF Online) and a cheaper Pro tier ($3.99/month vs
+            Soda PDF Online) and a cheaper Pro tier ($5.99/month vs
             $7.25). Choose Soda PDF if you need a Windows desktop app
             and use their e-signature / cloud storage. Choose
             GetPDFPro if you want a better free tier, a cheaper Pro
@@ -124,12 +124,12 @@ export default function VsSodaPdfPage() {
                 />
                 <Row
                   label="Paid tier (annual)"
-                  us="$24/year ($2/mo equivalent)"
+                  us="$53.88/year ($4.49/mo equivalent)"
                   them="$87/year Standard, $87/year Pro, $198/year Business (all annual, per Capterra)"
                 />
                 <Row
                   label="Paid tier (monthly)"
-                  us="$3.99/month"
+                  us="$5.99/month"
                   them="$7/month (Standard), $7.25/month (Pro), $16.50/month (Business)"
                 />
                 <Row
@@ -241,7 +241,7 @@ export default function VsSodaPdfPage() {
               <h3 className="font-semibold">Choose {SITE_NAME} if you:</h3>
               <ul className="mt-3 space-y-2 text-sm text-slate-600 dark:text-slate-300">
                 <li>• Use the free tier often (50 tasks/day vs Soda PDF Online&apos;s 2/day)</li>
-                <li>• Want a cheaper Pro tier ($3.99 vs $7.25)</li>
+                <li>• Want a cheaper Pro tier ($5.99 vs $7.25)</li>
                 <li>• Process large files (4 GB vs 3 MB on Soda PDF Online free)</li>
                 <li>• Work on macOS, Linux, or mobile</li>
                 <li>• Care about strict privacy (no file storage at all)</li>
