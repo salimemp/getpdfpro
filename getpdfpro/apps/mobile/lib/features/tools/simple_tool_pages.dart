@@ -32,8 +32,7 @@ class ToolPageSpec {
   final IconData actionIcon;
   final String? suggestedSuffix;
   final String outputExtension;
-  final String? Function(Map<String, dynamic> values)?
-      preSubmitValidation;
+  final String? Function(Map<String, dynamic> values)? preSubmitValidation;
 }
 
 /// Spec table. Add a new entry here to get a new tool page
@@ -96,8 +95,12 @@ final Map<String, ToolPageSpec> kSimpleToolPages = {
         label: 'Position',
         type: FieldType.dropdown,
         options: const [
-          'bottom-center', 'bottom-right', 'bottom-left',
-          'top-center', 'top-right', 'top-left',
+          'bottom-center',
+          'bottom-right',
+          'bottom-left',
+          'top-center',
+          'top-right',
+          'top-left',
         ],
         required: true,
       ),
@@ -163,7 +166,18 @@ final Map<String, ToolPageSpec> kSimpleToolPages = {
         id: 'lang',
         label: 'Language',
         type: FieldType.dropdown,
-        options: const ['eng', 'spa', 'fra', 'deu', 'hin', 'ara', 'chi_sim', 'jpn', 'kor', 'rus'],
+        options: const [
+          'eng',
+          'spa',
+          'fra',
+          'deu',
+          'hin',
+          'ara',
+          'chi_sim',
+          'jpn',
+          'kor',
+          'rus',
+        ],
         required: true,
       ),
     ],
@@ -218,10 +232,7 @@ final Map<String, ToolPageSpec> kSimpleToolPages = {
     endpoint: '/api/v1/security/unlock-download',
     suggestedSuffix: '-unlocked',
     formFields: [
-      ToolFormField(
-        id: 'password',
-        label: 'Current password (if any)',
-      ),
+      ToolFormField(id: 'password', label: 'Current password (if any)'),
     ],
   ),
   'watermark': ToolPageSpec(
@@ -230,17 +241,17 @@ final Map<String, ToolPageSpec> kSimpleToolPages = {
     endpoint: '/api/v1/pdf/watermark-download',
     suggestedSuffix: '-watermarked',
     formFields: [
-      ToolFormField(
-        id: 'text',
-        label: 'Watermark text',
-        required: true,
-      ),
+      ToolFormField(id: 'text', label: 'Watermark text', required: true),
       ToolFormField(
         id: 'position',
         label: 'Position',
         type: FieldType.dropdown,
         options: const [
-          'center', 'top-left', 'top-right', 'bottom-left', 'bottom-right',
+          'center',
+          'top-left',
+          'top-right',
+          'bottom-left',
+          'bottom-right',
         ],
         required: true,
       ),
@@ -253,16 +264,8 @@ final Map<String, ToolPageSpec> kSimpleToolPages = {
     endpoint: '/api/v1/security/sign-download',
     suggestedSuffix: '-signed',
     formFields: [
-      ToolFormField(
-        id: 'name',
-        label: 'Signer name',
-        required: true,
-      ),
-      ToolFormField(
-        id: 'date',
-        label: 'Date text',
-        hint: '2026-06-13',
-      ),
+      ToolFormField(id: 'name', label: 'Signer name', required: true),
+      ToolFormField(id: 'date', label: 'Date text', hint: '2026-06-13'),
     ],
   ),
   'redact': ToolPageSpec(
