@@ -73,7 +73,12 @@ sealed class DeepLinkAction {
 /// has typically already been exchanged by the time this fires —
 /// we just need to navigate the user to the right place.
 class LoginCallbackAction extends DeepLinkAction {
-  const LoginCallbackAction({this.accessToken, this.refreshToken, this.error, this.errorDescription});
+  const LoginCallbackAction({
+    this.accessToken,
+    this.refreshToken,
+    this.error,
+    this.errorDescription,
+  });
 
   /// Parsed access token, if present in the URL fragment. Most
   /// modern Supabase SDKs return the session via the SDK's own
@@ -237,7 +242,8 @@ class DeepLinkHandler {
       refreshToken: fragmentParams['refresh_token'],
       error: queryParams['error'] ?? fragmentParams['error'],
       errorDescription:
-          queryParams['error_description'] ?? fragmentParams['error_description'],
+          queryParams['error_description'] ??
+          fragmentParams['error_description'],
     );
   }
 
