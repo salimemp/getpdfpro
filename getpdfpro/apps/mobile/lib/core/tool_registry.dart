@@ -85,6 +85,7 @@ class Tool {
     this.webPath,
     this.requiresSignIn = false,
     this.comingSoon = false,
+    this.placeholder = false,
   });
 
   final String id;
@@ -105,6 +106,16 @@ class Tool {
   /// True if the tool is on the roadmap but not yet implemented in
   /// the mobile app. UI shows a "Coming soon" badge and disables tap.
   final bool comingSoon;
+
+  /// True if the tool is registered but the mobile app has not
+  /// shipped a native page for it yet — the router falls through
+  /// to the generic "Coming soon" placeholder for `/tools/<id>`.
+  /// Defaults to `false`. Set to `true` only when the only thing
+  /// the mobile app can do today is show a "use the web" CTA.
+  ///
+  /// Distinct from [comingSoon], which is shown in the dashboard
+  /// search results as a "Coming soon" badge and disables tap.
+  final bool placeholder;
 }
 
 /// The single registry of every tool. Add new tools here, give them
@@ -403,6 +414,10 @@ class ToolRegistry {
       route: '/tools/compare',
       icon: Icons.compare_arrows,
       webPath: '/tools/compare',
+      // Native ComparePage ships in
+      // apps/mobile/lib/features/tools/compare_page.dart and is
+      // wired to /tools/compare directly in app_router.dart.
+      placeholder: false,
     ),
 
     // ─── Intelligence (AI) ────────────────────────────────────

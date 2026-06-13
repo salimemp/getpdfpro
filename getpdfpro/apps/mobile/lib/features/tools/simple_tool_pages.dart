@@ -284,9 +284,9 @@ final Map<String, ToolPageSpec> kSimpleToolPages = {
   ),
   // Compare is intentionally NOT in this table — it
   // requires a second file picker, which the standard
-  // page doesn't support. Until we build a two-file
-  // variant, compare lands on the placeholder ("Coming
-  // soon — open on web").
+  // page doesn't support. The native two-file page
+  // lives in `compare_page.dart` and is wired to
+  // /tools/compare directly in app_router.dart.
   'edit-pdf': ToolPageSpec(
     titleKey: 'tools.edit_pdf',
     subtitleKey: 'tools.edit_pdf_desc',

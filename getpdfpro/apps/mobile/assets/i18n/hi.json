@@ -32,7 +32,8 @@
     "beta": "बीटा",
     "free": "मुफ़्त",
     "pro": "Pro",
-    "tap_to_speak": "बोलने के लिए टैप करें"
+    "tap_to_speak": "बोलने के लिए टैप करें",
+    "copy": "कॉपी करें"
   },
 
   "nav": {
@@ -249,7 +250,7 @@
     "redact": "PDF रिडैक्ट",
     "redact_desc": "टेक्स्ट पैटर्न हटाएं। असली या विज़ुअल ब्लैकआउट।",
     "compare": "PDF तुलना",
-    "compare_desc": "दो PDFs का अंतर देखें। विज़ुअल या केवल टेक्स्ट।",
+    "compare_desc": "दो PDFs की तुलना करें और देखें क्या बदला है।",
     "summarize": "AI सारांश",
     "summarize_desc": "Gemini का उपयोग करके PDF का संक्षिप्त सारांश प्राप्त करें।",
     "translate": "AI अनुवाद",
@@ -282,6 +283,38 @@
     "start_compress": "संपीड़ित करें",
     "complete": "{originalSize} → {newSize} संपीड़ित",
     "savings": "{pct}% बचाया"
+  },
+
+  "compare": {
+    "title": "PDFs की तुलना करें",
+    "subtitle": "PDF के दो संस्करणों के बीच क्या बदला देखें। मूल और संशोधित कॉपी चुनें।",
+    "file_a": "फ़ाइल A — मूल",
+    "file_b": "फ़ाइल B — संशोधित",
+    "total_size": "कुल: {size} (अधिकतम {max})",
+    "start_compare": "तुलना करें",
+    "complete": "तुलना पूरी हुई",
+    "page_counts": "A: {a} पेज · B: {b} पेज",
+    "adapter_adobe": "Adobe",
+    "adapter_local": "स्थानीय (PyMuPDF)",
+    "adapter_unknown": "अज्ञात एडाप्टर",
+    "similarity": "कुल समानता: {pct}%",
+    "no_changes": "कोई संरचनात्मक परिवर्तन नहीं मिला।",
+    "section_added": "जोड़ा गया ({count})",
+    "section_removed": "हटाया गया ({count})",
+    "section_modified": "संशोधित ({count})",
+    "page_label": "पेज {n}",
+    "chars_a": "A वर्ण",
+    "chars_b": "B वर्ण",
+    "words_a_only": "केवल A के शब्द",
+    "words_b_only": "केवल B के शब्द",
+    "raw_report": "कच्ची रिपोर्ट",
+    "both_required": "तुलना करने के लिए दोनों फ़ाइलें चुनें।",
+    "too_large": "फ़ाइलें कुल {size} — {max} की सीमा से अधिक।",
+    "path_missing": "चुनी गई फ़ाइल का पथ नहीं पढ़ा जा सका।",
+    "file_missing": "चुनी गई फ़ाइल डिस्क पर उपलब्ध नहीं है।",
+    "picker_failed": "फ़ाइल पिकर नहीं खुल सका: {error}",
+    "error_400": "ठीक दो PDFs चाहिए। कृपया फिर से चुनें।",
+    "error_413": "फ़ाइलें सर्वर के लिए बहुत बड़ी हैं।"
   },
 
   "split": {

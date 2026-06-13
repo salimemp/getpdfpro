@@ -32,7 +32,8 @@
     "beta": "Beta",
     "free": "Free",
     "pro": "Pro",
-    "tap_to_speak": "Tap to speak"
+    "tap_to_speak": "Tap to speak",
+    "copy": "Copy"
   },
 
   "nav": {
@@ -249,7 +250,7 @@
     "redact": "Redact PDF",
     "redact_desc": "Remove text patterns. Genuine or visual blackout.",
     "compare": "Compare PDF",
-    "compare_desc": "Diff two PDFs. Visual or text-only.",
+    "compare_desc": "Compare two PDFs and see what changed.",
     "summarize": "AI Summarize",
     "summarize_desc": "Get a concise summary of a PDF using Gemini.",
     "translate": "AI Translate",
@@ -282,6 +283,38 @@
     "start_compress": "Compress",
     "complete": "Compressed {originalSize} → {newSize}",
     "savings": "Saved {pct}%"
+  },
+
+  "compare": {
+    "title": "Compare PDFs",
+    "subtitle": "See what changed between two versions of a PDF. Pick the original and the revised copy.",
+    "file_a": "File A — original",
+    "file_b": "File B — revised",
+    "total_size": "Total: {size} of {max} max",
+    "start_compare": "Compare",
+    "complete": "Comparison complete",
+    "page_counts": "A: {a} pages · B: {b} pages",
+    "adapter_adobe": "Adobe",
+    "adapter_local": "Local (PyMuPDF)",
+    "adapter_unknown": "Unknown adapter",
+    "similarity": "Overall similarity: {pct}%",
+    "no_changes": "No structural changes detected.",
+    "section_added": "Added ({count})",
+    "section_removed": "Removed ({count})",
+    "section_modified": "Modified ({count})",
+    "page_label": "Page {n}",
+    "chars_a": "Chars A",
+    "chars_b": "Chars B",
+    "words_a_only": "Words A only",
+    "words_b_only": "Words B only",
+    "raw_report": "Raw report",
+    "both_required": "Pick both files to compare.",
+    "too_large": "Files total {size} — over the {max} limit.",
+    "path_missing": "Couldn't read the picked file path.",
+    "file_missing": "Picked file is no longer available on disk.",
+    "picker_failed": "Couldn't open file picker: {error}",
+    "error_400": "Need exactly two PDFs. Please pick again.",
+    "error_413": "Files are too large for the server."
   },
 
   "split": {

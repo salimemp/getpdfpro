@@ -14,6 +14,7 @@ import '../../features/onboarding/welcome_page.dart';
 import '../../features/settings/settings_page.dart';
 import '../../features/tools/compress_page.dart';
 import '../../features/tools/merge_page.dart';
+import '../../features/tools/compare_page.dart';
 import '../../features/tools/organize_page.dart';
 import '../../features/tools/pdf_to_image_page.dart';
 import '../../features/tools/protect_page.dart';
@@ -236,6 +237,15 @@ GoRouter _buildRouter(_RouterRefreshListenable refresh) {
         path: '/tools/organize',
         builder: (_, __) => const OrganizePage(),
       ),
+      // Compare PDFs — two-file picker, posts to
+      // /api/v1/pdf/compare-download with file_a + file_b
+      // multipart parts. Reads X-Cascade-Adapter response
+      // header to pick the right renderer (Adobe vs local
+      // PyMuPDF). See features/tools/compare_page.dart.
+      GoRoute(
+        path: '/tools/compare',
+        builder: (_, __) => const ComparePage(),
+      ),
       // AI / accessibility tools — text-input UX (no file
       // picker; the user types or pastes content).
       GoRoute(
@@ -294,6 +304,10 @@ GoRouter _buildRouter(_RouterRefreshListenable refresh) {
               buildSimpleToolPage(toolId) ?? const SizedBox.shrink(),
         ),
       // Catch-all for any other /tools/<id> — see redirect below.
+      // Tools that have a native page (registered as a GoRoute
+      // above OR in kSimpleToolPages) never hit this branch. The
+      // `placeholder` flag on Tool is a hint for future tools
+      // that should render the "Coming soon" page.
       GoRoute(
         path: '/tools/:toolId',
         builder: (context, state) {
@@ -303,6 +317,15 @@ GoRouter _buildRouter(_RouterRefreshListenable refresh) {
             return const ToolPlaceholderPage(
               toolId: 'unknown',
               toolTitle: 'Unknown tool',
+            );
+          }
+          if (tool.placeholder) {
+            return ToolPlaceholderPage(
+              toolId: tool.id,
+              toolTitle: tool.titleKey,
+              toolDescription: tool.descriptionKey,
+              toolIcon: tool.icon,
+              webPath: tool.webPath,
             );
           }
           return ToolPlaceholderPage(
