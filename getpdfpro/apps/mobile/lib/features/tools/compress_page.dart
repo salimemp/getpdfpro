@@ -112,7 +112,9 @@ class _CompressPageState extends State<CompressPage> {
       final stem = base.endsWith('.pdf')
           ? base.substring(0, base.length - 4)
           : base;
-      final out = File('${dir.path}/${stem}-compressed-${DateTime.now().millisecondsSinceEpoch}.pdf');
+      final out = File(
+        '${dir.path}/${stem}-compressed-${DateTime.now().millisecondsSinceEpoch}.pdf',
+      );
       await out.writeAsBytes(response.data as List<int>);
       final compressed = await out.length();
       if (mounted) {
@@ -148,10 +150,7 @@ class _CompressPageState extends State<CompressPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              'compress.subtitle'.tr(),
-              style: theme.textTheme.bodyMedium,
-            ),
+            Text('compress.subtitle'.tr(), style: theme.textTheme.bodyMedium),
             const SizedBox(height: 24),
             FilePickerField(
               file: _source,
@@ -159,13 +158,16 @@ class _CompressPageState extends State<CompressPage> {
               onClear: _source == null
                   ? null
                   : () => setState(() {
-                        _source = null;
-                        _resultPath = null;
-                        _error = null;
-                      }),
+                      _source = null;
+                      _resultPath = null;
+                      _error = null;
+                    }),
             ),
             const SizedBox(height: 24),
-            Text('compress.level_label'.tr(), style: theme.textTheme.titleSmall),
+            Text(
+              'compress.level_label'.tr(),
+              style: theme.textTheme.titleSmall,
+            ),
             const SizedBox(height: 8),
             SegmentedButton<String>(
               segments: [
@@ -195,7 +197,10 @@ class _CompressPageState extends State<CompressPage> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.error_outline, color: theme.colorScheme.onErrorContainer),
+                    Icon(
+                      Icons.error_outline,
+                      color: theme.colorScheme.onErrorContainer,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(child: Text(_error!)),
                   ],
@@ -207,7 +212,8 @@ class _CompressPageState extends State<CompressPage> {
               onPressed: (_busy || _source == null) ? null : _doCompress,
               icon: _busy
                   ? const SizedBox(
-                      width: 16, height: 16,
+                      width: 16,
+                      height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.compress),
@@ -217,7 +223,9 @@ class _CompressPageState extends State<CompressPage> {
               const SizedBox(height: 24),
               Card(
                 elevation: 0,
-                color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                color: theme.colorScheme.primaryContainer.withValues(
+                  alpha: 0.3,
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
@@ -228,15 +236,21 @@ class _CompressPageState extends State<CompressPage> {
                           const Icon(Icons.check_circle),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: Text('compress.complete'.tr(namedArgs: {
-                              'originalSize': _formatBytes(_originalBytes!),
-                              'newSize': _formatBytes(_compressedBytes!),
-                            })),
+                            child: Text(
+                              'compress.complete'.tr(
+                                namedArgs: {
+                                  'originalSize': _formatBytes(_originalBytes!),
+                                  'newSize': _formatBytes(_compressedBytes!),
+                                },
+                              ),
+                            ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Text('compress.savings'.tr(namedArgs: {'pct': _pctSaved()})),
+                      Text(
+                        'compress.savings'.tr(namedArgs: {'pct': _pctSaved()}),
+                      ),
                       const SizedBox(height: 8),
                       Text(
                         _resultPath!,
