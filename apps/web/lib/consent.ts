@@ -116,12 +116,20 @@ export function hasDecided(decision: ConsentDecision | null): decision is Consen
  * The string "unspecified" counts as DNT-off.
  */
 export function isDoNotTrackEnabled(
-  nav: { doNotTrack?: string | null } | undefined,
-  win: { doNotTrack?: string | null } | undefined,
+  nav: unknown,
+  win: unknown,
 ): boolean {
-  const n = nav?.doNotTrack;
-  const w = win?.doNotTrack;
-  const raw = n ?? w ?? null;
+  // Read the DNT property defensively — TS doesn't know `unknown` has it,
+  // and at runtime the property may be missing or non-string. Coerce.
+  const n =
+    typeof nav === 'object' && nav !== null && 'doNotTrack' in nav
+      ? (nav as { doNotTrack: unknown }).doNotTrack
+      : undefined;
+  const w =
+    typeof win === 'object' && win !== null && 'doNotTrack' in win
+      ? (win as { doNotTrack: unknown }).doNotTrack
+      : undefined;
+  const raw = (n ?? w ?? null) as unknown;
   if (raw === null || raw === undefined) return false;
   return raw === '1' || raw === 'yes';
 }
