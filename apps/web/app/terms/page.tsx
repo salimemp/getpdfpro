@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
+import { CookieSettingsButton } from "@/components/CookieSettingsButton";
 import { SITE_NAME, SITE_URL, ldJson, breadcrumbLd } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -204,6 +205,14 @@ export default function TermsPage() {
             Email <a href="mailto:legal@getpdfpro.com">legal@getpdfpro.com</a>{" "}
             for any questions about these Terms.
           </p>
+
+          {/*
+            Cookie settings — opens the global <CookieConsent /> banner.
+            GDPR / CCPA requires a way to revisit the choice at any time.
+          */}
+          <div className="not-prose mt-10">
+            <CookieSettingsButton />
+          </div>
         </article>
       </main>
       <SiteFooter />

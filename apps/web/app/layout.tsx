@@ -6,6 +6,7 @@ import { AuthProvider } from "@/lib/auth";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { SkipNav } from "@/components/SkipNav";
 import { OnboardingProvider } from "@/components/onboarding/OnboardingProvider";
+import { CookieConsent } from "@/components/CookieConsent";
 import {
   organizationLd,
   websiteLd,
@@ -132,6 +133,14 @@ export default async function RootLayout({
             </AuthProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
+        {/*
+          Site-wide GDPR / CCPA consent banner. Mounted once at the root
+          layout so it appears on every page. Once the user has decided,
+          the component renders nothing; the "Cookie settings" link in
+          the footer / privacy / terms pages re-opens it via the
+          getpdfpro:consent:reopen window event.
+        */}
+        <CookieConsent />
       </body>
     </html>
   );
