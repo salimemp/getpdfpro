@@ -8,6 +8,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  *
  * Returns a singleton — re-instantiating the client on every render
  * breaks realtime subscriptions and auth state listeners.
+ *
+ * Token-length check at build time lives in isValidConfig() below.
+ * Real Supabase anon JWTs are 200-220 chars; anything under 180 is
+ * truncated and will silently fail signature validation in supabase-js.
  */
 let _client: SupabaseClient | null = null;
 
