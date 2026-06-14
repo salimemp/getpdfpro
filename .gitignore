@@ -60,3 +60,5 @@ adsense-checklist.html
 # Match: /apps/web/public/<hex>.txt
 /apps/web/public/[a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9]*.txt
 /social-queue/
+.vercel
+.env*

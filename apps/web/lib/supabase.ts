@@ -12,6 +12,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  * Token-length check at build time lives in isValidConfig() below.
  * Real Supabase anon JWTs are 200-220 chars; anything under 180 is
  * truncated and will silently fail signature validation in supabase-js.
+ *
+ * Server-side note: this module is also imported by the [locale]
+ * server components, which read process.env at request time. Make
+ * sure both Vercel env-var contexts (build-time + runtime) have the
+ * full key — a missing runtime env causes the "not configured"
+ * banner to render even when the client bundle is correct.
  */
 let _client: SupabaseClient | null = null;
 
