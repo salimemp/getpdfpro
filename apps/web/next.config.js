@@ -8,19 +8,13 @@ const nextConfig = {
   poweredByHeader: false,
   // typed routes (Next 15.5+) — catches broken links at build time
   typedRoutes: true,
-  // CORS-safe headers for the API
-  async headers() {
-    return [
-      {
-        source: "/(.*)",
-        headers: [
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "X-Frame-Options", value: "DENY" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-        ],
-      },
-    ];
-  },
+  // NOTE: security headers (X-Content-Type-Options, X-Frame-Options,
+  // Referrer-Policy, Permissions-Policy, HSTS) used to live in this
+  // file's `headers()` function. They moved to apps/web/_headers for
+  // the Cloudflare Pages migration — the wrangler/OpenNext deploy reads
+  // the file at the build output root and applies headers there.
+  // The site-wide /* block in that file is the moral equivalent of
+  // what used to live here.
 };
 
 module.exports = withNextIntl(nextConfig);

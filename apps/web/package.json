@@ -10,7 +10,10 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "clean": "rm -rf .next .turbo node_modules"
+    "clean": "rm -rf .next .turbo node_modules .open-next",
+    "pages:build": "opennextjs-cloudflare build && cp _headers .open-next/_headers",
+    "pages:dev": "opennextjs-cloudflare build && cp _headers .open-next/_headers && wrangler pages dev .open-next",
+    "pages:deploy": "opennextjs-cloudflare build && cp _headers .open-next/_headers && wrangler pages deploy .open-next"
   },
   "dependencies": {
     "@supabase/ssr": "0.5.1",
@@ -23,6 +26,7 @@
     "react-dom": "19.0.0"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "^1.5.0",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -38,6 +42,7 @@
     "postcss": "8.4.47",
     "tailwindcss": "3.4.14",
     "typescript": "5.6.3",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.8",
+    "wrangler": "^3.99.0"
   }
 }
