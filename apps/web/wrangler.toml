@@ -1,0 +1,31 @@
+# Cloudflare Pages configuration for the getpdfpro-web app.
+#
+# The build process:
+#   1. `pnpm pages:build` runs `opennextjs-cloudflare build`, which:
+#      - runs `next build` to produce the .next/ output
+#      - converts the .next/ output into a Cloudflare Worker at .open-next/worker/
+#   2. `wrangler pages deploy .open-next/worker` (or the dashboard's "Deploy")
+#      pushes that worker + the static assets to Cloudflare Pages.
+#
+# Env vars are set in the Cloudflare dashboard (Pages → project → Settings
+# → Environment variables), NOT in this file. Secrets go there too.
+#
+# See: https://opennext.js.org/cloudflare
+
+name = "getpdfpro-web"
+compatibility_date = "2025-01-15"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".open-next/worker"
+
+# Main entry for the worker. OpenNext generates this automatically
+# during `opennextjs-cloudflare build`.
+main = "./.open-next/worker/index.js"
+
+# OpenNext's edge runtime needs the RSC + AsyncLocalStorage shims.
+# nodejs_compat gives us both.
+[build]
+command = "pnpm pages:build"
+
+# Disable observability (we'll add Logflare/Datadog later if needed).
+[observability]
+enabled = false
