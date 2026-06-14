@@ -22,20 +22,18 @@ export function AuthForm({ mode }: { mode: Mode }) {
   const [isPending, startTransition] = useTransition();
   const [oauthProvider, setOauthProvider] = useState<string | null>(null);
 
-  if (!auth.enabled) {
-    return (
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100">
-        <p className="font-medium">Supabase isn&apos;t configured yet.</p>
-        <p className="mt-1 text-amber-800 dark:text-amber-200">
-          Add <code className="font-mono">NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
-          <code className="font-mono">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> to
-          your Vercel environment variables. Until then, the tools work
-          anonymously (no account required) but you can&apos;t save your
-          history or unlock the higher free tier.
-        </p>
-      </div>
-    );
-  }
+  // NOTE: previously this component returned a "Supabase isn't configured"
+  // banner when auth.enabled was false. We removed that early-return
+  // because Vercel's env-var ingestion is currently broken for this
+  // project (open ticket with Vercel support), and the banner was
+  // hard-locking the live product behind a config issue that affects
+  // sign-up/sign-in but NOT the 35 PDF tools which work anonymously.
+  //
+  // If Supabase is not configured, the form's onSubmit handlers will
+  // call auth methods that throw (because createSupabaseBrowserClient()
+  // returns null). The existing try/catch in onSubmit catches those
+  // and shows the error inline — much better UX than a hard-locked
+  // page. Anonymous tool use is unaffected either way.
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
