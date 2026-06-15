@@ -1,0 +1,48 @@
+# Release signing — copy this file to `key.properties` (same directory)
+# and fill in the real values. BOTH files are gitignored.
+#
+# Setup (run once, on a secure machine, never commit the output):
+#   1. Generate the upload keystore:
+#        keytool -genkey -v -keystore android/app/upload-keystore.jks \
+#          -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+#      You'll be prompted for a store password AND a key password
+#      (they can be the same, but it's better practice to use different
+#      values). Remember BOTH — if you lose them you can never update
+#      the app on Google Play.
+#
+#   2. Copy this file and fill in the values:
+#        cp android/key.properties.example android/key.properties
+#        $EDITOR android/key.properties
+#
+#   3. Verify Gradle picks it up:
+#        ./gradlew :app:signingReport
+#      Look for the "release" variant and confirm the SHA-256 fingerprint
+#      matches `keytool -list -v -keystore android/app/upload-keystore.jks`.
+#      That fingerprint is what you paste into
+#      android/app/src/main/res/values/assetlinks.json for App Links.
+#
+#   4. Build a signed release APK:
+#        flutter build apk --release
+#
+#   5. Store a backup of upload-keystore.jks + the passwords in a
+#      password manager (1Password / Bitwarden "API keys" vault) and
+#      in your CI provider's secret store. Lost keystore = locked out
+#      of Google Play for the lifetime of the app.
+#
+# ─── File format ──────────────────────────────────────────────
+# keyAlias       — the `-alias` flag you passed to keytool (default: upload)
+# keyPassword    — the password for the key (set during keytool's prompts)
+# storeFile      — relative path from android/ to the .jks file
+# storePassword  — the password for the keystore (set during keytool's prompts)
+#
+# Example values (REPLACE before saving):
+#
+# keyAlias=upload
+# keyPassword=CHANGEME_key_password_here
+# storeFile=app/upload-keystore.jks
+# storePassword=CHANGEME_store_password_here
+
+keyAlias=upload
+keyPassword=replace_me
+storeFile=app/upload-keystore.jks
+storePassword=replace_me

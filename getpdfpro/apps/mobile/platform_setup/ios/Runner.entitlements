@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+		Universal Links — iOS will open the app for HTTPS URLs
+		matching the applinks entry on app.getpdfpro.com. This is
+		preferred over the custom-scheme getpdfpro:// for password
+		reset emails, magic-link landing pages, and the auth callback
+		flow.
+
+		Apple requires the matching apple-app-site-association file
+		at https://app.getpdfpro.com/.well-known/apple-app-site-association
+		(see scripts/deploy_well_known.sh for the deploy helper).
+
+		TEAM_ID is filled in by the user at Xcode build time; the
+		entitlement itself only needs the applinks entry.
+	-->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:app.getpdfpro.com</string>
+	</array>
+</dict>
+</plist>

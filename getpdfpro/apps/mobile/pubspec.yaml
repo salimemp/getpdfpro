@@ -69,6 +69,13 @@ dependencies:
   # Android 11+ package visibility rules out of the box.
   app_links: ^6.3.2
 
+  # External URL launcher — the placeholder tool pages
+  # (ToolPlaceholderPage) and the Settings "Open on web" link
+  # need to call launchUrl() to hand the user off to
+  # https://app.getpdfpro.com/tools/<slug>. 6.x is the
+  # Flutter 3.24+ compatible line; 7.x requires Flutter 3.27+.
+  url_launcher: ^6.3.2
+
   # Storage
   flutter_secure_storage: ^9.2.2
   shared_preferences: ^2.3.2

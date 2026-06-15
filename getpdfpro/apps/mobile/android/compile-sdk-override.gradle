@@ -1,0 +1,31 @@
+// Force every Android plugin subproject to compileSdk 36.
+// Several Flutter plugins (notably file_picker 8.3.7) pin
+// `compileSdk 34` in their own android/build.gradle even though
+// flutter_plugin_android_lifecycle 2.0.x AAR metadata requires
+// compileSdk >= 36. The project-level `compileSdk = 36` in
+// app/build.gradle.kts only applies to the :app subproject; it does
+// NOT propagate to plugin subprojects.
+//
+// The beforeProject hook fires before the subproject's build.gradle
+// runs — too early to set compileSdk because the `android` extension
+// doesn't exist yet. We register an afterEvaluate inside
+// beforeProject, which fires AFTER the subproject's build.gradle
+// runs but BEFORE the AAR metadata check.
+
+gradle.beforeProject { project ->
+    project.afterEvaluate {
+        def androidExt = project.extensions.findByName("android")
+        if (androidExt != null) {
+            try {
+                def method = androidExt.getClass().getMethod(
+                    "setCompileSdkVersion",
+                    int.class
+                )
+                method.invoke(androidExt, 36)
+                println "compile-sdk-override: set ${project.path} compileSdk to 36"
+            } catch (NoSuchMethodException e) {
+                println "Warning: could not set compileSdk on ${project.path} (${androidExt.getClass().getSimpleName()})"
+            }
+        }
+    }
+}
