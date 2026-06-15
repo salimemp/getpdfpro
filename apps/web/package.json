@@ -16,7 +16,7 @@
     "pages:deploy": "opennextjs-cloudflare build && cp _headers .open-next/_headers && cp _redirects .open-next/_redirects && cp .open-next/worker.js .open-next/_worker.js && wrangler pages deploy .open-next"
   },
   "dependencies": {
-    "@supabase/ssr": "0.5.1",
+    "@supabase/ssr": "0.5.2",
     "@supabase/supabase-js": "2.45.4",
     "clsx": "2.1.1",
     "lucide-react": "0.453.0",
