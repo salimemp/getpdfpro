@@ -26,6 +26,7 @@ import {
   Copy,
   Check,
   X,
+  Info,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import {
@@ -409,6 +410,17 @@ function PasskeySection() {
           </p>
         </div>
       </header>
+
+      <div
+        data-testid="passkey-per-device-info"
+        className="mt-4 flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300"
+      >
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
+        <span>
+          Passkeys are stored on this device. Enroll a passkey on every
+          device you want to sign in from.
+        </span>
+      </div>
 
       {error && (
         <div className="mt-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
