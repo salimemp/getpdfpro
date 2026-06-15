@@ -1,0 +1,24 @@
+# Cloudflare Pages configuration for the getpdfpro-web app.
+#
+# IMPORTANT: There is a SECOND wrangler.toml at the repo root
+# (apps/wrangler.toml). It is the source of truth for Cloudflare
+# Pages' deploy config (compat flags, build output dir). This
+# file exists ONLY so that `opennextjs-cloudflare build` (which
+# runs from this directory) finds a wrangler config and doesn't
+# abort with "No `wrangler.(toml|json|jsonc)` config file found".
+#
+# Do NOT add Pages-specific config here (compat flags, build
+# output dir) — those are set in apps/wrangler.toml, which is
+# the one Cloudflare Pages actually reads during deploy. Putting
+# them here would create two sources of truth and they'll drift.
+#
+# See: https://opennext.js.org/cloudflare
+#      https://developers.cloudflare.com/pages/functions/wrangler-configuration/
+
+name = "getpdfpro-web"
+compatibility_date = "2026-04-15"
+compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public", "enable_request_signal"]
+
+# Same as apps/wrangler.toml. Path is relative to THIS file's
+# location (apps/web/), so the full path is apps/web/.open-next.
+pages_build_output_dir = ".open-next"
