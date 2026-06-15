@@ -42,6 +42,19 @@ void main() {
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
+
+    // Expand the test viewport to 800x1200 so the Security page's
+    // ListView (TOTP section + passkey section + recovery-codes
+    // section + About) fits without scrolling. The default 800x600
+    // is too short — the recovery section header is below the fold
+    // and the "Add a passkey" button sits where the "Add a passkey"
+    // section *header* would be in the truncated layout, so
+    // find.text(...).first hits the wrong widget.
+    final binding = TestWidgetsFlutterBinding.ensureInitialized();
+    binding.platformDispatcher.views.first.physicalSize =
+        const Size(800, 1200);
+    binding.platformDispatcher.views.first.devicePixelRatio = 1.0;
+
     final controller = EasyLocalizationController(
       forceLocale: const Locale('en'),
       path: 'assets/i18n',
@@ -60,6 +73,12 @@ void main() {
       const Locale('en'),
       translations: controller.translations,
     );
+  });
+
+  tearDown(() {
+    final binding = TestWidgetsFlutterBinding.ensureInitialized();
+    binding.platformDispatcher.views.first.resetPhysicalSize();
+    binding.platformDispatcher.views.first.resetDevicePixelRatio();
   });
 
   Widget wrap(Widget child) {
