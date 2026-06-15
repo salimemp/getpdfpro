@@ -46,6 +46,12 @@ app.*.map.json
 /android/.gradle/
 /android/local.properties
 /android/key.properties
+# Release-signing material — never commit the keystore or any
+# password-bearing key files. The .example template (and the
+# build.gradle.kts loader) tell the user how to generate theirs.
+/android/app/*.jks
+/android/app/*.keystore
+/android/**/key.properties
 /android/**/GeneratedPluginRegistrant.java
 
 # iOS / CocoaPods
