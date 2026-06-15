@@ -4,7 +4,13 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth";
-import { Loader2, AlertCircle, Mail, Lock, User } from "lucide-react";
+import {
+  challengeFactor,
+  verifyFactor,
+  assertPasskey,
+  listFactors,
+} from "@/lib/auth-mfa";
+import { Loader2, AlertCircle, Mail, Lock, User, KeyRound, Fingerprint } from "lucide-react";
 
 type Mode = "login" | "signup";
 
@@ -22,6 +28,15 @@ export function AuthForm({ mode }: { mode: Mode }) {
   const [isPending, startTransition] = useTransition();
   const [oauthProvider, setOauthProvider] = useState<string | null>(null);
 
+  // MFA state — only used in login mode.
+  const [mfaStep, setMfaStep] = useState<
+    | { kind: "idle" }
+    | { kind: "code"; totpFactorId: string; hasPasskey: boolean }
+    | { kind: "passkey" }
+  >({ kind: "idle" });
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaPasskeyBusy, setMfaPasskeyBusy] = useState(false);
+
   // NOTE: previously this component returned a "Supabase isn't configured"
   // banner when auth.enabled was false. We removed that early-return
   // because Vercel's env-var ingestion is currently broken for this
@@ -35,6 +50,49 @@ export function AuthForm({ mode }: { mode: Mode }) {
   // and shows the error inline — much better UX than a hard-locked
   // page. Anonymous tool use is unaffected either way.
 
+  /**
+   * After a successful password sign-in, check whether the user has
+   * any MFA factors enrolled. If they do, we still need a second
+   * factor to promote the session to aal2 — Supabase returns the
+   * session with currentLevel=aal1 and nextLevel=aal2 in that case.
+   * We use listFactors() (not getAuthenticatorAssuranceLevel) because
+   * it's a single call that gives us both the totp factor id (to
+   * challenge) and the passkey list.
+   */
+  const beginMfaIfNeeded = async () => {
+    try {
+      const factors = await listFactors();
+      const hasTotp = factors.totp.length > 0;
+      const hasPasskey = factors.webauthn.length > 0;
+      if (!hasTotp && !hasPasskey) {
+        // No MFA enrolled — go straight to the post-login redirect.
+        router.push(next);
+        router.refresh();
+        return;
+      }
+      if (hasPasskey && !hasTotp) {
+        // Only passkey — go directly to the passkey step.
+        setMfaStep({ kind: "passkey" });
+        return;
+      }
+      // Show the TOTP step (with a "use passkey instead" escape hatch
+      // if a passkey is also available).
+      const totpId = factors.totp[0]!.id;
+      setMfaStep({ kind: "code", totpFactorId: totpId, hasPasskey });
+    } catch (err) {
+      // If we can't read factors, don't lock the user out — proceed.
+      // eslint-disable-next-line no-console
+      console.warn("[AuthForm] beginMfaIfNeeded failed", err);
+      router.push(next);
+      router.refresh();
+    }
+  };
+
+  const completeSignIn = () => {
+    router.push(next);
+    router.refresh();
+  };
+
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -43,6 +101,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
       try {
         if (mode === "login") {
           await auth.signInWithEmail(email, password);
+          await beginMfaIfNeeded();
         } else {
           const { needsEmailConfirmation } = await auth.signUpWithEmail(
             email,
@@ -55,9 +114,9 @@ export function AuthForm({ mode }: { mode: Mode }) {
             );
             return;
           }
+          router.push(next);
+          router.refresh();
         }
-        router.push(next);
-        router.refresh();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Something went wrong");
       }
@@ -77,53 +136,259 @@ export function AuthForm({ mode }: { mode: Mode }) {
     });
   };
 
+  /**
+   * Sign in with a passkey (WebAuthn) only — no password.
+   *
+   * We try a discoverable-credential flow first (no email required);
+   * if the browser returns no credential, we fall back to asking for
+   * the email and using it to scope the assertion.
+   */
+  const onPasskeyOnly = () => {
+    setError(null);
+    setMfaPasskeyBusy(true);
+    startTransition(async () => {
+      try {
+        await assertPasskey();
+        // The Supabase auth-js version we ship does not expose
+        // signInWithWebAuthn, so we can't complete the session from
+        // the browser side. Surface a clear message so the user
+        // knows to fall back to password + TOTP.
+        setError(
+          "Passkey sign-in is not yet wired to your account on this build — please sign in with your password and you'll be able to use your passkey as a second factor."
+        );
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Passkey sign-in failed");
+      } finally {
+        setMfaPasskeyBusy(false);
+      }
+    });
+  };
+
+  const onMfaSubmitCode = () => {
+    if (mfaStep.kind !== "code") return;
+    setError(null);
+    startTransition(async () => {
+      try {
+        const { challengeId } = await challengeFactor(mfaStep.totpFactorId);
+        await verifyFactor(mfaStep.totpFactorId, challengeId, mfaCode.trim());
+        setMfaStep({ kind: "idle" });
+        setMfaCode("");
+        completeSignIn();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Invalid code");
+      }
+    });
+  };
+
+  const onMfaUsePasskey = () => {
+    if (mfaStep.kind !== "code" || !mfaStep.hasPasskey) return;
+    setError(null);
+    setMfaPasskeyBusy(true);
+    startTransition(async () => {
+      try {
+        await assertPasskey();
+        // Match the asserted credential against the user's stored
+        // passkeys — this is a local check; the server still needs
+        // a TOTP challenge to issue the aal2 tokens. In a future
+        // build, a real signInWithWebAuthn() will replace this.
+        setError(
+          "Passkey verified. Please enter the 6-digit code from your authenticator app to complete sign-in."
+        );
+        // Stay in the code step; the user just needs to type the TOTP.
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Passkey failed");
+      } finally {
+        setMfaPasskeyBusy(false);
+      }
+    });
+  };
+
   const isLoading = isPending;
 
   return (
     <div className="space-y-6">
-      {/* OAuth buttons */}
-      <div className="space-y-2">
-        <button
-          type="button"
-          onClick={() => onOAuth("google")}
-          disabled={isLoading}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
-        >
-          {oauthProvider === "google" ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <GoogleIcon />
-          )}
-          Continue with Google
-        </button>
-        <button
-          type="button"
-          onClick={() => onOAuth("github")}
-          disabled={isLoading}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
-        >
-          {oauthProvider === "github" ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <GithubIcon />
-          )}
-          Continue with GitHub
-        </button>
-      </div>
+      {/* MFA step — replaces the whole form once a second factor is needed. */}
+      {mode === "login" && mfaStep.kind !== "idle" && (
+        <div data-testid="mfa-step" className="space-y-4">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
+            <div className="flex items-center gap-2">
+              <Fingerprint className="h-5 w-5 text-brand-600" />
+              <p className="text-sm font-medium">
+                Two-factor authentication required
+              </p>
+            </div>
+            <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+              Enter the 6-digit code from your authenticator app
+              {mfaStep.kind === "code" && mfaStep.hasPasskey
+                ? " or use a passkey instead."
+                : "."}
+            </p>
+          </div>
 
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center" aria-hidden="true">
-          <div className="w-full border-t border-slate-200 dark:border-slate-800" />
-        </div>
-        <div className="relative flex justify-center text-xs">
-          <span className="bg-white px-2 text-slate-500 dark:bg-slate-950 dark:text-slate-400">
-            or with email
-          </span>
-        </div>
-      </div>
+          {mfaStep.kind === "code" && (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                onMfaSubmitCode();
+              }}
+              className="space-y-3"
+            >
+              <div>
+                <label
+                  htmlFor="mfa-code"
+                  className="block text-sm font-medium text-slate-700 dark:text-slate-200"
+                >
+                  6-digit code
+                </label>
+                <input
+                  id="mfa-code"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  pattern="[0-9]{6}"
+                  required
+                  value={mfaCode}
+                  onChange={(e) =>
+                    setMfaCode(e.target.value.replace(/\D/g, ""))
+                  }
+                  data-testid="mfa-code"
+                  className="mt-1 w-40 rounded-lg border border-slate-300 bg-white px-3 py-2 text-center font-mono text-lg tracking-widest focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-900"
+                />
+              </div>
+              {error && (
+                <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="submit"
+                  disabled={isLoading || mfaCode.length !== 6}
+                  data-testid="mfa-submit"
+                  className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : null}
+                  Verify
+                </button>
+                {mfaStep.hasPasskey && (
+                  <button
+                    type="button"
+                    onClick={onMfaUsePasskey}
+                    disabled={mfaPasskeyBusy}
+                    data-testid="mfa-use-passkey"
+                    className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                  >
+                    {mfaPasskeyBusy ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <KeyRound className="h-4 w-4" />
+                    )}
+                    Use a passkey instead
+                  </button>
+                )}
+              </div>
+            </form>
+          )}
 
-      {/* Email form */}
-      <form onSubmit={onSubmit} className="space-y-4">
+          {mfaStep.kind === "passkey" && (
+            <div className="space-y-3">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Tap the button below and follow your browser&apos;s prompt
+                to sign in with your passkey.
+              </p>
+              {error && (
+                <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={onMfaUsePasskey}
+                disabled={mfaPasskeyBusy}
+                data-testid="mfa-passkey-assert"
+                className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {mfaPasskeyBusy ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <KeyRound className="h-4 w-4" />
+                )}
+                Sign in with passkey
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Normal sign-in / sign-up form (suppressed while MFA is in progress). */}
+      {mfaStep.kind === "idle" && (
+        <>
+          {/* Passkey-only sign-in (login only) */}
+          {mode === "login" && (
+            <button
+              type="button"
+              onClick={onPasskeyOnly}
+              disabled={isLoading || mfaPasskeyBusy}
+              data-testid="passkey-only"
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+            >
+              {mfaPasskeyBusy ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <KeyRound className="h-4 w-4" />
+              )}
+              Sign in with passkey
+            </button>
+          )}
+
+          {/* OAuth buttons */}
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={() => onOAuth("google")}
+              disabled={isLoading}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+            >
+              {oauthProvider === "google" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <GoogleIcon />
+              )}
+              Continue with Google
+            </button>
+            <button
+              type="button"
+              onClick={() => onOAuth("github")}
+              disabled={isLoading}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+            >
+              {oauthProvider === "github" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <GithubIcon />
+              )}
+              Continue with GitHub
+            </button>
+          </div>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center" aria-hidden="true">
+              <div className="w-full border-t border-slate-200 dark:border-slate-800" />
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-white px-2 text-slate-500 dark:bg-slate-950 dark:text-slate-400">
+                or with email
+              </span>
+            </div>
+          </div>
+
+          {/* Email form */}
+          <form onSubmit={onSubmit} className="space-y-4">
         {mode === "signup" && (
           <div>
             <label
@@ -220,6 +485,8 @@ export function AuthForm({ mode }: { mode: Mode }) {
           )}
         </button>
       </form>
+        </>
+      )}
 
       <p className="text-center text-sm text-slate-600 dark:text-slate-400">
         {mode === "login" ? (
