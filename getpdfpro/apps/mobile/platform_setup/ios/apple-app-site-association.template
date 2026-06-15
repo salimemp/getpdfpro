@@ -1,0 +1,19 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": ["REPLACE_ME_WITH_APPLE_TEAM_ID.com.getpdfpro.getpdfproMobile"],
+        "components": [
+          {
+            "/": "/*",
+            "comment": "Match every path on app.getpdfpro.com — Universal Links will open the app for auth callbacks, password reset, magic-link landing, and share-sheet opens."
+          }
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": ["REPLACE_ME_WITH_APPLE_TEAM_ID.com.getpdfpro.getpdfproMobile"]
+  }
+}
