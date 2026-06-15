@@ -25,25 +25,26 @@ The Cloudflare Pages UI will ask for build settings. Fill in:
 | Setting | Value |
 |---|---|
 | **Framework preset** | **None** (we have a custom build via OpenNext) |
-| **Root directory** | `apps/web` |
-| **Build command** | `pnpm install && pnpm pages:build` |
-| **Build output directory** | `.open-next` |
+| **Root directory** | `apps` |
+| **Build command** | `cd web && pnpm install && pnpm pages:build` |
+| **Build output directory** | `web/.open-next` |
 | **Install command** | *(leave blank — `pnpm install` in the build command above handles it)* |
 | **Environment variables** | See below |
 
-**Why Root directory = `apps/web` and not blank:**
+**Why Root directory = `apps` and not `apps/web` or blank:**
 
-Setting Root directory to `apps/web` is the key fix. With it blank (the default), Cloudflare's runner does two things that break our build:
+The first build attempts used `apps/web` and blank respectively; both failed. The "v2 root directory strategy" Cloudflare uses has two quirks:
 
-1. It runs its own `npm ci` against the **repo root** before executing the build command. The root has its own `package.json` (for turbo + supabase tooling) with a stale `package-lock.json` (regenerated during the PR #25 monorepo consolidation, but its entries no longer match the root's trimmed manifest). `npm ci` strict mode fails with dozens of `Missing X from lock file` errors before the build command ever runs.
-2. It looks for `wrangler.toml` at the repo root and reports `No Wrangler configuration file found` — ours is at `apps/web/wrangler.toml`.
+- With Root directory blank, the runner does an `npm ci` against the repo root before the build command. The root's stale `package-lock.json` (from before the PR #25 monorepo consolidation) fails npm ci strict mode, and the actual build never starts.
+- With Root directory = `apps/web`, the v2 strategy mangles the path during `cd` resolution and tries to chdir to a non-existent directory (`/opt/buildhome/repo/app/web`, with the `s` from `apps` dropped).
 
-By setting Root directory to `apps/web`, the runner:
-- finds `wrangler.toml` and `open-next.config.ts` immediately,
-- runs from the right context, so `pnpm install` reads `apps/web/pnpm-lock.yaml` (which is what we ship), and
-- the build command's `pnpm pages:build` runs from `apps/web/` and writes `.open-next/` there — which matches Build output directory = `.open-next`.
+Setting Root directory to just `apps` and putting the `cd web` inside the build command avoids both bugs. The runner is happy with a top-level directory, and the build command handles the deeper `cd` natively (no path normalization involved).
 
-The `pnpm install && pnpm pages:build` chain inside the build command replaces the older `cd apps/web && pnpm install --filter web... && pnpm pages:build` — the `cd` is unnecessary once Root directory is set, and the `pnpm install` in the build command is what actually installs the web app's deps (the Install command field is intentionally left blank so Cloudflare doesn't pre-run `npm ci`).
+**Why the build command's `cd web && pnpm install`:**
+
+- `pnpm install` reads `apps/web/pnpm-lock.yaml` and installs the web app's deps (including `@opennextjs/cloudflare` and `wrangler`).
+- `pnpm pages:build` then runs the OpenNext build, which produces `.open-next/worker.js` + static assets. The script also renames `worker.js` → `_worker.js` (the Cloudflare Pages convention) and copies `_headers` + `_redirects` into `.open-next/`.
+- Build output directory = `web/.open-next` because the runner is still in `apps/`.
 
 **Important**: do NOT set the "Node.js version" preset — OpenNext requires Node 20+, and Cloudflare Pages' default (20.x) is fine. If you see an older default, change to 20.
 
@@ -130,11 +131,25 @@ Build times: ~90 seconds for a full build. Faster than Vercel.
 
 **Symptom:** the build log shows Cloudflare running `npm clean-install` (or `npm ci`), which fails with `EUSAGE` and a long list of `Missing: <package>@<version> from lock file` errors, well before the actual `pnpm install` in the build command ever runs.
 
-**Cause:** Root directory is set to blank (the default) instead of `apps/web`. Cloudflare's runner auto-runs `npm ci` against the repo root before the build command. The root `package-lock.json` is stale (it was last regenerated during the PR #25 monorepo consolidation and its entries no longer match the root's trimmed `package.json`), so `npm ci` strict mode rejects the install. This happens *before* your build command runs, which is why the `pnpm install` in the build command is never reached.
+**Cause:** Root directory is set to blank (the default) instead of `apps`. Cloudflare's runner auto-runs `npm ci` against the repo root before the build command. The root `package-lock.json` is stale (it was last regenerated during the PR #25 monorepo consolidation and its entries no longer match the root's trimmed `package.json`), so `npm ci` strict mode rejects the install. This happens *before* your build command runs, which is why the `pnpm install` in the build command is never reached.
 
-**Fix:** go to **Settings → Builds & deployments** and change **Root directory** from blank to `apps/web`. The build command and build output directory also need to drop the `cd apps/web` and `apps/web/.open-next` prefixes (since the runner is already in `apps/web`). See the table in step 3 above for the exact values.
+**Fix:** go to **Settings → Builds & deployments** and change **Root directory** from blank to `apps`. The build command needs to add a `cd web &&` prefix (since the runner is now in `apps/`, not `apps/web/`), and the build output directory needs the `web/` prefix. See the table in step 3 above for the exact values.
 
 The wrangler.toml lookup warning (`No Wrangler configuration file found`) is a related symptom of the same root cause — with the wrong Root directory, Cloudflare scans the wrong place.
+
+### Build succeeds ("✨ Your site was deployed!") but every page 404s at `*.pages.dev`
+
+**Symptom:** the build log ends with `Success: Your site was deployed!` and `Uploading... (N/N)` for several hundred files, but visiting `https://getpdfpro-web.pages.dev/` (or any page) returns `404 Not Found` from Pages.
+
+**Cause:** the Cloudflare Pages deploy uploaded the static assets, but the request handler (the OpenNext Worker) was never registered. Pages auto-detects a request handler only if the build output contains a file named **`_worker.js`** (not `worker.js`). Our build outputs `.open-next/worker.js` (OpenNext's standard name) but Pages looks for `_worker.js` and finds nothing, so all requests fall through to Pages' default 404.
+
+This is a **code-side issue** (the original PR #28 setup assumed a Cloudflare Workers-style deploy, not Pages), and the fix lives in `apps/web/`:
+
+- `apps/web/wrangler.toml` — set `pages_build_output_dir = ".open-next"` (was `".open-next/worker"`), drop the `main` and `[build]` fields (Pages reads `_worker.js` from the output dir, not from wrangler.toml).
+- `apps/web/package.json` — extend `pages:build` / `pages:dev` / `pages:deploy` to also `cp .open-next/worker.js .open-next/_worker.js` so Pages can find the handler.
+- `apps/web/_redirects` — new file with `/* /_worker.js/:splat 200` so all routes reach the worker (Pages' default would otherwise 404 non-static paths).
+
+After the fix lands, push a new commit to `main` and the next build will deploy the worker. `https://getpdfpro-web.pages.dev/` will start returning the actual home page.
 
 ### Build fails with "Cannot find module @opennextjs/cloudflare"
 

@@ -11,9 +11,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "clean": "rm -rf .next .turbo node_modules .open-next",
-    "pages:build": "opennextjs-cloudflare build && cp _headers .open-next/_headers",
-    "pages:dev": "opennextjs-cloudflare build && cp _headers .open-next/_headers && wrangler pages dev .open-next",
-    "pages:deploy": "opennextjs-cloudflare build && cp _headers .open-next/_headers && wrangler pages deploy .open-next"
+    "pages:build": "opennextjs-cloudflare build && cp _headers .open-next/_headers && cp _redirects .open-next/_redirects && cp .open-next/worker.js .open-next/_worker.js",
+    "pages:dev": "opennextjs-cloudflare build && cp _headers .open-next/_headers && cp _redirects .open-next/_redirects && cp .open-next/worker.js .open-next/_worker.js && wrangler pages dev .open-next",
+    "pages:deploy": "opennextjs-cloudflare build && cp _headers .open-next/_headers && cp _redirects .open-next/_redirects && cp .open-next/worker.js .open-next/_worker.js && wrangler pages deploy .open-next"
   },
   "dependencies": {
     "@supabase/ssr": "0.5.1",
