@@ -19,8 +19,8 @@
 #      https://developers.cloudflare.com/pages/functions/functions-as-workers
 
 name = "getpdfpro-web"
-compatibility_date = "2025-01-15"
-compatibility_flags = ["nodejs_compat"]
+compatibility_date = "2026-04-15"
+compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public", "enable_request_signal"]
 
 # Cloudflare Pages reads `pages_build_output_dir` to know which
 # directory to upload. The dashboard ALSO has a "Build output
