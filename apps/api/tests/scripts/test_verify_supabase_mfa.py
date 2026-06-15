@@ -38,8 +38,11 @@ import pytest
 # The script lives in ``apps/api/scripts/`` (sibling of ``app/``), not
 # under the ``app`` package. We load it by file path so pytest doesn't
 # need an ``__init__.py`` in ``scripts/`` and so the script's top-level
-# imports (``pyotp``, ``supabase``) are evaluated against the same
-# interpreter as the test.
+# import (``supabase``) is evaluated against the same interpreter as
+# the test. The script imports ``pyotp`` lazily inside ``main()`` so a
+# fresh venv without it can still parse the module and run the
+# offline-skip branch; we patch ``pyotp.TOTP`` via ``sys.modules`` in
+# the tests that exercise the online path.
 _SCRIPT_PATH = (
     Path(__file__).resolve().parents[2]
     / "scripts"
@@ -290,9 +293,14 @@ class TestHappyPathOnline:
         monkeypatch.setenv("SUPABASE_URL", "https://osjtyipxwpkmzsextbne.supabase.co")
         monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "sb_secret_x")
 
-        # Patch the ``pyotp.TOTP`` inside the *script* module (not the
-        # top-level pyotp module — the script imported it as a name).
-        with patch.object(_script.pyotp, "TOTP") as mock_totp:
+        # Patch the ``pyotp.TOTP`` class via sys.modules. The script
+        # now imports ``pyotp`` lazily inside ``main()`` (so a fresh
+        # venv without ``pyotp`` installed can still run the
+        # offline-skip path), which means ``_script.pyotp`` is no
+        # longer a module-level attribute. We patch the class on the
+        # ``pyotp`` module the script will resolve at import time
+        # inside ``main()``.
+        with patch("pyotp.TOTP") as mock_totp:
             mock_instance = MagicMock()
             mock_instance.now.return_value = "123456"
             mock_totp.return_value = mock_instance
