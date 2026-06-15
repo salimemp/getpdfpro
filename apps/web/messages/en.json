@@ -87,5 +87,10 @@
     "error": "Something went wrong",
     "tryAgain": "Try again",
     "back": "Back"
+  },
+  "Settings": {
+    "security": {
+      "passkeys_per_device_tooltip": "Passkeys are stored on this device. Enroll a passkey on every device you want to sign in from."
+    }
   }
 }
