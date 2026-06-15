@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../../core/env.dart';
 
 /// Placeholder page for tools that aren't implemented in the mobile
 /// app yet. The dashboard points here for ~30 of the 35 tools until
@@ -25,6 +28,16 @@ class ToolPlaceholderPage extends StatelessWidget {
   final String? toolDescription;
   final IconData? toolIcon;
   final String? webPath;
+
+  /// Resolves the "open on web" URL for this tool. Falls back to
+  /// the website root if [webPath] is null (e.g. the placeholder
+  /// was opened from an unknown /tools/<id> URL).
+  Uri _webUri() {
+    final path = (webPath != null && webPath!.isNotEmpty)
+        ? webPath!
+        : '/tools/$toolId';
+    return Uri.parse('${Env.websiteUrl}$path');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -102,10 +115,23 @@ class ToolPlaceholderPage extends StatelessWidget {
               ),
               const Spacer(),
               FilledButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(const SnackBar(content: Text('Open on web')));
+                onPressed: () async {
+                  final uri = _webUri();
+                  // LaunchMode.externalApplication hands the URL to
+                  // the system browser (or Universal-Link handler
+                  // if app.getpdfpro.com is associated with our
+                  // app on iOS — see ios/Runner/Runner.entitlements).
+                  final ok = await launchUrl(
+                    uri,
+                    mode: LaunchMode.externalApplication,
+                  );
+                  if (!ok && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Could not open $uri'),
+                      ),
+                    );
+                  }
                 },
                 icon: const Icon(Icons.open_in_browser),
                 label: Text('common.open_in_browser'.tr()),

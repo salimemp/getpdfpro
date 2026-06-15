@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/env.dart';
 
@@ -207,12 +208,17 @@ class _SettingsPageState extends State<SettingsPage> {
             leading: const Icon(Icons.open_in_browser),
             title: Text('settings.open_on_web'.tr()),
             subtitle: Text(Env.websiteUrl),
-            onTap: () {
-              // The web app should be opened externally. There's no
-              // url_launcher in pubspec — just show the URL for copy.
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text(Env.websiteUrl)));
+            onTap: () async {
+              final uri = Uri.parse(Env.websiteUrl);
+              final ok = await launchUrl(
+                uri,
+                mode: LaunchMode.externalApplication,
+              );
+              if (!ok && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Could not open $uri')),
+                );
+              }
             },
           ),
           ListTile(
