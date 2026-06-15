@@ -96,5 +96,14 @@
 	<string>GetPDFPro needs access to your photo library to attach scanned images to PDFs.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>GetPDFPro needs permission to save generated PDFs to your photo library.</string>
+
+	<!-- ============================================================ -->
+	<!-- Face ID — required by the webauthn package (which wraps      -->
+	<!-- local_auth internally) for every passkey ceremony. iOS will  -->
+	<!-- hard-crash on the first biometric prompt without this entry. -->
+	<!-- Without it, every user who tries to add a passkey is killed. -->
+	<!-- ============================================================ -->
+	<key>NSFaceIDUsageDescription</key>
+	<string>GetPDFPro uses Face ID to unlock your passkeys for sign-in.</string>
 </dict>
 </plist>
