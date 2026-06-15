@@ -7,10 +7,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../features/auth/confirm_email_page.dart';
 import '../../features/auth/login_page.dart';
+import '../../features/auth/mfa/mfa_login_prompt.dart';
 import '../../features/auth/recovery_page.dart';
 import '../../features/auth/signup_page.dart';
 import '../../features/dashboard/dashboard_page.dart';
 import '../../features/onboarding/welcome_page.dart';
+import '../../features/settings/security_page.dart';
 import '../../features/settings/settings_page.dart';
 import '../../features/tools/compress_page.dart';
 import '../../features/tools/merge_page.dart';
@@ -203,6 +205,16 @@ GoRouter _buildRouter(_RouterRefreshListenable refresh) {
         },
       ),
       GoRoute(path: '/signup', builder: (_, __) => const SignupPage()),
+      // Post-password-sign-in MFA challenge. Lands here when the
+      // user has at least one factor enrolled; the page itself
+      // bounces to /dashboard if the user has no factors.
+      GoRoute(
+        path: '/auth/mfa',
+        builder: (context, state) {
+          final returnTo = state.uri.queryParameters['returnTo'];
+          return MfaLoginPromptPage(returnTo: returnTo);
+        },
+      ),
       GoRoute(
         path: '/auth/recovery',
         builder: (context, state) {
@@ -219,6 +231,11 @@ GoRouter _buildRouter(_RouterRefreshListenable refresh) {
       ),
       GoRoute(path: '/dashboard', builder: (_, __) => const DashboardPage()),
       GoRoute(path: '/settings', builder: (_, __) => const SettingsPage()),
+      // Security & sign-in (MFA + passkey management).
+      GoRoute(
+        path: '/settings/security',
+        builder: (_, __) => const SecurityPage(),
+      ),
       // Custom-UIX tool pages — each has its own state model
       // (file picker, multi-file, password, etc.) and can't be
       // expressed via the StandardToolPage builder.

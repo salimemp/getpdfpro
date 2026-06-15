@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 import '../../core/deep_links.dart';
+import 'mfa/mfa_service.dart';
 
 /// Sign-in page.
 ///
@@ -16,7 +18,7 @@ import '../../core/deep_links.dart';
 /// For OAuth (Google) we use a deep-link callback `getpdfpro://login-callback`.
 /// The platform must register that scheme (see pubspec.yaml > platform
 /// configs and the README). For email magic-link we use the same scheme.
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key, this.returnTo});
 
   /// Where to navigate after a successful sign-in. If null, go to
@@ -26,10 +28,10 @@ class LoginPage extends StatefulWidget {
   final String? returnTo;
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _loading = false;
@@ -62,9 +64,50 @@ class _LoginPageState extends State<LoginPage> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
-      if (mounted) context.go(_landing());
+      if (!mounted) return;
+      // If the user has any MFA factors enrolled, route to the MFA
+      // challenge page first. The page itself bounces to /dashboard
+      // when the user has no factors — saves us a round-trip.
+      final factors = await ref.read(mfaServiceProvider).listFactors();
+      if (!mounted) return;
+      final hasFactors = factors.isNotEmpty;
+      if (hasFactors) {
+        final rt = Uri.encodeComponent(_landing());
+        context.go('/auth/mfa?returnTo=$rt');
+      } else {
+        context.go(_landing());
+      }
     } on AuthException catch (e) {
       setState(() => _error = e.message);
+    } catch (e) {
+      setState(() => _error = e.toString());
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  /// Passwordless sign-in via a device-bound passkey. We trigger
+  /// the WebAuthn assertion; on success we treat the user as
+  /// signed in (the local keychain verified the biometric). In
+  /// production this would be wired to a server-side assertion
+  /// verifier; for the MVP we use the local result as a strong
+  /// proof-of-presence signal and fall back to password if no
+  /// passkey is enrolled on this device.
+  Future<void> _signInWithPasskey() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final result = await ref.read(mfaServiceProvider).assertPasskey();
+      if (!mounted) return;
+      if (result.success) {
+        context.go(_landing());
+        return;
+      }
+      setState(() => _error = 'security.passkey_no_passkeys'.tr());
+    } catch (e) {
+      setState(() => _error = e.toString());
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -205,6 +248,31 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 16),
               ],
+              // "Sign in with a passkey" is offered above the email /
+              // password form so the user can try passwordless first.
+              // Tapping it triggers the WebAuthn assertion; if no
+              // passkey is enrolled on this device the action fails
+              // gracefully and the password form below stays usable.
+              OutlinedButton.icon(
+                onPressed: _loading ? null : _signInWithPasskey,
+                icon: const Icon(Icons.fingerprint),
+                label: Text('security.sign_in_with_passkey'.tr()),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Row(
+                children: [
+                  Expanded(child: Divider()),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    child: Text('OR'),
+                  ),
+                  Expanded(child: Divider()),
+                ],
+              ),
+              const SizedBox(height: 16),
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
