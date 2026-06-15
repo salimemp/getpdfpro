@@ -7,6 +7,26 @@
 // than errors so the build isn't blocked on tech debt that is out of
 // scope for the change at hand. The pricing-sweep PRs that touch
 // `app/**` and `lib/blog.ts` produce zero new findings.
+//
+// Warning budget
+// --------------
+// `next lint` is invoked with `--max-warnings 25` (see package.json:
+// `"lint": "next lint --max-warnings 25"`). CI fails when the warning
+// count exceeds 25. Why 25?
+//   - Current baseline is ~35 warnings (verified on main at the
+//     release-readiness audit, commit dae9f9f). 25 is intentionally
+//     a touch stricter than today's count so the next engineer who
+//     cleans up an unused import or tightens a `useMemo` dep array
+//     gets a green build, and the budget ratchets down naturally
+//     as tech debt is paid off.
+//   - A small headroom (a single PR is unlikely to add more than
+//     a handful of warnings) keeps the budget from being
+//     perpetually red while still being a real gate.
+//   - When the count is consistently <25, lower the budget in
+//     this file's companion comment AND in package.json.
+//
+// Once the warning count crosses below 25 and stays there, lower
+// both numbers in lockstep.
 import { dirname } from "path";
 import { fileURLToPath } from "url";
 import { FlatCompat } from "@eslint/eslintrc";
