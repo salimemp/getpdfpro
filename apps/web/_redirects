@@ -1,0 +1,14 @@
+# Cloudflare Pages routing.
+# Pages auto-detects a request handler if the build output contains a
+# `_worker.js` file (single file or directory). For OpenNext's
+# `worker.js` output, our `pages:build` script renames it to
+# `_worker.js` and copies this file into `.open-next/`.
+#
+# This rule sends every request to the worker (which then serves
+# static assets directly and falls through to the Next.js handler for
+# dynamic routes). Pages' default SPA fallback would otherwise 404
+# any path that isn't a static file.
+#
+# See: https://developers.cloudflare.com/pages/configuration/redirects/
+
+/* /_worker.js/:splat 200
