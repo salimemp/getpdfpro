@@ -27,9 +27,14 @@ cleans up the user.
 Modes
 -----
 * **offline** (default if env vars are missing) — prints a clear skip
-  message and exits 0. This is the mode CI runs in.
+  message and exits 0. This is the mode CI runs in. The ``pyotp`` and
+  ``supabase`` imports are at the top, but ``pyotp`` is only imported
+  lazily inside ``main()`` (after the offline-skip check) so a fresh
+  venv that hasn't run ``pip install -r requirements.txt`` can still
+  parse the script and report the skip cleanly.
 * **online** — runs the full flow against the real project. Requires
-  ``SUPABASE_URL`` and ``SUPABASE_SERVICE_ROLE_KEY``.
+  ``SUPABASE_URL``, ``SUPABASE_SERVICE_ROLE_KEY``, and the
+  ``pyotp`` package (added to ``apps/api/requirements.txt``).
 
 Usage
 -----
@@ -55,10 +60,9 @@ import sys
 import time
 from typing import Any
 
-# ``pyotp`` is added to apps/api/requirements.txt specifically for this
-# script. Importing it lazily inside ``main()`` so the offline-mode skip
-# path doesn't require it.
-import pyotp  # noqa: E402  (deliberate — see "import order" note below)
+# ``pyotp`` is imported lazily inside ``main()`` (see below) so a fresh
+# venv that has only ``supabase`` installed can still run the script in
+# offline-skip mode without crashing with ModuleNotFoundError.
 from supabase import Client, create_client  # noqa: E402
 
 # ─── Logging ──────────────────────────────────────────────────────────────
@@ -106,6 +110,12 @@ def main() -> int:
             f"SUPABASE_URL does not look like a Supabase project URL: {url!r}. "
             f"expected something like https://<project-ref>.supabase.co"
         )
+
+    # Lazy import — ``pyotp`` is only required in the online (live) path.
+    # A fresh venv that hasn't done ``pip install -r requirements.txt``
+    # can still parse the module and run the offline-skip branch above
+    # without crashing with ModuleNotFoundError.
+    import pyotp  # noqa: E402  (deliberate — lazy import, see comment)
 
     log.info("connecting to %s ...", _redact_project_ref(url))
     client: Client = create_client(url, key)
