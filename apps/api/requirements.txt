@@ -41,6 +41,11 @@ pydantic-settings==2.6.1
 supabase==2.8.1
 boto3==1.35.54  # Cloudflare R2 (S3-compatible)
 
+# TOTP for the Supabase MFA verification harness
+# (scripts/verify_supabase_mfa.py and its tests).
+# Pure-Python, no native deps.
+pyotp==2.9.0
+
 # Queue & tasks
 celery==5.4.0
 redis==5.2.0
