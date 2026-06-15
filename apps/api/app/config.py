@@ -18,7 +18,10 @@ class Settings(BaseSettings):
     )
 
     # App
-    env: str = "development"
+    # Default to "production" so a deploy that forgets to set ENV
+    # still reports itself honestly to /health. Local devs who want
+    # the old behavior can set ENV=development in their shell.
+    env: str = "production"
     port: int = 8000
     log_level: str = "info"
 

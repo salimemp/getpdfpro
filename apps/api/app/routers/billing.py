@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Literal
+from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel, Field
@@ -54,6 +54,54 @@ def _price_id_for(interval: str) -> str:
     if interval == "monthly":
         return os.environ["STRIPE_PRICE_PRO_MONTHLY"]
     return os.environ["STRIPE_PRICE_PRO_YEARLY"]
+
+
+def _supabase_admin():
+    """Return a service-role Supabase client, or None if it's not
+    configured. Imported lazily so the module loads even when the
+    service role key is missing (the ``/billing/*`` endpoints then
+    503 cleanly via ``_stripe_configured()`` / an explicit check)."""
+    url = os.getenv("SUPABASE_URL", "").strip()
+    key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+    if not url or not key:
+        return None
+    from supabase import create_client  # lazy: avoids hard dep on supabase
+
+    return create_client(url, key)
+
+
+def _resolve_user_id(obj: dict[str, Any]) -> str | None:
+    """Pull the Supabase user_id out of a Stripe event payload.
+
+    Stripe event objects don't carry our user_id on every event type
+    by default, so we look in two places:
+
+    1. ``client_reference_id`` (checkout sessions — set by us at
+       session-create time in ``create_checkout_session``).
+    2. ``metadata.user_id`` (subscriptions, invoices — we set this
+       in the ``metadata`` block of the checkout session and it
+       carries over to the resulting subscription).
+    """
+    cid = obj.get("client_reference_id")
+    if cid:
+        return str(cid)
+    metadata = obj.get("metadata") or {}
+    uid = metadata.get("user_id")
+    return str(uid) if uid else None
+
+
+def _update_user_plan(user_id: str, plan: str) -> None:
+    """Set ``user_metadata.plan`` on a Supabase user. Raises if the
+    admin client is not configured or the API call fails."""
+    admin = _supabase_admin()
+    if admin is None:
+        raise RuntimeError(
+            "Supabase admin client is not configured "
+            "(SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY missing)"
+        )
+    admin.auth.admin.update_user_by_id(
+        user_id, {"user_metadata": {"plan": plan}}
+    )
 
 
 # ─── Endpoints ──────────────────────────────────────────────────
@@ -169,30 +217,96 @@ async def stripe_webhook(request: Request) -> dict:
         ) from exc
 
     event_type = event.get("type")
-    logger.info("stripe_webhook", extra={"type": event_type})
+    event_id = event.get("id")
+    logger.info("stripe_webhook", extra={"type": event_type, "id": event_id})
 
-    # TODO: update Supabase user_metadata.plan based on the event.
-    # Requires a Supabase admin client (service-role key) on the API
-    # side. The pattern is:
-    #
-    #   from supabase import create_client
-    #   supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-    #
-    #   if event_type == "checkout.session.completed":
-    #       sub = event["data"]["object"]
-    #       user_id = sub["client_reference_id"]
-    #       supabase_admin.auth.admin.update_user_by_id(
-    #           user_id, {"user_metadata": {"plan": "pro"}}
-    #       )
-    #   elif event_type == "customer.subscription.deleted":
-    #       ... plan: "free" ...
-    #
-    # We add this once the Supabase project is live and we have the
-    # service role key in the env. For now, log the event and return
-    # 200 so Stripe doesn't retry.
-    logger.info(
-        "stripe_event_received",
-        extra={"type": event_type, "id": event.get("id")},
-    )
+    # ─── Plan-update dispatch ──────────────────────────────────
+    # We don't fail the request for events we don't care about —
+    # return 200 with no action so Stripe doesn't keep retrying.
+    try:
+        if event_type == "checkout.session.completed":
+            obj = event["data"]["object"]
+            user_id = _resolve_user_id(obj)
+            if not user_id:
+                logger.warning(
+                    "checkout.session.completed without user_id; id=%s",
+                    event_id,
+                )
+            else:
+                _update_user_plan(user_id, "pro")
+                logger.info(
+                    "plan_updated", extra={"user_id": user_id, "plan": "pro"}
+                )
+
+        elif event_type == "customer.subscription.updated":
+            # Map the subscription's status back to a plan string.
+            # ``active`` and ``trialing`` keep the user on Pro; the
+            # edge cases (past_due, etc.) are handled by the
+            # invoice.payment_failed event below.
+            obj = event["data"]["object"]
+            status_ = obj.get("status")
+            user_id = _resolve_user_id(obj)
+            if status_ in ("active", "trialing") and user_id:
+                _update_user_plan(user_id, "pro")
+                logger.info(
+                    "plan_updated",
+                    extra={"user_id": user_id, "plan": "pro", "status": status_},
+                )
+            elif user_id:
+                logger.info(
+                    "subscription_updated_to_non_active",
+                    extra={"user_id": user_id, "status": status_},
+                )
+
+        elif event_type == "customer.subscription.deleted":
+            obj = event["data"]["object"]
+            user_id = _resolve_user_id(obj)
+            if user_id:
+                _update_user_plan(user_id, "free")
+                logger.info(
+                    "plan_updated", extra={"user_id": user_id, "plan": "free"}
+                )
+
+        elif event_type == "invoice.payment_failed":
+            # Don't auto-downgrade on a single failed payment — flag
+            # the user for follow-up (Stripe will retry, and a future
+            # ``customer.subscription.deleted`` will fire if it really
+            # cancels). The flag is stored on the user_metadata so
+            # the marketing/retention flow can pick it up.
+            obj = event["data"]["object"]
+            user_id = _resolve_user_id(obj)
+            if user_id:
+                admin = _supabase_admin()
+                if admin is not None:
+                    admin.auth.admin.update_user_by_id(
+                        user_id,
+                        {"user_metadata": {"payment_failed": True}},
+                    )
+                    logger.info(
+                        "payment_failure_flagged",
+                        extra={"user_id": user_id},
+                    )
+
+        else:
+            # Any other event type — acknowledge so Stripe stops
+            # retrying. We log it for observability.
+            logger.info(
+                "stripe_event_ignored",
+                extra={"type": event_type, "id": event_id},
+            )
+
+    except Exception as exc:  # noqa: BLE001
+        # Don't 500 silently — that swallows the real error. Log it
+        # and re-raise as 500 so Stripe retries the webhook. We've
+        # already verified the signature at this point, so the retry
+        # is safe.
+        logger.exception(
+            "stripe_webhook_handler_failed",
+            extra={"type": event_type, "id": event_id},
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"handler error: {exc.__class__.__name__}",
+        ) from exc
 
     return {"received": True}
