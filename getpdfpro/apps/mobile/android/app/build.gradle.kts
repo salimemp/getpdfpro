@@ -90,3 +90,28 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+// Transitive compileSdk override — several Flutter plugins (notably
+// file_picker 8.3.7) pin `compileSdk 34` in their own android/build.gradle
+// even though flutter_plugin_android_lifecycle 2.0.x AAR metadata requires
+// compileSdk >= 36. The project-level `compileSdk = 36` above only
+// applies to the app subproject; it does NOT propagate to plugin
+// subprojects, which is why the build was still failing with
+//   :file_picker:checkDebugAarMetadata
+//   Dependency ':flutter_plugin_android_lifecycle' requires libraries
+//   and applications that depend on it to compile against version 36
+//   or later of the Android APIs.
+//   :file_picker is currently compiled against android-34.
+//
+// Force every Android plugin subproject to compileSdk 36 + Java 17
+// after its own build.gradle has been evaluated.
+subprojects {
+    afterEvaluate {
+        if (project.hasProperty("android")) {
+            val androidExt = project.extensions.findByName("android")
+            if (androidExt is com.android.build.gradle.BaseExtension) {
+                androidExt.compileSdkVersion(36)
+            }
+        }
+    }
+}
