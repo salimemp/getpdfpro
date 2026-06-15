@@ -88,11 +88,13 @@ fi
 # App Links — Android reads the assetlinks.json at install time to
 # verify our app against the SHA-256 cert fingerprint of the signing
 # key. The user MUST replace the placeholder fingerprint with the
-# real one (see key.properties.example for how to extract it).
+# real one (see android/key.properties.example for how to extract it).
+# Note: Android res/values/ and res/xml/ only accept .xml files. JSON
+# files go in res/raw/ which holds binary resources.
 if [ -f "$SCRIPT_DIR/android/assetlinks.json" ]; then
-  echo "==> Copying android/app/src/main/res/values/assetlinks.json"
-  mkdir -p android/app/src/main/res/values
-  cp "$SCRIPT_DIR/android/assetlinks.json" android/app/src/main/res/values/assetlinks.json
+  echo "==> Copying android/app/src/main/res/raw/assetlinks.json"
+  mkdir -p android/app/src/main/res/raw
+  cp "$SCRIPT_DIR/android/assetlinks.json" android/app/src/main/res/raw/assetlinks.json
 fi
 
 echo ""
@@ -100,7 +102,7 @@ echo "Done. Verify the changes look right:"
 echo "  diff <(git show HEAD:ios/Runner/Info.plist) ios/Runner/Info.plist"
 echo "  diff <(git show HEAD:ios/Runner/Runner.entitlements) ios/Runner/Runner.entitlements 2>/dev/null || true"
 echo "  diff <(git show HEAD:android/app/src/main/AndroidManifest.xml) android/app/src/main/AndroidManifest.xml"
-echo "  diff <(git show HEAD:android/app/src/main/res/values/assetlinks.json) android/app/src/main/res/values/assetlinks.json 2>/dev/null || true"
+echo "  diff <(git show HEAD:android/app/src/main/res/raw/assetlinks.json) android/app/src/main/res/raw/assetlinks.json 2>/dev/null || true"
 echo ""
 echo "Next steps:"
 echo "  1. flutter pub get"
