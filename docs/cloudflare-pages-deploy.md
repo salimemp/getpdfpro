@@ -158,6 +158,22 @@ The dep isn't installed. Run:
 cd apps/web && pnpm install
 ```
 
+### Build fails with 15 `Could not resolve "fs" / "path" / "url" / "vm" / ...` errors during `Failed building Pages Functions`
+
+**Symptom:** the build log shows wrangler's `Pages Functions` bundling step failing with 15 errors of the form `Could not resolve "<builtin>" — Add the "nodejs_compat" compatibility flag to your project.`
+
+**Cause:** Cloudflare Pages is **not finding the wrangler.toml at all**, so the `compatibility_flags = ["nodejs_compat", ...]` we set are silently ignored. The build log will say `No Wrangler configuration file found. Continuing.` right before the failure.
+
+This is a path-mismatch problem: the Cloudflare Pages Root directory in the dashboard is `apps`, so Pages looks for `apps/wrangler.toml` (not `apps/web/wrangler.toml`). If the wrangler config is nested inside the web app, Pages never finds it.
+
+**Fix:** move the wrangler config to the **Root directory** that Pages sees. The wrangler config is the source of truth for Pages config (per the Cloudflare docs: "this file becomes the source of truth when used, meaning that you can not edit the same fields in the dashboard"). So:
+
+1. Move `apps/web/wrangler.toml` to `apps/wrangler.toml` (the project root).
+2. Update the `pages_build_output_dir` in the new file to `"web/.open-next"` (relative to the new location).
+3. Commit and push — the next build will read the config and the compat flag will take effect.
+
+Note: once the wrangler file is the source of truth, the dashboard's "Compatibility flags" setting becomes read-only. You must edit the wrangler file (and push a commit) to change compat flags going forward.
+
 ### Build succeeds but `/login` shows "Supabase isn't configured" banner
 
 Env vars didn't land. Go to **Settings → Environment variables** and verify the values are there. Cloudflare encrypts them in the UI display, but the actual values should be the full strings.

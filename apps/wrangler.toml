@@ -1,0 +1,43 @@
+# Cloudflare Pages configuration for the getpdfpro-web app.
+#
+# This file lives at the project root (apps/) because Cloudflare Pages
+# looks for the wrangler config at the Root directory it was given
+# (which is "apps" in the dashboard build settings). Pages won't find
+# the config if it's nested in apps/web/ — the build will warn
+# "No Wrangler configuration file found" and fall back to defaults,
+# which means our compatibility flags and build output dir are
+# silently ignored. This is why earlier deploys got 15 "Could not
+# resolve fs/path/..." errors: the flags were set, just not read.
+#
+# The build process (run by `pnpm pages:build` from apps/web):
+#   1. `opennextjs-cloudflare build` runs `next build` and produces
+#      a Cloudflare Worker at `apps/web/.open-next/worker.js` plus
+#      a static assets directory at `apps/web/.open-next/`.
+#   2. The `pages:build` script then renames `worker.js` to `_worker.js`
+#      (the Cloudflare Pages convention) and copies our `_headers` +
+#      `_redirects` files into the build output.
+#   3. Cloudflare Pages deploys from `web/.open-next/` (relative to
+#      the Root directory): it picks up `_worker.js` as the request
+#      handler and serves the rest as static assets.
+#
+# Per Cloudflare docs, once this wrangler.toml is in the deploy
+# branch, it becomes the SOURCE OF TRUTH for the Pages project's
+# config — the dashboard fields become read-only. Don't try to
+# edit compatibility flags in the dashboard anymore.
+#
+# See: https://opennext.js.org/cloudflare
+#      https://developers.cloudflare.com/pages/functions/wrangler-configuration/
+
+name = "getpdfpro-web"
+compatibility_date = "2026-04-15"
+compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public", "enable_request_signal"]
+
+# Cloudflare Pages reads `pages_build_output_dir` to know which
+# directory to upload. Path is relative to the Root directory (which
+# is `apps` in our dashboard build settings), so the full path is
+# `apps/web/.open-next`.
+pages_build_output_dir = "web/.open-next"
+
+# Disable observability (we'll add Logflare/Datadog later if needed).
+[observability]
+enabled = false
