@@ -416,6 +416,7 @@
     "passkey_adding": "Setting up passkey...",
     "passkey_name_hint": "Passkey name (e.g. iPhone 15)",
     "passkey_no_passkeys": "No passkeys enrolled on this device.",
+    "passkey_per_device_info": "Passkeys are stored on this device. Enroll a passkey on every device you want to sign in from.",
     "passkey_use": "Use a passkey",
     "passkey_factor_label": "{name} • added {date}",
     "passkey_remove": "Remove",
