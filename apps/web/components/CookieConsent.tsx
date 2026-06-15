@@ -304,7 +304,7 @@ export function CookieConsent() {
               className="mt-1 text-sm text-slate-600 dark:text-slate-300"
             >
               Choose which cookies you allow. Essential cookies are always on
-              because the site can't function without them.
+              because the site can&apos;t function without them.
             </p>
 
             <ul className="mt-4 space-y-3">
