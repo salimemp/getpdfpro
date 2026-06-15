@@ -129,6 +129,12 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
             ListTile(
+              leading: const Icon(Icons.security),
+              title: Text('settings.security_cta'.tr()),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/settings/security'),
+            ),
+            ListTile(
               leading: const Icon(Icons.logout),
               title: Text('common.sign_out'.tr()),
               onTap: _signOut,

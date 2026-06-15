@@ -33,6 +33,23 @@ dependencies:
   webauthn: ^0.2.5          # Passkey / WebAuthn
   local_auth: ^2.3.0         # Biometrics
 
+  # QR rendering for TOTP enrollment (authenticator app scans the
+  # otpauth:// URI). qr_flutter 4.1.0 is the Flutter 3.24+/Dart 3.7+
+  # compatible line.
+  qr_flutter: ^4.1.0
+
+  # Crypto helpers used by the passkey enrollment flow to derive a
+  # deterministic 32-byte clientDataHash from a server-side challenge
+  # (we don't have a real WebAuthn server yet — the hash is a SHA-256
+  # of the challenge bytes; this is the same digest the `webauthn`
+  # package would receive from a relying-party server).
+  crypto: ^3.0.5
+
+  # RFC 4648 base32 encoding for the raw TOTP secret (so users who
+  # can't scan the QR can still paste it into Google Authenticator,
+  # 1Password, Bitwarden, etc.).
+  base32: ^2.1.3
+
   # PDF
   syncfusion_flutter_pdf: ^33.2.12
   pdfx: ^2.6.0
