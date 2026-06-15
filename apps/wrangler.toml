@@ -37,7 +37,6 @@ compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public", "enable_
 # is `apps` in our dashboard build settings), so the full path is
 # `apps/web/.open-next`.
 pages_build_output_dir = "web/.open-next"
-
-# Disable observability (we'll add Logflare/Datadog later if needed).
-[observability]
-enabled = false
+# Note: [observability] is a Workers-only config block, not supported
+# by Pages. If you need Logpush / Logflare later, do it via the
+# Cloudflare dashboard for the Pages project, not here.
