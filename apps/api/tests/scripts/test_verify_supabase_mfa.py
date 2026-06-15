@@ -148,8 +148,20 @@ def mock_client_factory(
 ) -> Iterator[MagicMock]:
     """Yield a MagicMock that pretends to be the supabase.Client
     returned by ``create_client``. Each test can adjust the mocks to
-    simulate failure cases."""
-    with patch.object(_script, "create_client") as mock_create:
+    simulate failure cases.
+
+    The script does ``from supabase import Client, create_client``
+    lazily inside ``main()`` (so a fresh venv without ``supabase``
+    installed can still parse the module and run the offline-skip
+    branch). We patch the names at the source — on the ``supabase``
+    module's namespace — so the ``from ... import ...`` inside
+    ``main()`` resolves to the mock.
+    """
+    # Ensure the supabase module is importable in this venv (the
+    # tests already have it installed via ``apps/api/requirements.txt``).
+    import supabase  # noqa: F401  (forces import; side effect: populates sys.modules)
+
+    with patch("supabase.create_client") as mock_create:
         client = MagicMock()
         # Admin
         admin_user = MagicMock(id="user-xyz-789")

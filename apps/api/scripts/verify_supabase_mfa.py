@@ -58,12 +58,18 @@ import random
 import string
 import sys
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-# ``pyotp`` is imported lazily inside ``main()`` (see below) so a fresh
-# venv that has only ``supabase`` installed can still run the script in
-# offline-skip mode without crashing with ModuleNotFoundError.
-from supabase import Client, create_client  # noqa: E402
+# ``supabase`` and ``pyotp`` are BOTH imported lazily inside ``main()``
+# (see below). A fresh venv that hasn't run ``pip install -r
+# requirements.txt`` can still parse this module and run the
+# offline-skip branch above without crashing with ModuleNotFoundError.
+# This is what the docstring already claims — making it actually true.
+
+if TYPE_CHECKING:
+    # Type hints only — never executed at runtime, so a missing
+    # ``supabase`` install can't break the import.
+    from supabase import Client  # noqa: F401
 
 # ─── Logging ──────────────────────────────────────────────────────────────
 # A single line per step keeps the output CI-friendly. We use a custom
@@ -111,11 +117,27 @@ def main() -> int:
             f"expected something like https://<project-ref>.supabase.co"
         )
 
-    # Lazy import — ``pyotp`` is only required in the online (live) path.
-    # A fresh venv that hasn't done ``pip install -r requirements.txt``
-    # can still parse the module and run the offline-skip branch above
-    # without crashing with ModuleNotFoundError.
-    import pyotp  # noqa: E402  (deliberate — lazy import, see comment)
+    # Lazy imports — ``supabase`` and ``pyotp`` are only required in
+    # the online (live) path. A fresh venv that hasn't done
+    # ``pip install -r requirements.txt`` can still parse the module
+    # and run the offline-skip branch above without crashing with
+    # ModuleNotFoundError. Both imports are placed here, not at module
+    # top, on purpose.
+    try:
+        from supabase import Client, create_client  # noqa: E402
+    except ImportError as exc:
+        return _fail(
+            "supabase package is not installed. install it with "
+            "`pip install supabase` (and pyotp for the online path) "
+            "to run the live verification. exiting 1."
+        )
+    try:
+        import pyotp  # noqa: E402
+    except ImportError as exc:
+        return _fail(
+            "pyotp is not installed. install it with `pip install pyotp` "
+            "to run the live verification. exiting 1."
+        )
 
     log.info("connecting to %s ...", _redact_project_ref(url))
     client: Client = create_client(url, key)
