@@ -12,3 +12,14 @@ compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public", "enable_
 [assets]
 directory = ".open-next/assets"
 binding = "ASSETS"
+
+# Plain-text env vars (non-sensitive). Read at runtime via process.env.
+# For NEXT_PUBLIC_* vars, these ALSO get inlined into the client bundle at build time,
+# but server-side code reads from process.env.
+# Secrets like the anon key should be in [secrets] or via `wrangler secret put`,
+# but NEXT_PUBLIC_* are public anyway, so [vars] is fine.
+[vars]
+NEXT_PUBLIC_SUPABASE_URL = "https://osjtyipxwpkmzsextbne.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9zanR5aXB4d3BrbXpzZXh0Ym5lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNzYzNDgsImV4cCI6MjA5Njk1MjM0OH0.95765gbqpjkedk5nfa9JdHa2b1BljGofRIMOk1nXxUA"
+NEXT_PUBLIC_API_URL = "https://api.getpdfpro.com"
+NEXT_PUBLIC_SITE_URL = "https://app.getpdfpro.com"

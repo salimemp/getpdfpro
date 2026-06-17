@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, AlertCircle, CheckCircle2, Sparkles, Mail } from "lucide-react";
 import { useAuth } from "@/lib/auth";
-import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase";
+import { createSupabaseBrowserClient } from "@/lib/supabase";
 
 export function BetaClaimForm() {
   const router = useRouter();
@@ -14,24 +14,14 @@ export function BetaClaimForm() {
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
 
-  if (!isSupabaseConfigured()) {
-    return (
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100">
-        <p className="font-medium">Supabase isn&apos;t configured yet.</p>
-        <p className="mt-1 text-amber-800 dark:text-amber-200">
-          Once you finish the Supabase setup (see the C4 runbook), the
-          beta form will work. Until then, drop me a line at{" "}
-          <a
-            className="font-medium underline"
-            href="mailto:salim@getpdfpro.com"
-          >
-            salim@getpdfpro.com
-          </a>{" "}
-          and I&apos;ll add you to the beta manually.
-        </p>
-      </div>
-    );
-  }
+  // NOTE: previously this component returned a "Supabase isn't configured"
+  // banner when isSupabaseConfigured() was false. We removed that early-return
+  // because the same bug that hit AuthForm (server-rendered chunk not seeing
+  // runtime process.env.NEXT_PUBLIC_*, even when the client bundle inlines
+  // the values correctly) would hard-lock the page behind a false-positive
+  // config check. Instead we render the form and let createSupabaseBrowserClient()
+  // return null inside onClaim / AlreadySignedInClaim; the existing try/catch
+  // surfaces the error inline. Anonymous tool use is unaffected either way.
 
   const onClaim = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,6 +68,16 @@ export function BetaClaimForm() {
   if (auth.user) {
     return <AlreadySignedInClaim />;
   }
+
+  // NOTE: historically this component returned a "Supabase isn't configured"
+  // banner when isSupabaseConfigured() was false. We removed the early-return
+  // for the same reason as AuthForm — Workers' runtime process.env for
+  // NEXT_PUBLIC_* can be missing on the server-rendered chunk even when the
+  // client bundle inlines the values correctly, which hard-locks the page
+  // behind a false-positive config check. Letting the form render and
+  // catching the null client inside onClaim / AlreadySignedInClaim surfaces
+  // a real error to the user without breaking the page. Anonymous tool use
+  // is unaffected either way.
 
   return (
     <form onSubmit={onClaim} className="space-y-4">

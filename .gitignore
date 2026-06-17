@@ -62,6 +62,7 @@ adsense-checklist.html
 /social-queue/
 .vercel
 .env*
+.dev.vars
 
 # OpenNext Cloudflare build output
 /.open-next/
