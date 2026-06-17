@@ -26,6 +26,17 @@ jobs:
 
       - name: Build OpenNext bundle
         working-directory: apps/web
+        # NEXT_PUBLIC_* must be in the process env at BUILD time so Next.js
+        # inlines them into the client bundle. The wrangler.toml [vars] block
+        # only sets them at Worker runtime — too late for the inlining step.
+        # Values mirror apps/web/wrangler.toml [vars] (kept in sync manually).
+        # These are the public anon key + URLs, not secrets, so plain text in
+        # the workflow is fine.
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: "https://osjtyipxwpkmzsextbne.supabase.co"
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9zanR5aXB4d3BrbXpzZXh0Ym5lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNzYzNDgsImV4cCI6MjA5Njk1MjM0OH0.95765gbqpjkedk5nfa9JdHa2b1BljGofRIMOk1nXxUA"
+          NEXT_PUBLIC_API_URL: "https://api.getpdfpro.com"
+          NEXT_PUBLIC_SITE_URL: "https://app.getpdfpro.com"
         run: pnpm opennext:build
 
       - name: Deploy to Cloudflare Workers
