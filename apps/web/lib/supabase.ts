@@ -22,19 +22,18 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 let _client: SupabaseClient | null = null;
 
 /**
- * Returns true if `value` looks like a real Supabase config string.
+ * Returns true if `value` looks like a real Supabase URL.
  * We accept any non-empty string that:
  *   - is not a placeholder (e.g. Vercel's "<from Supabase>" sentinel,
  *     or "<my-supabase-url>" template placeholders)
  *   - starts with http:// or https://
  *   - has at least 20 characters (Supabase URLs are 30+ chars in practice)
- *   - contains "supabase" (the real ones do)
  *
  * Without this check, the underlying supabase-js client will try
  * `new URL(emptyOrPlaceholder)` and throw "Invalid URL" at runtime,
  * which manifests as a hydration error on every page.
  */
-function isValidConfig(value: string | undefined): value is string {
+function isValidUrl(value: string | undefined): value is string {
   if (!value) return false;
   if (value.length < 20) return false;
   if (!value.startsWith("http://") && !value.startsWith("https://")) return false;
@@ -45,13 +44,32 @@ function isValidConfig(value: string | undefined): value is string {
   return true;
 }
 
+/**
+ * Returns true if `value` looks like a real Supabase anon key JWT.
+ * A real Supabase anon key is a JWT (header.payload.signature) that
+ *   - is at least 180 characters long (real keys are 200-220)
+ *   - is not a placeholder (no angle brackets, no Vercel sentinel text)
+ *
+ * We deliberately do NOT require the key to start with "http://" —
+ * it's a JWT, not a URL. (Prior versions of this function applied
+ * the URL check to both the URL and the key, which silently broke
+ * the client once the URL was wired up but the key check was
+ * unrelated and always failed.)
+ */
+function isValidAnonKey(value: string | undefined): value is string {
+  if (!value) return false;
+  if (value.length < 180) return false;
+  if (value.includes("<") || value.includes(">")) return false;
+  return true;
+}
+
 export function createSupabaseBrowserClient(): SupabaseClient | null {
   if (_client) return _client;
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!isValidConfig(url) || !isValidConfig(anonKey)) {
+  if (!isValidUrl(url) || !isValidAnonKey(anonKey)) {
     // Don't throw at import time — let the consumer decide.
     // This makes the file safe to import in tests / storybooks.
     return null;
@@ -68,7 +86,7 @@ export function createSupabaseBrowserClient(): SupabaseClient | null {
  */
 export function isSupabaseConfigured(): boolean {
   return Boolean(
-    isValidConfig(process.env.NEXT_PUBLIC_SUPABASE_URL) &&
-      isValidConfig(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+    isValidUrl(process.env.NEXT_PUBLIC_SUPABASE_URL) &&
+      isValidAnonKey(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
   );
 }
