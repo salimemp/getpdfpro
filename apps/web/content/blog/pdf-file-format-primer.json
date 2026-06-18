@@ -1,0 +1,175 @@
+{
+  "slug": "pdf-file-format-primer",
+  "title": "The PDF file format: a 2026 primer",
+  "description": "What's actually inside a PDF file? A short, accurate tour of the spec — versions, encryption, fonts, and the subsets (PDF/A, PDF/UA) that matter in practice.",
+  "excerpt": "PDF looks like a document. Under the hood, it's a typed object graph with a specific structure. Here's what every developer and curious user should know about the format in 2026.",
+  "cover": "/blog/cover-pdf-file-format-primer.webp",
+  "date": "2026-06-13",
+  "author": "GetPDFPro",
+  "readingMinutes": 7,
+  "tags": [
+    "explainer",
+    "spec",
+    "deep-dive"
+  ],
+  "sections": [
+    {
+      "type": "p",
+      "text": "PDF has been around for 35 years and is still the default document format for contracts, invoices, e-books, government filings, and academic papers. Most people treat it as a black box. Here's what's actually inside one."
+    },
+    {
+      "type": "h2",
+      "text": "A short history"
+    },
+    {
+      "type": "p",
+      "text": "PDF was created by John Warnock, co-founder of Adobe, in 1991. The internal codename was 'Project Camelot.' Adobe released the PDF specification for free in 1993, which is unusual for a company that could have kept it proprietary — and that decision is the reason PDF won as a standard. In 2008, PDF was standardized internationally as ISO 32000-1. The current version, PDF 2.0, is ISO 32000-2:2020."
+    },
+    {
+      "type": "p",
+      "text": "Source: ISO 32000-2:2020 and Adobe's own PDF history page. Cross-referenced on 11 June 2026."
+    },
+    {
+      "type": "h2",
+      "text": "What's inside a PDF"
+    },
+    {
+      "type": "p",
+      "text": "A PDF is a structured collection of objects. The structure follows a typed object model sometimes called COS (Carousel Object System, in homage to the Project Camelot origin). There are nine basic object types:"
+    },
+    {
+      "type": "ol",
+      "items": [
+        "Boolean — true / false",
+        "Number — integer or real",
+        "String — wrapped in parentheses, can be hex-encoded",
+        "Name — preceded by a slash, like /Title",
+        "Array — ordered list of objects",
+        "Dictionary — unordered key/value map (the workhorse of the format)",
+        "Stream — a dictionary followed by a length-prefixed byte sequence (used for page contents, images, embedded fonts)",
+        "Null — a single object",
+        "Indirect object — an object with a unique object number, addressable from anywhere else in the file"
+      ]
+    },
+    {
+      "type": "p",
+      "text": "The first line of a PDF is a header like %PDF-2.0 that declares the version. The last line is %%EOF. Between them, you have a body of indirect objects and a cross-reference table that lets a reader locate any object by number without scanning the file linearly."
+    },
+    {
+      "type": "h2",
+      "text": "Versions in practice"
+    },
+    {
+      "type": "p",
+      "text": "The version number in the header doesn't dictate features — readers are supposed to inspect actual object types. But the version does hint at what's likely inside. A short tour:"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "Version",
+        "Year",
+        "Notable additions"
+      ],
+      "rows": [
+        [
+          "PDF 1.0",
+          "1993",
+          "Initial release"
+        ],
+        [
+          "PDF 1.4",
+          "2001",
+          "Transparency, JBIG2 image decoding, tagged PDF"
+        ],
+        [
+          "PDF 1.5",
+          "2003",
+          "Layers (optional content), object streams, cross-reference streams"
+        ],
+        [
+          "PDF 1.6",
+          "2004",
+          "AES-128 encryption, 3D annotations"
+        ],
+        [
+          "PDF 1.7",
+          "2006",
+          "XFA forms, attachments"
+        ],
+        [
+          "PDF 2.0 (ISO 32000-2:2020)",
+          "2020",
+          "AES-256, deprecates many 1.x features, clearer tagged-PDF model"
+        ]
+      ]
+    },
+    {
+      "type": "h2",
+      "text": "The 14 standard fonts"
+    },
+    {
+      "type": "p",
+      "text": "PDF 1.0 defined 14 fonts that every conformant reader must support without embedding: Times-Roman, Times-Bold, Times-Italic, Times-BoldItalic, Helvetica, Helvetica-Bold, Helvetica-Oblique, Helvetica-BoldOblique, Courier, Courier-Bold, Courier-Oblique, Courier-BoldOblique, Symbol, and ZapfDingbats. If a PDF uses only these, it can be tiny — no embedded font data needed."
+    },
+    {
+      "type": "callout",
+      "tone": "info",
+      "text": "Modern PDFs almost always embed additional fonts. But the 14 standard fonts remain a useful baseline for size-optimized documents — government forms, accessibility tooling, and some PDF/A archival profiles lean on them."
+    },
+    {
+      "type": "h2",
+      "text": "Encryption"
+    },
+    {
+      "type": "p",
+      "text": "PDF 2.0 defines 256-bit AES encryption as the recommended cipher. Earlier versions used 40-bit and 128-bit RC4 (deprecated) and 128-bit AES. When you password-protect a PDF, both a user password (required to open) and an owner password (required to change permissions like print/edit) are supported. The encryption applies to the document body but not the cross-reference table or header, which is a small leak but in practice not exploitable."
+    },
+    {
+      "type": "h2",
+      "text": "Subsets you should know about"
+    },
+    {
+      "type": "p",
+      "text": "ISO and other bodies have defined PDF subsets for specific use cases. The ones that matter in 2026:"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "PDF/A — archival. Forbid external references, require embedded fonts, ban JavaScript. Required for legal and government archives in many jurisdictions.",
+        "PDF/UA — universal accessibility. Require tagged content, structure trees, and reading order. The basis for WCAG-aligned document workflows.",
+        "PDF/X — print production. Strict color management (CMYK, ICC profiles), high-resolution images, no transparency.",
+        "PDF/E — engineering. For 3D and interactive machinery documentation.",
+        "PDF/VT — variable data transactional. For batch-produced documents like statements and bills."
+      ]
+    },
+    {
+      "type": "h2",
+      "text": "Why this matters for tools"
+    },
+    {
+      "type": "p",
+      "text": "When a tool like GetPDFPro merges, splits, or compresses a PDF, it's manipulating this object graph — concatenating page trees, rewriting the cross-reference table, optionally recompressing image streams. Tools that do this well preserve structure; tools that don't fall back to rasterization, which loses everything that makes PDF a structured format rather than a stack of images."
+    },
+    {
+      "type": "p",
+      "text": "Practical takeaway: when choosing a PDF tool, check whether the output still has selectable text and a working outline. If it doesn't, the tool rasterized your document, and you've lost searchability, accessibility, and reusability."
+    }
+  ],
+  "sources": [
+    {
+      "label": "ISO 32000-2:2020 — Document management — Portable document format — Part 2: PDF 2.0",
+      "url": "https://www.iso.org/standard/63534.html",
+      "accessedOn": "2026-06-11"
+    },
+    {
+      "label": "Adobe — PDF History (Project Camelot origin)",
+      "url": "https://www.adobe.com/content/dam/acom/en/devnet/pdf/pdf_reference_archive/pdf-reference-1-25.pdf",
+      "accessedOn": "2026-06-11"
+    },
+    {
+      "label": "PDF 1.7 specification (free, Adobe)",
+      "url": "https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/PDF32000_2008.pdf",
+      "accessedOn": "2026-06-11"
+    }
+  ]
+}

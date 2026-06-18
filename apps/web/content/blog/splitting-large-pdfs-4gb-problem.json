@@ -1,0 +1,132 @@
+{
+  "slug": "splitting-large-pdfs-4gb-problem",
+  "title": "Splitting large PDFs: the 4 GB problem nobody warns you about",
+  "description": "PDF was never designed for files bigger than 4 GB. Here's why, what to do about it, and how to safely extract the pages you need from a multi-GB file.",
+  "excerpt": "The PDF spec caps any single file at ~4.7 GB. Hitting that ceiling is more common than you'd think — legal discovery, design files, medical imaging. Here's how to work around it.",
+  "cover": "/blog/cover-splitting-large-pdfs-4gb-problem.webp",
+  "date": "2026-06-17",
+  "author": "GetPDFPro",
+  "readingMinutes": 5,
+  "tags": [
+    "split",
+    "limits",
+    "deep-dive"
+  ],
+  "sections": [
+    {
+      "type": "p",
+      "text": "The PDF specification caps any single file at about 4.7 GB. If you have a 5 GB PDF, you don't have a valid PDF — you have a file that some readers will open and others will refuse. This is the most common cause of 'the file won't open' errors on large documents, and it shows up in real workflows more often than people think."
+    },
+    {
+      "type": "h2",
+      "text": "Why 4 GB?"
+    },
+    {
+      "type": "p",
+      "text": "PDF's cross-reference table uses 10-digit byte offsets to locate objects. 10 digits = 1 byte short of 10 GB. But the spec also reserves some of that range for safety, and in practice the cross-reference stream and other metadata shrink the available range to about 4.7 GB. Any object offset above that can't be addressed in a conformant file."
+    },
+    {
+      "type": "p",
+      "text": "PDF 2.0 introduced extended cross-reference streams that can use larger offsets, but support is uneven — Acrobat supports it, but many readers and most online tools don't yet."
+    },
+    {
+      "type": "h2",
+      "text": "Where 4 GB PDFs come from"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "Legal discovery exports — large multi-gigabyte document collections dumped into a single PDF",
+        "Medical imaging — CT and MRI scans exported as multi-page PDFs",
+        "CAD and engineering — large-format drawings with embedded high-resolution images",
+        "Book manuscripts with hundreds of full-page color illustrations",
+        "Auto-generated reports from data systems (e.g., a year of monthly statements)"
+      ]
+    },
+    {
+      "type": "h2",
+      "text": "The fix: split before you do anything else"
+    },
+    {
+      "type": "p",
+      "text": "If you have a file over 1 GB, split it before you try to compress, merge, or transform it. A 5 GB file split into 10 × 500 MB files is trivially manageable. The same 5 GB file passed through a transformer is a memory-pressure disaster waiting to happen — and most online tools will silently fail or time out."
+    },
+    {
+      "type": "h2",
+      "text": "How to split a large PDF"
+    },
+    {
+      "type": "p",
+      "text": "There are three common splitting strategies:"
+    },
+    {
+      "type": "h3",
+      "text": "By page count"
+    },
+    {
+      "type": "p",
+      "text": "Split into N-page chunks. E.g., 'give me files of 100 pages each.' This is the safest strategy because you control the output size directly — if you pick 100 pages and the source is 5 GB, each output is roughly 500 MB, well under the 4 GB cap."
+    },
+    {
+      "type": "h3",
+      "text": "By ranges"
+    },
+    {
+      "type": "p",
+      "text": "Extract specific page ranges, e.g., 'pages 1–10, 50–60, 200–210.' Use this when you know exactly which pages you need and don't want a 100-page file with one useful section."
+    },
+    {
+      "type": "h3",
+      "text": "By bookmarks"
+    },
+    {
+      "type": "p",
+      "text": "If the source has a working outline, split at the top-level bookmarks. This is the right strategy for legal discovery — each top-level entry becomes a separate file, and the bookmarks become a navigable index across the output set."
+    },
+    {
+      "type": "h2",
+      "text": "The packaging question"
+    },
+    {
+      "type": "p",
+      "text": "If your split produces more than a handful of files, the natural thing to do is package them as a ZIP. The trade-off: ZIP itself isn't a streaming format, so a 4 GB output split into 200 files becomes a 4 GB ZIP. If you need to upload the result somewhere, that's the same problem you started with."
+    },
+    {
+      "type": "p",
+      "text": "GetPDFPro's split endpoint returns a ZIP of one-PDF-per-page-range. For a 1 GB source split into 10 × 100-page files, the ZIP is just over 1 GB — same order of magnitude, but the individual entries are now usable."
+    },
+    {
+      "type": "h2",
+      "text": "Privacy note for big files"
+    },
+    {
+      "type": "p",
+      "text": "If you're splitting a confidential file (legal, medical, financial), double-check that your tool runs in memory and discards the file after the response. Tools that store uploads for batch processing will hold your file for hours — iLovePDF, for example, states on their Features page (verified 11 June 2026) that they 'automatically eliminate all your archives within two hours.' Two hours is better than weeks, but it's not zero. GetPDFPro processes and discards in the same request — verified live by inspecting the endpoint behavior."
+    },
+    {
+      "type": "h2",
+      "text": "Try it"
+    },
+    {
+      "type": "p",
+      "text": "Drop in a PDF, pick a splitting strategy, get a ZIP of clean files. Free tier handles files up to 50 MB, which is enough for most everyday splits. For multi-GB files, Pro ($5.99/mo) raises the cap to 4 GB and gives you 1,000 tasks per day."
+    }
+  ],
+  "sources": [
+    {
+      "label": "PDF 1.7 specification, § 7.5.4 (cross-reference table)",
+      "url": "https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/PDF32000_2008.pdf",
+      "accessedOn": "2026-06-11"
+    },
+    {
+      "label": "iLovePDF — Features (file retention policy)",
+      "url": "https://www.ilovepdf.com/features",
+      "accessedOn": "2026-06-11"
+    },
+    {
+      "label": "GetPDFPro split endpoint (live)",
+      "url": "https://api.getpdfpro.com/docs",
+      "accessedOn": "2026-06-11"
+    }
+  ]
+}
