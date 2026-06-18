@@ -11,9 +11,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "clean": "rm -rf .next .turbo node_modules .open-next",
-    "opennext:build": "opennextjs-cloudflare build",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload"
+    "build:blog-data": "node ../../scripts/build-blog-data.mjs",
+    "opennext:build": "pnpm build:blog-data && opennextjs-cloudflare build",
+    "deploy": "pnpm opennext:build && opennextjs-cloudflare deploy",
+    "upload": "pnpm opennext:build && opennextjs-cloudflare upload"
   },
   "dependencies": {
     "@supabase/ssr": "0.5.1",
