@@ -75,12 +75,35 @@ const INLINE_POSTS: BlogPost[] = [];
  * Load generated posts from apps/web/content/blog/<slug>.json at module
  * init. Runs at build time (Next.js statically renders this).
  *
+ * Path resolution: we resolve relative to THIS module's location, NOT
+ * process.cwd(). The Next.js build runs from apps/web/ (the working-dir
+ * in the deploy workflow), so a `path.join(process.cwd(), 'apps', ...)`
+ * would produce a doubled path and silently load nothing. Walking up
+ * from the module file is reliable regardless of where the build runs.
+ *
  * Skips:
  *   - Files starting with `_` (used for _review/ and similar)
  *   - Files that fail validation (logged to console as a warning)
  */
+function findContentBlogDir(): string {
+  // Walk up from this file: apps/web/lib/blog.ts → apps/web/lib/ → apps/web/ → apps/ → repo root
+  // Try apps/web/content/blog/ first (the canonical location).
+  const candidates = [
+    path.resolve(__dirname, "..", "content", "blog"),                  // apps/web/content/blog
+    path.resolve(__dirname, "..", "..", "content", "blog"),             // apps/content/blog (alt)
+    path.resolve(__dirname, "..", "..", "apps", "web", "content", "blog"), // repo-root relative
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(c)) return c;
+  }
+  // Fall back to the canonical path even if it doesn't exist; the caller
+  // checks existence and returns []. This keeps the function safe in
+  // fresh checkouts before the directory is created.
+  return candidates[0]!;
+}
+
 function loadGeneratedPosts(): BlogPost[] {
-  const contentDir = path.join(process.cwd(), "apps", "web", "content", "blog");
+  const contentDir = findContentBlogDir();
   if (!fs.existsSync(contentDir)) return [];
 
   const posts: BlogPost[] = [];

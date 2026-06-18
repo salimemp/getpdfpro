@@ -119,7 +119,7 @@ FIRST-HAND PROOF (only facts the writer was allowed to use):
 
     url = (
         "https://generativelanguage.googleapis.com/v1beta/models/"
-        "gemini-1.5-flash-8b:generateContent?key=" + api_key
+        "gemini-2.5-flash:generateContent?key=" + api_key
     )
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],

@@ -140,11 +140,21 @@ OUTPUT FORMAT: Strict JSON. No markdown fences. No preamble. No explanation. Jus
 """
 
 
-def call_gemini(prompt: str, model: str = "gemini-1.5-flash-8b") -> dict[str, Any]:
+def call_gemini(prompt: str, model: str | None = None) -> dict[str, Any]:
     """Call Gemini and parse the JSON response.
 
     Tries GEMINI_API_KEY env var first. Raises if missing — the caller
     should have a fallback or surface the error.
+
+    Model selection:
+      - Default: gemini-2.5-flash (current stable, broadly available,
+        supports structured output, free tier friendly)
+      - Override via GEMINI_MODEL env var
+      - History of fallback models we've used:
+        - gemini-1.5-flash-8b (older AI Studio keys, often unavailable)
+        - gemini-2.0-flash (deprecated June 2026)
+        - gemini-2.5-flash (current default as of June 2026)
+        - gemini-flash-latest (alias to latest stable; sometimes busy)
     """
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
@@ -154,6 +164,7 @@ def call_gemini(prompt: str, model: str = "gemini-1.5-flash-8b") -> dict[str, An
             "Get one free at https://aistudio.google.com/apikey and run:\n"
             "  export GEMINI_API_KEY=..."
         )
+    model = model or os.environ.get("GEMINI_MODEL") or "gemini-2.5-flash"
 
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
 
@@ -164,7 +175,15 @@ def call_gemini(prompt: str, model: str = "gemini-1.5-flash-8b") -> dict[str, An
             "topP": 0.9,
             "maxOutputTokens": 8192,
             "responseMimeType": "application/json",
-            "responseSchema": WRITER_SCHEMA,
+            # NOTE: responseSchema disabled. Gemini rejects schemas whose
+            # array properties don't define `items`, and our `sections`
+            # is a discriminated union (oneOf 8 variants) that Gemini
+            # doesn't express well. We rely on:
+            #   - responseMimeType: application/json  (forces JSON output)
+            #   - explicit "OUTPUT FORMAT: Strict JSON" in the prompt
+            #   - post-hoc validation in _validate_post() below
+            # This is more permissive but has been the more reliable path
+            # across gemini-2.0-flash → gemini-2.5-flash.
         },
         "safetySettings": [
             {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
@@ -193,10 +212,88 @@ def call_gemini(prompt: str, model: str = "gemini-1.5-flash-8b") -> dict[str, An
     # clean JSON, but strip any markdown fences just in case)
     text = re.sub(r"^```(?:json)?\s*", "", text.strip())
     text = re.sub(r"\s*```$", "", text)
-    return json.loads(text)
+    parsed = json.loads(text)
+
+    # Post-validate. We don't ship a responseSchema to Gemini (it rejects
+    # schemas with array properties that lack `items`), so we validate here.
+    # Throws with a clear message if the model returned something we can't
+    # fix up automatically.
+    return _validate_post(parsed)
 
 
-def write_post(topic: TopicEntry, model: str = "gemini-1.5-flash-8b") -> dict[str, Any]:
+_VALID_SECTION_TYPES = {"p", "h2", "h3", "ul", "ol", "callout", "table", "code"}
+_VALID_CALLOUT_TONES = {"info", "tip", "warning"}
+
+
+def _validate_post(post: dict) -> dict:
+    """Normalize and validate the post object returned by Gemini.
+
+    Fixes common issues:
+      - Sections missing 'type' are dropped (rare but happens)
+      - Sections with unknown type are coerced to 'p' (defensive)
+      - ul/ol items is missing → empty list
+      - callout tone is missing/invalid → defaults to 'info'
+      - table missing rows/headers → empty
+      - sources is missing → empty list
+      - tags is missing → empty list
+    Throws ValueError if post is fundamentally malformed.
+    """
+    if not isinstance(post, dict):
+        raise ValueError(f"Post is not a dict: {type(post).__name__}")
+
+    # Required top-level fields (post slug/date/author injected later)
+    for field in ("title", "description", "excerpt", "sections"):
+        if field not in post:
+            raise ValueError(f"Post missing required field: {field!r}")
+
+    if not isinstance(post["sections"], list):
+        raise ValueError(f"sections is not a list: {type(post['sections']).__name__}")
+    if not post["sections"]:
+        raise ValueError("sections is empty")
+
+    cleaned_sections = []
+    for s in post["sections"]:
+        if not isinstance(s, dict):
+            continue
+        t = s.get("type")
+        if t not in _VALID_SECTION_TYPES:
+            # Coerce unknown types to a paragraph of the text
+            if "text" in s:
+                cleaned_sections.append({"type": "p", "text": str(s["text"])})
+            continue
+        if t in ("ul", "ol"):
+            items = s.get("items") or []
+            if not isinstance(items, list):
+                items = [str(items)]
+            s["items"] = [str(x) for x in items]
+        elif t == "callout":
+            tone = s.get("tone")
+            if tone not in _VALID_CALLOUT_TONES:
+                s["tone"] = "info"
+        elif t == "table":
+            s["headers"] = [str(h) for h in (s.get("headers") or [])]
+            rows = s.get("rows") or []
+            if not isinstance(rows, list):
+                rows = []
+            s["rows"] = [[str(c) for c in row] for row in rows if isinstance(row, list)]
+        elif t == "code":
+            s.setdefault("lang", "text")
+        cleaned_sections.append(s)
+
+    if not cleaned_sections:
+        raise ValueError("All sections were dropped during validation")
+
+    post["sections"] = cleaned_sections
+    post.setdefault("tags", [])
+    post.setdefault("sources", [])
+    if not isinstance(post["tags"], list):
+        post["tags"] = []
+    if not isinstance(post["sources"], list):
+        post["sources"] = []
+    return post
+
+
+def write_post(topic: TopicEntry, model: str | None = None) -> dict[str, Any]:
     """Generate a complete post object for the topic."""
     prompt = build_prompt(topic)
     post = call_gemini(prompt, model=model)
