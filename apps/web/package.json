@@ -17,7 +17,7 @@
     "upload": "pnpm opennext:build && opennextjs-cloudflare upload"
   },
   "dependencies": {
-    "@supabase/ssr": "0.5.1",
+    "@supabase/ssr": "0.5.2",
     "@supabase/supabase-js": "2.45.4",
     "clsx": "2.1.1",
     "lucide-react": "0.453.0",
