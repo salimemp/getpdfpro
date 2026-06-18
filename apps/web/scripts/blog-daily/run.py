@@ -54,6 +54,25 @@ def list_existing_slugs() -> list[str]:
     return slugs
 
 
+def already_published_today() -> str | None:
+    """If a post was already published today (UTC), return its slug.
+    Otherwise return None. Used by the cron to avoid double-publishing
+    when the polling interval is shorter than the cron cadence."""
+    today = _dt.date.today().isoformat()
+    if not CONTENT_DIR.exists():
+        return None
+    for p in CONTENT_DIR.iterdir():
+        if not p.is_file() or p.suffix != ".json" or p.name.startswith("_"):
+            continue
+        try:
+            data = json.loads(p.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        if data.get("date") == today:
+            return data.get("slug", p.stem)
+    return None
+
+
 def git_has_changes() -> bool:
     """Return True if the repo has uncommitted changes."""
     try:
@@ -109,9 +128,26 @@ def git_push() -> None:
         raise RuntimeError(f"git push failed: {r.stderr}")
 
 
-def run_daily(tool_slug: str | None = None, dry_run: bool = False) -> dict:
-    """Generate and publish one post. Returns a status dict."""
+def run_daily(tool_slug: str | None = None, dry_run: bool = False,
+             force: bool = False) -> dict:
+    """Generate and publish one post. Returns a status dict.
+
+    Idempotency: if a post was already published today (UTC), returns
+    status="already-published-today" without doing anything. Pass
+    --force to override (useful for regenerating a post).
+    """
     already_written = list_existing_slugs()
+
+    # Idempotency check — prevents the cron from double-publishing when
+    # the poll interval is shorter than the daily cadence.
+    if not force and not tool_slug:
+        today_slug = already_published_today()
+        if today_slug:
+            return {
+                "status": "already-published-today",
+                "slug": today_slug,
+                "note": "Skipping — post already published today. Pass --force to override.",
+            }
 
     # Pick topic
     if tool_slug:
@@ -227,9 +263,11 @@ def main():
     ap.add_argument("--tool", help="Specific tool slug to write about")
     ap.add_argument("--dry-run", action="store_true",
                     help="Show what would run, no API calls")
+    ap.add_argument("--force", action="store_true",
+                    help="Override the 'already published today' guard")
     args = ap.parse_args()
 
-    result = run_daily(tool_slug=args.tool, dry_run=args.dry_run)
+    result = run_daily(tool_slug=args.tool, dry_run=args.dry_run, force=args.force)
 
     # Print a structured status line the cron can grep
     print()
@@ -241,7 +279,7 @@ def main():
         sys.exit(0)
     elif result["status"] == "review":
         sys.exit(2)
-    elif result["status"] == "dry-run":
+    elif result["status"] in ("dry-run", "already-published-today"):
         sys.exit(0)
     else:
         sys.exit(1)
