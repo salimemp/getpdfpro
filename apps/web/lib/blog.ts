@@ -86,25 +86,29 @@ const INLINE_POSTS: BlogPost[] = [];
  *   - Files that fail validation (logged to console as a warning)
  */
 function findContentBlogDir(): string {
-  // Walk up from this file: apps/web/lib/blog.ts → apps/web/lib/ → apps/web/ → apps/ → repo root
-  // Try apps/web/content/blog/ first (the canonical location).
-  const candidates = [
-    path.resolve(__dirname, "..", "content", "blog"),                  // apps/web/content/blog
-    path.resolve(__dirname, "..", "..", "content", "blog"),             // apps/content/blog (alt)
-    path.resolve(__dirname, "..", "..", "apps", "web", "content", "blog"), // repo-root relative
-  ];
-  for (const c of candidates) {
-    if (fs.existsSync(c)) return c;
+  // __dirname at runtime is the COMPILED module location, not the source.
+  // During `next build`, lib/blog.ts may be compiled to any of:
+  //   apps/web/lib/                          (source — not where __dirname points)
+  //   apps/web/.next/server/lib/             (next build output)
+  //   apps/web/.next/server/app/blog/[slug]/ (next build, per-route)
+  //   <some-bundled-path>/lib/               (OpenNext worker bundle)
+  // Each has a different number of ".." segments to reach apps/web/content/blog,
+  // so fixed relative paths don't work. We walk UP from __dirname until
+  // we find a directory containing "content/blog/" — works everywhere.
+  let dir = __dirname;
+  for (let depth = 0; depth < 12; depth++) {
+    const candidate = path.join(dir, "content", "blog");
+    if (fs.existsSync(candidate)) return candidate;
+    const parent = path.dirname(dir);
+    if (parent === dir) break; // hit filesystem root
+    dir = parent;
   }
-  // Fall back to the canonical path even if it doesn't exist; the caller
-  // checks existence and returns []. This keeps the function safe in
-  // fresh checkouts before the directory is created.
-  return candidates[0]!;
+  return ""; // signal not found; caller returns []
 }
 
 function loadGeneratedPosts(): BlogPost[] {
   const contentDir = findContentBlogDir();
-  if (!fs.existsSync(contentDir)) return [];
+  if (!contentDir) return [];
 
   const posts: BlogPost[] = [];
   for (const file of fs.readdirSync(contentDir)) {
