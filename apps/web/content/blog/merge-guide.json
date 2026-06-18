@@ -1,0 +1,128 @@
+{
+  "title": "Merge PDF Online: A 2024 Guide to Combining Your Documents",
+  "description": "Effortlessly merge PDF online with GetPDFPro. Combine your PDF files securely, preserving bookmarks, form fields, and text selection, all in your browser.",
+  "excerpt": "Merging PDF files online is straightforward with GetPDFPro, allowing you to combine multiple documents into a single, cohesive PDF while maintaining critical document features.",
+  "tags": [
+    "merge",
+    "combine-pdfs",
+    "online-tool",
+    "pdf-organize",
+    "tutorial"
+  ],
+  "sections": [
+    {
+      "type": "p",
+      "text": "To merge PDF online, GetPDFPro provides a browser-based solution that allows you to combine multiple PDF documents into one unified file. This process is engineered to preserve the integrity of your original documents, ensuring features like bookmarks, form fields, and text selection remain fully functional in the output."
+    },
+    {
+      "type": "h2",
+      "text": "The 30-second version"
+    },
+    {
+      "type": "ol",
+      "items": [
+        "Navigate to the GetPDFPro Merge PDF tool at /tools/merge.",
+        "Drag and drop your PDF files into the designated area or click to select them from your device.",
+        "Arrange the files in the desired order by dragging their thumbnails.",
+        "Click the 'Merge PDF' button to initiate the combination process.",
+        "Download your newly merged PDF file directly to your computer."
+      ]
+    },
+    {
+      "type": "h2",
+      "text": "Why Merge PDFs Online?"
+    },
+    {
+      "type": "p",
+      "text": "Combining PDF files into a single document offers numerous advantages, from streamlining workflow to simplifying document management. Whether you're compiling reports, joining legal documents, or consolidating research papers, a reliable online PDF merger is an invaluable tool. It eliminates the need for desktop software installations and allows for quick processing directly within your web browser."
+    },
+    {
+      "type": "h3",
+      "text": "Preserving Document Fidelity"
+    },
+    {
+      "type": "p",
+      "text": "Many online tools rasterize PDFs during the merge process, which converts pages into images and strips away interactive elements. GetPDFPro, however, utilizes the open-source PyMuPDF engine, which concatenates page trees directly. This technical approach ensures that crucial elements such as bookmarks, form fields, and text selection survive intact in the combined PDF [1]. This means your merged document isn't just a collection of images; it's a fully functional PDF that retains its original intelligence."
+    },
+    {
+      "type": "callout",
+      "tone": "info",
+      "text": "💡 GetPDFPro's merge process uses an in-memory pass, meaning no temporary files are stored on our servers, and your file is discarded immediately after the response completes, ensuring your data privacy [2]."
+    },
+    {
+      "type": "h2",
+      "text": "Security and Performance Considerations"
+    },
+    {
+      "type": "p",
+      "text": "When you combine PDF files online, security and performance are paramount. GetPDFPro addresses these concerns by processing your documents efficiently and privately. The merge endpoint at /api/v1/pdf/merge-download performs a single in-memory pass, which means your files are processed without being written to disk as temporary files. Once the merged file is delivered to you, the data is discarded [2]."
+    },
+    {
+      "type": "p",
+      "text": "The underlying PyMuPDF engine is a robust and widely adopted library, trusted by countless production PDF tools across various industries. Its documentation is publicly available at pymupdf.readthedocs.io, highlighting its transparency and reliability [3]. This commitment to established, high-performance technology ensures that when you join PDF files with GetPDFPro, you're getting a secure and efficient service."
+    },
+    {
+      "type": "h3",
+      "text": "Key Advantages of GetPDFPro's Merge Tool"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "Feature",
+        "Benefit",
+        "Source"
+      ],
+      "rows": [
+        [
+          "Content Preservation",
+          "Bookmarks, form fields, and text selection survive in the output.",
+          "[1]"
+        ],
+        [
+          "Data Security",
+          "Single in-memory pass; no temp files, file discarded after response.",
+          "[2]"
+        ],
+        [
+          "Engine Reliability",
+          "Powered by PyMuPDF, used by countless production PDF tools.",
+          "[3]"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "Beyond merging, GetPDFPro offers a suite of tools to manage your PDFs. For instance, if you need to extract specific pages, consider our [Split PDF tool](/tools/split). Or, if your combined file is too large, our [Compress PDF tool](/tools/compress) can help reduce its size without significant quality loss. Understanding how to effectively manage your documents can significantly improve your digital workflow, much like understanding [PDF security best practices](/blog/pdf-security-best-practices) can protect your data."
+    },
+    {
+      "type": "h2",
+      "text": "Try it"
+    },
+    {
+      "type": "p",
+      "text": "Ready to combine your PDF documents with ease and confidence? Try it free at [GetPDFPro's Merge PDF tool](/tools/merge)."
+    }
+  ],
+  "sources": [
+    {
+      "label": "GetPDFPro source: apps/web/app/tools/merge/page.tsx",
+      "url": "apps/web/app/tools/merge/page.tsx",
+      "accessedOn": "2026-06-18"
+    },
+    {
+      "label": "GetPDFPro API (live, https://api.getpdfpro.com/docs)",
+      "url": "https://api.getpdfpro.com/docs",
+      "accessedOn": "2026-06-18"
+    },
+    {
+      "label": "PyMuPDF documentation",
+      "url": "https://pymupdf.readthedocs.io/en/latest/",
+      "accessedOn": "2026-06-18"
+    }
+  ],
+  "slug": "merge-guide",
+  "date": "2026-06-18",
+  "author": "GetPDFPro",
+  "cover": "/blog/cover-merge-guide.webp",
+  "readingMinutes": 2
+}
