@@ -43,7 +43,11 @@ Fill in:
 - **User support email:** `support@getpdfpro.com`
 - **App logo:** upload your logo (PNG, **120×120 minimum** — Google will
   display this on the consent screen)
-- **App domain → Authorized domains:** `getpdfpro.com`, `supabase.co`
+- **App domain → Authorized domains:** `getpdfpro.com` ONLY.
+  ⚠️ **Do NOT add `supabase.co` here.** Google's validator rejects it
+  with "Invalid domain: must be a top private domain" because it's
+  owned by Supabase, not by you. The Supabase callback URL goes in a
+  different field (Authorized redirect URIs — step 3 below), not here.
 - **Developer contact:** your email
 
 Save.
@@ -116,6 +120,20 @@ If you want full brand control:
   Google Cloud Console must EXACTLY match
   `https://osjtyipxwpkmzsextbne.supabase.co/auth/v1/callback` (case-sensitive,
   trailing slash optional, but don't add query params).
+- **"Invalid domain: must be a top private domain"** when adding
+  `supabase.co` to **Authorized domains** — the Authorized domains field
+  only accepts domains YOU own. Supabase's domain belongs to Supabase,
+  not to you, so it's rejected. The Supabase callback URL belongs in
+  the OAuth client's **Authorized redirect URIs** field (step 3), NOT
+  in the consent screen's **Authorized domains** field.
+- **Two different "URL" fields, easy to confuse**:
+  - **OAuth consent screen → Authorized domains** = domains that can
+    appear in the OAuth flow that YOU control. Add `getpdfpro.com`.
+  - **OAuth client → Authorized redirect URIs** = exact URLs Google is
+    allowed to redirect to with the auth code. Add
+    `https://osjtyipxwpkmzsextbne.supabase.co/auth/v1/callback` and
+    (optionally) `https://app.getpdfpro.com/account` for the post-callback
+    landing page.
 - **Logo doesn't appear on consent screen** — logo only shows after brand
   verification. For external apps in production, Google requires a
   domain-verified email and 100+ users before granting verification.
