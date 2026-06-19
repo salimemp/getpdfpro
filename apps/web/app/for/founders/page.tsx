@@ -1078,6 +1078,9 @@ export default function ForFoundersPage() {
                 { href: "/blog/compressing-pdfs-what-works", title: "Compressing PDFs: what actually works", desc: "The 3 real levers, with benchmark numbers." },
                 { href: "/blog/how-to-merge-pdfs", title: "How to merge PDFs: a 2026 guide", desc: "The 30-second version + 3 bookmark-preserving rules." },
                 { href: "/blog/splitting-large-pdfs-4gb-problem", title: "Splitting large PDFs: the 4 GB problem", desc: "Why the PDF spec caps files at ~4.7 GB and what to do." },
+                { href: "/for/designers", title: "GetPDFPro for Designers", desc: "Same toolkit, framed for graphic and UI designers." },
+                { href: "/for/legal", title: "GetPDFPro for Legal", desc: "Same toolkit, framed for attorneys and compliance." },
+                { href: "/for/businesses", title: "GetPDFPro for Businesses", desc: "Same toolkit, framed for small business and operations teams." },
               ].map((link) => (
                 <Link
                   key={link.href}

@@ -66,3 +66,9 @@ adsense-checklist.html
 
 # OpenNext Cloudflare build output
 /.open-next/
+/apps/web/.open-next/
+/apps/web/.wrangler/
+
+# TypeScript incremental build info (auto-regenerated)
+/*.tsbuildinfo
+/apps/web/tsconfig.tsbuildinfo
