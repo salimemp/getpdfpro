@@ -22,20 +22,20 @@ export function SiteHeader() {
         <Link href="/" className="flex items-center" aria-label="GetPDFPro home">
           {/* Light-mode logo (visible in light theme) */}
           <Image
-            src="/logo-light.png"
+            src="/logo-light-horizontal.png"
             alt="GetPDFPro"
-            width={160}
-            height={40}
-            className="h-9 w-auto block dark:hidden"
+            width={368}
+            height={45}
+            className="h-10 w-auto block dark:hidden"
             priority
           />
           {/* Dark-mode logo (visible in dark theme) */}
           <Image
-            src="/logo-dark.png"
+            src="/logo-dark-horizontal.png"
             alt="GetPDFPro"
-            width={160}
-            height={40}
-            className="h-9 w-auto hidden dark:block"
+            width={420}
+            height={45}
+            className="h-10 w-auto hidden dark:block"
             priority
           />
         </Link>
@@ -174,16 +174,16 @@ export function SiteFooter() {
         <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
           <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
             <Image
-              src="/logo-light.png"
+              src="/logo-light-horizontal.png"
               alt="GetPDFPro"
-              width={120}
+              width={245}
               height={30}
               className="h-7 w-auto block dark:hidden"
             />
             <Image
-              src="/logo-dark.png"
+              src="/logo-dark-horizontal.png"
               alt="GetPDFPro"
-              width={120}
+              width={280}
               height={30}
               className="h-7 w-auto hidden dark:block"
             />
