@@ -46,9 +46,14 @@ import {
 //   - Both include the primary keyword naturally
 // ───────────────────────────────────────────────────────────────────
 export const metadata: Metadata = {
-  title: `${SITE_NAME} for Technical Founders — In-Browser, Private, No Upload`,
+  // Title is 35 chars. With the layout's " | GetPDFPro" suffix, the
+  // final <title> is ~45 chars, within Google's 50-60 char display
+  // limit. Don't use a long dash-separated title here — Google's SERP
+  // truncates aggressively.
+  title: `${SITE_NAME} for Technical Founders`,
+  // Meta 156 chars, within the 150-160 sweet spot.
   description:
-    "The PDF toolkit built for engineers and technical founders. 39 tools, in-browser processing (no upload, no retention), 50 free tasks/day, transparent pricing. Privacy you can verify.",
+    "The PDF toolkit built for engineers. 39 PDF tools, in-browser processing (no upload, no retention, no ads). 50 free tasks/day, transparent $5.99/mo Pro tier.",
   keywords: [
     "pdf tool for developers",
     "pdf tool no upload",
