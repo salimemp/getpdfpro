@@ -443,7 +443,7 @@ export default function ForLegalPage() {
                 title="What &quot;true redaction&quot; means in PDF terms"
                 body={
                   <>
-                    A PDF stores text as drawing instructions in a content stream — &quot;show glyph X at coordinate Y.&quot; Visual redaction tools draw a black rectangle on top, but leave the original glyphs in the content stream. <strong>True redaction</strong> removes the glyphs and replaces the rectangle. We do both. The same applies to image redaction: we overwrite the underlying pixel data in the image XObject, not in an overlay layer. <a href="/blog/redact-pdf-properly" className="font-medium text-brand-600 hover:underline dark:text-brand-400">Read the technical walkthrough →</a>
+                    A PDF stores text as drawing instructions in a content stream — &quot;show glyph X at coordinate Y.&quot; Visual redaction tools draw a black rectangle on top, but leave the original glyphs in the content stream. <strong>True redaction</strong> removes the glyphs and replaces the rectangle. We do both. The same applies to image redaction: we overwrite the underlying pixel data in the image XObject, not in an overlay layer. <Link href="/blog/redact-pdf-properly" className="font-medium text-brand-600 hover:underline dark:text-brand-400">Read the technical walkthrough →</Link>
                   </>
                 }
               />
