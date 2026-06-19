@@ -59,8 +59,12 @@ class Settings(BaseSettings):
     gemini_pro_model: str = "gemini-1.5-pro"
 
     # ─── Resend (email) ───────────────────────────────────────
+    # NOTE: The from-email domain MUST be verified in Resend.
+    # Current verified domain: app.getpdfpro.com (subdomain).
+    # To use the cleaner apex `getpdfpro.com`, also verify it in
+    # https://resend.com/domains and change this to noreply@getpdfpro.com.
     resend_api_key: str = ""
-    resend_from_email: str = "GetPDFPro <noreply@getpdfpro.com>"
+    resend_from_email: str = "GetPDFPro <noreply@app.getpdfpro.com>"
 
     # ─── Stripe ───────────────────────────────────────────────
     stripe_secret_key: str = ""

@@ -79,8 +79,8 @@ export default function VsIlovepdfPage() {
             of 11 June 2026. Every GetPDFPro claim is from our
             deployed code at the time of writing. If you spot
             something out of date, email{" "}
-            <a href="mailto:salim@getpdfpro.com">
-              salim@getpdfpro.com
+            <a href="mailto:support@getpdfpro.com">
+              support@getpdfpro.com
             </a>{" "}
             and we&apos;ll fix it.
           </div>

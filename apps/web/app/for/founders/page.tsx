@@ -142,7 +142,7 @@ const faqs = [
   },
   {
     q: "What languages are supported?",
-    a: "The web interface is in English. The mobile app supports English and Hindi (with 12 more locales on the roadmap). The AI Translate tool (Pro) supports 12+ languages. The OCR tool supports 100+ languages via Tesseract. If you need a specific UI language, email salim@getpdfpro.com — the top requests get prioritized for the next release.",
+    a: "The web interface is in English. The mobile app supports English and Hindi (with 12 more locales on the roadmap). The AI Translate tool (Pro) supports 12+ languages. The OCR tool supports 100+ languages via Tesseract. If you need a specific UI language, email support@getpdfpro.com — the top requests get prioritized for the next release.",
   },
   {
     q: "What's your refund policy?",

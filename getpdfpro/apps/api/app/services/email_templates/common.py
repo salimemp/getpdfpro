@@ -28,14 +28,15 @@ BRAND_CARD = "#ffffff"          # card / panel
 BRAND_BORDER = "#e2e8f0"        # slate-200 — dividers
 BRAND_DANGER = "#dc2626"        # red-600 — destructive CTAs
 
-# Public CDN-served logo (square PNG). Kept as a single source of
-# truth so brand team can swap it without touching templates.
-LOGO_URL = "https://cdn.getpdfpro.com/email/logo.png"
+# Public logo (square PNG). Hosted on the web app — 256x256 email-optimized
+# version. If you ever set up a real CDN at cdn.getpdfpro.com, swap this
+# URL to point there for caching benefits.
+LOGO_URL = "https://app.getpdfpro.com/email-logo.png"
 LOGO_ALT = "GetPDFPro logo"
 
-SUPPORT_URL = "https://getpdfpro.com/support"
-PRIVACY_URL = "https://getpdfpro.com/privacy"
-TERMS_URL = "https://getpdfpro.com/terms"
+SUPPORT_URL = "https://app.getpdfpro.com/contact"
+PRIVACY_URL = "https://app.getpdfpro.com/privacy"
+TERMS_URL = "https://app.getpdfpro.com/terms"
 
 SUPPORTED_LOCALES = ("en", "es", "ar", "hi")
 DEFAULT_LOCALE = "en"

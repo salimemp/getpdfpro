@@ -72,8 +72,8 @@ export default function AboutPage() {
             <h2>Contact</h2>
             <p>
               Questions, feature requests, or bug reports? Email{" "}
-              <a href="mailto:salim@getpdfpro.com">
-                salim@getpdfpro.com
+              <a href="mailto:support@getpdfpro.com">
+                support@getpdfpro.com
               </a>
               . We read every message.
             </p>
