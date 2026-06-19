@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
-import { FileText, User, LogOut } from "lucide-react";
+import { User, LogOut } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/lib/auth";
 import { ThemeToggle } from "./ThemeToggle";
@@ -16,13 +17,27 @@ import { LocaleSwitcher } from "./LocaleSwitcher";
 export function SiteHeader() {
   const t = useTranslations("Site.nav");
   return (
-    <header className="border-b border-slate-200 dark:border-slate-800">
+    <header className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
       <div className="container-narrow flex h-16 items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 font-semibold">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white">
-            <FileText className="h-5 w-5" />
-          </div>
-          <span>GetPDFPro</span>
+        <Link href="/" className="flex items-center" aria-label="GetPDFPro home">
+          {/* Light-mode logo (visible in light theme) */}
+          <Image
+            src="/logo-light.png"
+            alt="GetPDFPro"
+            width={160}
+            height={40}
+            className="h-9 w-auto block dark:hidden"
+            priority
+          />
+          {/* Dark-mode logo (visible in dark theme) */}
+          <Image
+            src="/logo-dark.png"
+            alt="GetPDFPro"
+            width={160}
+            height={40}
+            className="h-9 w-auto hidden dark:block"
+            priority
+          />
         </Link>
         <nav className="hidden gap-6 text-sm text-slate-600 sm:flex dark:text-slate-300">
           <Link href="/tools" className="hover:text-slate-900 dark:hover:text-white">
@@ -157,10 +172,21 @@ export function SiteFooter() {
     <footer className="border-t border-slate-200 py-12 dark:border-slate-800">
       <div className="container-narrow">
         <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-          <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-            <div className="flex h-6 w-6 items-center justify-center rounded bg-brand-600 text-white">
-              <FileText className="h-3.5 w-3.5" />
-            </div>
+          <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
+            <Image
+              src="/logo-light.png"
+              alt="GetPDFPro"
+              width={120}
+              height={30}
+              className="h-7 w-auto block dark:hidden"
+            />
+            <Image
+              src="/logo-dark.png"
+              alt="GetPDFPro"
+              width={120}
+              height={30}
+              className="h-7 w-auto hidden dark:block"
+            />
             <span>{t("copyright", { year: new Date().getFullYear() })}</span>
           </div>
           <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-slate-600 dark:text-slate-400">

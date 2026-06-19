@@ -52,12 +52,21 @@ export const metadata: Metadata = {
     title: "GetPDFPro — The Professional PDF Toolkit",
     description:
       "Free, fast, private PDF tools. Merge, split, compress, convert, sign, and edit PDFs in your browser.",
+    images: [
+      {
+        url: "/og-default.png",
+        width: 1200,
+        height: 630,
+        alt: "GetPDFPro — 39 PDF tools, in-browser, zero upload",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "GetPDFPro — The Professional PDF Toolkit",
     description:
       "Free, fast, private PDF tools. Merge, split, compress, convert, sign, and edit PDFs in your browser.",
+    images: ["/og-default.png"],
   },
   robots: {
     index: true,
