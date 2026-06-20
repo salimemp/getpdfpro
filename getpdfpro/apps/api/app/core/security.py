@@ -27,19 +27,26 @@ logger = structlog.get_logger()
 # ─── Constants ─────────────────────────────────────────────────
 bearer_scheme = HTTPBearer(auto_error=False)
 
-# Strong password policy
-PASSWORD_MIN_LENGTH = 12
+# Password policy (matches frontend PasswordInput component):
+#   - At least 8 characters
+#   - At least 1 letter (a-z or A-Z)
+#   - At least 1 digit (0-9)
+#   - At least 1 special character (printable ASCII symbol)
+# Max 128 chars to match bcrypt's truncation behavior; longer passwords
+# silently fail otherwise.
+PASSWORD_MIN_LENGTH = 8
 PASSWORD_PATTERN = re.compile(
-    r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]).{12,128}$"
+    r"^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{}|;:'\"`,.<>?/~\\|]).{8,128}$"
 )
 
-# Common weak passwords (top 100, expand as needed)
+# Common weak passwords — checked case-insensitively before the
+# strength regex. Expand from https://github.com/danielmiessler/SecLists
 WEAK_PASSWORDS = frozenset(
     {
-        "password", "password123", "123456789012", "qwertyuiop12",
-        "iloveyou12345", "admin1234567", "welcome12345", "abc12345678",
-        "letmein12345", "1qaz2wsx3edc", "qwerty123456", "password12!",
-        # Add more from https://github.com/danielmiessler/SecLists
+        "password", "password1", "password123", "qwerty123", "qwerty1234",
+        "letmein1", "letmein123", "welcome1", "welcome123", "admin123",
+        "iloveyou1", "iloveyou123", "abc12345", "abc123456", "12345678",
+        "123456789", "1234567890", "qwertyuiop", "1q2w3e4r", "asdf1234",
     }
 )
 
@@ -62,21 +69,39 @@ class PasswordValidationError(ValueError):
 
 def validate_password_strength(password: str) -> None:
     """
-    Enforce strong password policy. Raises PasswordValidationError if weak.
+    Enforce password policy. Raises PasswordValidationError if weak.
 
     Rules:
-    - Min 12 characters
-    - Mix of upper + lower + digit + symbol
+    - Min 8 characters
+    - At least 1 letter (any case)
+    - At least 1 digit
+    - At least 1 special character
     - Not in common weak list
-    - Not breached (per HIBP)
     """
+    if not password or len(password) < PASSWORD_MIN_LENGTH:
+        raise PasswordValidationError(
+            f"Password must be at least {PASSWORD_MIN_LENGTH} characters"
+        )
+
     if password.lower() in WEAK_PASSWORDS:
         raise PasswordValidationError("Password is too common")
 
     if not PASSWORD_PATTERN.match(password):
-        raise PasswordValidationError(
-            "Password must be 12+ characters with upper, lower, digit, and symbol"
-        )
+        # Give the user a hint about which rule they missed
+        missing = []
+        if not re.search(r"[A-Za-z]", password):
+            missing.append("a letter")
+        if not re.search(r"\d", password):
+            missing.append("a number")
+        if not re.search(
+            r"[!@#$%^&*()_+\-=\[\]{}|;:'\"`,.<>?/~\\|]", password
+        ):
+            missing.append("a special character")
+        if missing:
+            hint = "Password needs " + ", ".join(missing)
+        else:
+            hint = "Password must contain a letter, a number, and a special character"
+        raise PasswordValidationError(hint)
 
 
 async def check_password_breached(password: str) -> bool:

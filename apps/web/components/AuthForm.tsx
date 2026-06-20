@@ -10,7 +10,12 @@ import {
   assertPasskey,
   listFactors,
 } from "@/lib/auth-mfa";
-import { Loader2, AlertCircle, Mail, Lock, User, KeyRound, Fingerprint } from "lucide-react";
+import {
+  PasswordInput,
+  PASSWORD_RULES,
+  type BreachStatus,
+} from "@/components/PasswordInput";
+import { Loader2, AlertCircle, Mail, User, KeyRound, Fingerprint } from "lucide-react";
 
 type Mode = "login" | "signup";
 
@@ -27,6 +32,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
   const [info, setInfo] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [oauthProvider, setOauthProvider] = useState<string | null>(null);
+  const [breachStatus, setBreachStatus] = useState<BreachStatus>("idle");
 
   // MFA state — only used in login mode.
   const [mfaStep, setMfaStep] = useState<
@@ -97,6 +103,27 @@ export function AuthForm({ mode }: { mode: Mode }) {
     e.preventDefault();
     setError(null);
     setInfo(null);
+
+    // Client-side gate for signup: enforce password rules + breach status
+    // before talking to Supabase. Server still re-validates.
+    if (mode === "signup") {
+      const missingRules = PASSWORD_RULES.filter((r) => !r.test(password));
+      if (missingRules.length > 0) {
+        setError(
+          `Password needs: ${missingRules.map((r) => r.label.toLowerCase()).join(", ")}.`
+        );
+        return;
+      }
+      if (breachStatus === "breached") {
+        setError(
+          "This password has appeared in known data breaches. Please choose a different one."
+        );
+        return;
+      }
+      // Note: when breachStatus === "checking", we let the request
+      // through — the server re-runs HIBP and will reject if breached.
+    }
+
     startTransition(async () => {
       try {
         if (mode === "login") {
@@ -441,18 +468,15 @@ export function AuthForm({ mode }: { mode: Mode }) {
           >
             Password
           </label>
-          <div className="relative mt-1">
-            <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input
+          <div className="mt-1">
+            <PasswordInput
               id="password"
-              type="password"
-              autoComplete={mode === "login" ? "current-password" : "new-password"}
-              required
-              minLength={6}
+              mode={mode}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="At least 6 characters"
-              className="w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-3 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              onChange={setPassword}
+              autoComplete={mode === "login" ? "current-password" : "new-password"}
+              onBreachStatusChange={setBreachStatus}
+              data-testid="password"
             />
           </div>
         </div>
