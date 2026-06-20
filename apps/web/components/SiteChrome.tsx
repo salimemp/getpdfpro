@@ -19,25 +19,34 @@ export function SiteHeader() {
   return (
     <header className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
       <div className="container-narrow flex h-16 items-center justify-between">
-        <Link href="/" className="flex items-center" aria-label="GetPDFPro home">
-          {/* Light-mode logo (visible in light theme) */}
+        <Link
+          href="/"
+          className="flex items-center gap-2.5"
+          aria-label="GetPDFPro home"
+        >
+          {/* Icon (renders crisp at any size) */}
           <Image
-            src="/logo-light-horizontal.png"
-            alt="GetPDFPro"
-            width={368}
-            height={45}
-            className="h-10 w-auto block dark:hidden"
+            src="/logo-icon-light.png"
+            alt=""
+            width={36}
+            height={36}
+            className="h-9 w-9 block dark:hidden"
             priority
           />
-          {/* Dark-mode logo (visible in dark theme) */}
           <Image
-            src="/logo-dark-horizontal.png"
-            alt="GetPDFPro"
-            width={420}
-            height={45}
-            className="h-10 w-auto hidden dark:block"
+            src="/logo-icon-dark.png"
+            alt=""
+            width={36}
+            height={36}
+            className="h-9 w-9 hidden dark:block"
             priority
           />
+          {/* Wordmark as HTML so text scales perfectly and respects theme */}
+          <span className="text-[22px] font-extrabold leading-none tracking-tight">
+            <span className="text-slate-900 dark:text-white">Get</span>
+            <span className="text-brand-500">PDF</span>
+            <span className="text-slate-900 dark:text-white">Pro</span>
+          </span>
         </Link>
         <nav className="hidden gap-6 text-sm text-slate-600 sm:flex dark:text-slate-300">
           <Link href="/tools" className="hover:text-slate-900 dark:hover:text-white">
@@ -172,21 +181,25 @@ export function SiteFooter() {
     <footer className="border-t border-slate-200 py-12 dark:border-slate-800">
       <div className="container-narrow">
         <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-          <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
+          <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
             <Image
-              src="/logo-light-horizontal.png"
-              alt="GetPDFPro"
-              width={245}
-              height={30}
-              className="h-7 w-auto block dark:hidden"
+              src="/logo-icon-light.png"
+              alt=""
+              width={22}
+              height={22}
+              className="h-5 w-5 block dark:hidden"
             />
             <Image
-              src="/logo-dark-horizontal.png"
-              alt="GetPDFPro"
-              width={280}
-              height={30}
-              className="h-7 w-auto hidden dark:block"
+              src="/logo-icon-dark.png"
+              alt=""
+              width={22}
+              height={22}
+              className="h-5 w-5 hidden dark:block"
             />
+            <span className="font-extrabold text-slate-900 dark:text-white">
+              Get<span className="text-brand-500">PDF</span>Pro
+            </span>
+            <span className="text-slate-400 dark:text-slate-600">·</span>
             <span>{t("copyright", { year: new Date().getFullYear() })}</span>
           </div>
           <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-slate-600 dark:text-slate-400">
