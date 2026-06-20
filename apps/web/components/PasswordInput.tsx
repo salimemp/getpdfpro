@@ -64,7 +64,8 @@ function scorePassword(p: string): {
   label: string;
 } {
   if (!p) {
-    return { score: 0, level: "empty", pct: 0, color: "bg-slate-200 dark:bg-slate-800", label: "" };
+    // Empty placeholder state — all gray segments, neutral label
+    return { score: 0, level: "empty", pct: 0, color: "bg-slate-200 dark:bg-slate-800", label: "Type to start" };
   }
   const score = PASSWORD_RULES.filter((r) => r.test(p)).length;
   switch (score) {
@@ -205,7 +206,7 @@ export function PasswordInput({
     };
   }, []);
 
-  const showMeter = mode === "signup" && value.length > 0;
+  const showMeter = mode === "signup";
   const showRules = mode === "signup";
   const showBreachWarning = mode === "signup" && breachStatus === "breached";
 
@@ -274,8 +275,8 @@ export function PasswordInput({
         </div>
       )}
 
-      {/* Rule checklist — only on signup */}
-      {showRules && value.length > 0 && (
+      {/* Rule checklist — only on signup, always visible so users see the rules upfront */}
+      {showRules && (
         <ul
           className="space-y-1 text-xs"
           aria-label="Password requirements"

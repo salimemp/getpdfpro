@@ -77,17 +77,24 @@ describe("PasswordInput", () => {
   });
 
   describe("rule checklist", () => {
-    it("does not render the checklist before the user types", () => {
+    it("renders the checklist in signup mode even with empty input (rules upfront)", () => {
       renderPasswordInput({ value: "" });
+      expect(
+        screen.getByRole("list", { name: /password requirements/i }),
+      ).toBeInTheDocument();
+    });
+
+    it("renders 4 rule items in signup mode", () => {
+      renderPasswordInput({ value: "" });
+      const list = screen.getByRole("list", { name: /password requirements/i });
+      expect(list.children).toHaveLength(4);
+    });
+
+    it("does NOT render the checklist in login mode", () => {
+      renderPasswordInput({ value: "anything", mode: "login" });
       expect(
         screen.queryByRole("list", { name: /password requirements/i }),
       ).not.toBeInTheDocument();
-    });
-
-    it("renders 4 rule items once the user types", () => {
-      renderPasswordInput({ value: "a" });
-      const list = screen.getByRole("list", { name: /password requirements/i });
-      expect(list.children).toHaveLength(4);
     });
 
     it("marks passed rules with the success color class", () => {
@@ -108,9 +115,11 @@ describe("PasswordInput", () => {
   });
 
   describe("strength meter", () => {
-    it("renders the meter in signup mode after typing", () => {
-      renderPasswordInput({ value: "a" });
+    it("renders the meter in signup mode even with empty input (placeholder state)", () => {
+      renderPasswordInput({ value: "" });
       expect(screen.getByRole("status")).toBeInTheDocument();
+      // Empty placeholder label
+      expect(screen.getByText("Type to start")).toBeInTheDocument();
     });
 
     it("does NOT render the meter in login mode", () => {
