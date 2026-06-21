@@ -206,7 +206,11 @@ export function PasswordInput({
     };
   }, []);
 
-  const showMeter = mode === "signup";
+  // Visual feedback (strength meter) is always shown when there's a
+  // password — users expect a strength indicator on any password field.
+  // The hard rules (8+ chars, letter, number, special) and the breach
+  // check only apply when creating a NEW password (signup mode).
+  const showMeter = true;
   const showRules = mode === "signup";
   const showBreachWarning = mode === "signup" && breachStatus === "breached";
 
