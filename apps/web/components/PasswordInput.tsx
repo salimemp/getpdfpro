@@ -164,11 +164,21 @@ export function PasswordInput({
     }
   }, [breachStatus, mode, onBreachStatusChange]);
 
-  // Debounced breach check — only meaningful in signup mode, and only
-  // when the password is locally strong (avoid wasting calls on "a").
+  // Debounced breach check — runs on BOTH login and signup modes.
+  //
+  // Gate conditions:
+  //   - signup: wait for all 4 rules to pass (length / letter / number / special)
+  //     so we don't waste calls on obviously-weak inputs that we'll reject
+  //   - login: only wait for >= 6 chars (any real password is at least
+  //     this long; below that, we're probably still typing). Existing
+  //     passwords may not meet the new 8-char rule, so we can't gate on it.
   useEffect(() => {
-    if (mode !== "signup") return;
-    if (!passedAllRules || value.length < 8) {
+    const minLength = mode === "signup" ? 8 : 6;
+    const readyToCheck =
+      value.length >= minLength &&
+      (mode === "login" || passedAllRules);
+
+    if (!readyToCheck) {
       setBreachStatus("idle");
       return;
     }
@@ -206,13 +216,16 @@ export function PasswordInput({
     };
   }, []);
 
-  // Visual feedback (strength meter) is always shown when there's a
-  // password — users expect a strength indicator on any password field.
-  // The hard rules (8+ chars, letter, number, special) and the breach
-  // check only apply when creating a NEW password (signup mode).
-  const showMeter = true;
+  // The strength meter and rule checklist only show on signup — login
+  // is for existing users and showing 'Weak' on a password they can't
+  // change from this screen is just noise.
+  //
+  // The HIBP breach check, however, ALWAYS runs. If the user is signing
+  // in with a known-breached password, we surface a warning so they
+  // can go to /account and change it. This applies to login too.
+  const showMeter = mode === "signup";
   const showRules = mode === "signup";
-  const showBreachWarning = mode === "signup" && breachStatus === "breached";
+  const showBreachWarning = breachStatus === "breached";
 
   return (
     <div className="space-y-2">

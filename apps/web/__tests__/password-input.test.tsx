@@ -122,9 +122,9 @@ describe("PasswordInput", () => {
       expect(screen.getByText("Type to start")).toBeInTheDocument();
     });
 
-    it("renders the meter in LOGIN mode too (informational, not gated)", () => {
+    it("does NOT render the meter in login mode (signup-only)", () => {
       renderPasswordInput({ mode: "login", value: "anything" });
-      expect(screen.getByRole("status")).toBeInTheDocument();
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
     });
 
     it("displays 'Strong' label when all 4 rules pass", () => {
