@@ -38,9 +38,17 @@ export const metadata: Metadata = {
   creator: "GetPDFPro",
   publisher: "GetPDFPro",
   icons: {
+    // Browsers pick the largest PNG that fits their use case. Most
+    // modern browsers (Chrome 80+, Firefox, Safari) prefer 32x32 for
+    // the tab favicon. The .ico is the legacy fallback for older IE.
     icon: [
       { url: "/favicon.ico", sizes: "any" },
-      { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
+      { url: "/favicon-32.png", type: "image/png", sizes: "32x32" },
+      { url: "/favicon-48.png", type: "image/png", sizes: "48x48" },
+      { url: "/favicon-64.png", type: "image/png", sizes: "64x64" },
+      { url: "/favicon-128.png", type: "image/png", sizes: "128x128" },
+      { url: "/favicon-256.png", type: "image/png", sizes: "256x256" },
+      { url: "/favicon-512.png", type: "image/png", sizes: "512x512" },
     ],
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
   },
