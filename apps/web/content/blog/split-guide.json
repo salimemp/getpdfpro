@@ -1,0 +1,114 @@
+{
+  "title": "Splitting Large PDFs: The 4.7 GB Problem",
+  "description": "Learn how to split PDF pages efficiently with GetPDFPro, addressing common challenges like the 4.7 GB file size limit and extracting specific pages from large documents.",
+  "excerpt": "Splitting PDF pages is a crucial task for managing large documents, especially when dealing with files that approach the technical 4.7 GB size limit. GetPDFPro offers flexible methods to separate PDF pages by count, range, or bookmark.",
+  "tags": [
+    "split-pdf",
+    "pdf-management",
+    "large-files",
+    "organize",
+    "pdf-spec"
+  ],
+  "sections": [
+    {
+      "type": "p",
+      "text": "To split PDF pages, you can use a browser-based tool like GetPDFPro to precisely separate documents into smaller, more manageable files. This process is essential for tasks like extracting specific pages from a PDF or breaking down oversized documents that exceed technical specifications, ensuring they remain valid and usable."
+    },
+    {
+      "type": "h2",
+      "text": "The 30-second version"
+    },
+    {
+      "type": "ol",
+      "items": [
+        "Navigate to GetPDFPro's [Split PDF tool](/tools/split).",
+        "Upload the PDF document you wish to split.",
+        "Choose your preferred splitting method: by a fixed page count, specific page ranges, or existing bookmarks within the document.",
+        "Initiate the split process, and then download a ZIP file containing your newly separated PDF documents, each corresponding to a defined page range or section."
+      ]
+    },
+    {
+      "type": "h2",
+      "text": "Why Splitting PDFs is Essential: Addressing File Limits and Organization"
+    },
+    {
+      "type": "p",
+      "text": "Managing large PDF documents often presents unique challenges, from sharing specific sections to ensuring file integrity. The ability to separate PDF pages is fundamental for efficient document workflows, allowing you to extract pages from PDF documents with precision. One of the most significant technical reasons to split PDFs stems from a core limitation within the PDF specification itself. The cross-reference table, which is vital for mapping object locations within a PDF, uses 10-digit byte offsets [2]. This constraint means that any file larger than approximately 4.7 GB cannot be a valid PDF, as its internal structure cannot correctly reference data beyond this size [2]. Splitting such large documents into smaller, compliant files is the standard and often only workaround. After splitting, you might also find it useful to [merge several PDFs back together](/tools/merge) in a new configuration or [compress individual files](/tools/compress) for easier distribution."
+    },
+    {
+      "type": "table",
+      "headers": [
+        "PDF Specification Detail",
+        "Value / Impact"
+      ],
+      "rows": [
+        [
+          "Cross-reference table byte offset",
+          "10 digits [2]"
+        ],
+        [
+          "Maximum valid PDF file size",
+          "~4.7 GB [2]"
+        ],
+        [
+          "Standard workaround for large files",
+          "Splitting into smaller PDFs"
+        ]
+      ]
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "text": "Did you know? PDFs larger than ~4.7 GB are technically invalid due to the 10-digit byte offset limitation in the PDF specification's cross-reference table. Splitting is the official workaround to maintain document integrity and usability! [2]"
+    },
+    {
+      "type": "h2",
+      "text": "GetPDFPro's Flexible Splitting Modes"
+    },
+    {
+      "type": "p",
+      "text": "GetPDFPro's Split PDF tool provides three distinct modes, offering precise control to separate PDF pages and cater to a wide array of needs, whether you're extracting specific pages from a PDF or simply breaking down a large document [1]."
+    },
+    {
+      "type": "ul",
+      "items": [
+        "**By Page Count**: This mode is ideal for uniformly separating a large document into smaller, equal-sized chunks. For example, you can split a 100-page PDF into 10 separate 10-page documents, perfect for batch processing or distributing sections evenly.",
+        "**By Page Ranges**: Offering granular control, this option allows you to define custom ranges (e.g., \"1-5, 10-12, 20\") to extract specific pages from PDF documents. This is particularly useful for isolating chapters, appendices, or specific reports within a larger file.",
+        "**By Bookmark**: If your PDF contains an organized bookmark structure, GetPDFPro can leverage these as natural break points. This mode creates a new PDF for each top-level bookmark section, providing an efficient way to separate PDF pages based on their logical and pre-defined structure."
+      ]
+    },
+    {
+      "type": "h3",
+      "text": "Practical Applications for Separated PDFs"
+    },
+    {
+      "type": "p",
+      "text": "Beyond overcoming technical file size limits, separating PDF pages is invaluable for many everyday tasks. You might need to extract a single report from a lengthy annual document for a colleague, share only a specific chapter of an e-book with a student, or reorganize a scanned document by pulling out blank pages and reordering the rest. The ability to precisely control which pages are extracted and how they are grouped makes managing digital documents significantly easier and more efficient. For further organization, you can also use the [reorder pages tool](/tools/reorder) after splitting to fine-tune the sequence of your new documents or combine them in a new order."
+    },
+    {
+      "type": "h2",
+      "text": "Try it"
+    },
+    {
+      "type": "p",
+      "text": "Ready to split your PDFs with precision and ease, whether to manage file size or extract specific content? Try it free at [GetPDFPro's Split PDF tool](/tools/split)."
+    }
+  ],
+  "sources": [
+    {
+      "label": "GetPDFPro source: apps/web/app/tools/split/page.tsx",
+      "url": "apps/web/app/tools/split/page.tsx",
+      "accessedOn": "2026-06-28"
+    },
+    {
+      "label": "PDF specification (Adobe open source)",
+      "url": "https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/PDF32000_2008.pdf",
+      "accessedOn": "2026-06-28"
+    }
+  ],
+  "slug": "split-guide",
+  "date": "2026-06-28",
+  "author": "GetPDFPro",
+  "cover": "/blog/cover-split-guide.webp",
+  "readingMinutes": 3
+}
