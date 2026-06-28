@@ -158,6 +158,27 @@ def call_gemini(prompt: str, model: str | None = None) -> dict[str, Any]:
     """
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
+        # Fallback: read from the mavis agent env file when the cron shell
+        # doesn't have GEMINI_API_KEY set. Lets the daily cron fire even if
+        # the user hasn't added the key to their shell profile.
+        env_path = os.path.expanduser("~/.mavis/agents/mavis/.env")
+        if os.path.isfile(env_path):
+            try:
+                with open(env_path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if not line or line.startswith("#"):
+                            continue
+                        if "=" in line:
+                            k, _, v = line.partition("=")
+                            k = k.strip()
+                            v = v.strip().strip('"').strip("'")
+                            if k not in os.environ:
+                                os.environ[k] = v
+                api_key = os.environ.get("GEMINI_API_KEY")
+            except OSError:
+                pass
+    if not api_key:
         raise RuntimeError(
             "GEMINI_API_KEY env var not set. "
             "The blog generator needs a Gemini API key to write posts. "
