@@ -9,6 +9,137 @@ import type { BlogPost } from "./blog";
 
 export const GENERATED_POSTS: BlogPost[] = [
   {
+    "title": "Delete Pages from PDF: A GetPDFPro Guide",
+    "description": "Learn how to quickly delete pages from your PDF documents using GetPDFPro's browser-based toolkit. Remove unwanted pages efficiently and precisely.",
+    "excerpt": "To delete pages from a PDF, use GetPDFPro's Add / Remove Pages tool to either remove specific pages or select only the ones you wish to keep. The process is intuitive, leveraging a live page thumbnail strip for direct interaction.",
+    "tags": [
+      "pdf-editing",
+      "delete-pages",
+      "organize",
+      "tutorial"
+    ],
+    "sections": [
+      {
+        "type": "p",
+        "text": "To delete pages from a PDF, GetPDFPro provides a straightforward, browser-based solution through its Add / Remove Pages tool. This allows you to precisely remove unwanted pages or isolate only the necessary ones, streamlining your documents without complex software."
+      },
+      {
+        "type": "h2",
+        "text": "The 30-second version"
+      },
+      {
+        "type": "ol",
+        "items": [
+          "Navigate to GetPDFPro's [Add / Remove Pages tool](/tools/add-remove-pages).",
+          "Upload your PDF document from your device.",
+          "On the live page thumbnail strip, click to select the pages you want to delete, or choose the option to keep only specific pages [1].",
+          "Confirm your selection and download your modified PDF."
+        ]
+      },
+      {
+        "type": "h2",
+        "text": "Understanding GetPDFPro's Page Management"
+      },
+      {
+        "type": "p",
+        "text": "Managing pages within a PDF document is a common requirement, whether for removing sensitive information, excising blank sheets, or simply reducing file size. GetPDFPro's Add / Remove Pages tool is engineered for this specific task, offering a direct and visual approach to modify your PDF's structure. It's designed to make the process of how to delete pdf page as simple as possible, without requiring any software installation."
+      },
+      {
+        "type": "callout",
+        "tone": "tip",
+        "text": "GetPDFPro's Add / Remove Pages tool offers a unique click-to-remove UI directly on a live page thumbnail strip, making page deletion intuitive and precise [1]."
+      },
+      {
+        "type": "h3",
+        "text": "Two Approaches to Removing Pages"
+      },
+      {
+        "type": "p",
+        "text": "The tool supports two primary methods for page removal, catering to different workflows. You can either actively delete specific pages you no longer need or, conversely, select only the pages you wish to keep, effectively discarding all others. Both methods leverage the same interactive interface, ensuring a consistent user experience when you need to remove pages from pdf documents."
+      },
+      {
+        "type": "table",
+        "headers": [
+          "Method",
+          "Description",
+          "Primary Use Case"
+        ],
+        "rows": [
+          [
+            "Delete Specific Pages",
+            "Select individual pages to mark them for removal. The remaining pages form your new document.",
+            "Removing a few unwanted pages, such as blank pages, cover sheets, or outdated content."
+          ],
+          [
+            "Keep Only Selected Pages",
+            "Choose the specific pages you want to retain. All unselected pages will be discarded.",
+            "Extracting a subset of pages from a larger document, like a specific chapter or section for sharing."
+          ]
+        ]
+      },
+      {
+        "type": "h2",
+        "text": "Step-by-Step: How to Delete PDF Pages"
+      },
+      {
+        "type": "ol",
+        "items": [
+          "**Access the Tool:** Open your web browser and navigate directly to the [Add / Remove Pages tool](/tools/add-remove-pages) on GetPDFPro.",
+          "**Upload Your PDF:** Click the 'Upload PDF' button and select the document from your computer. The tool will process it and display a thumbnail preview of each page.",
+          "**Select Pages for Deletion:** Review the page thumbnails. To delete specific pages, simply click on the thumbnail of each page you wish to remove. A visual indicator (e.g., a red X or a grayed-out state) will confirm your selection [1].",
+          "**Alternatively, Keep Only Desired Pages:** If your goal is to extract a few pages from a large document, you can select only the pages you want to keep. The tool will then generate a new PDF containing only these selected pages.",
+          "**Process and Download:** Once your selections are complete, click the 'Apply Changes' or 'Process PDF' button. GetPDFPro will quickly generate your new PDF. Download the modified file to your device."
+        ]
+      },
+      {
+        "type": "h3",
+        "text": "Precision Deletion with Thumbnail Previews"
+      },
+      {
+        "type": "p",
+        "text": "The core of GetPDFPro's page deletion functionality lies in its interactive, live page thumbnail strip [1]. This visual interface allows you to see every page of your document at a glance, enabling precise control over which pages to delete. You can quickly scroll through, identify, and click to remove pages, ensuring that no critical content is accidentally discarded. This visual feedback is crucial for maintaining accuracy, especially when dealing with lengthy documents or when you need to [reorder pages](/tools/reorder-pages) after deletion."
+      },
+      {
+        "type": "h2",
+        "text": "When to Remove Pages from a PDF"
+      },
+      {
+        "type": "ul",
+        "items": [
+          "**Reducing File Size:** Removing unnecessary pages, especially those with heavy graphics, can significantly reduce the overall file size. For further optimization, consider using our [Compress PDF tool](/tools/compress-pdf).",
+          "**Extracting Specific Content:** When you only need a few pages from a larger report or book, deleting the rest creates a focused, smaller document.",
+          "**Removing Sensitive Information:** Before sharing a document, you might need to delete pdf page containing confidential data.",
+          "**Correcting Errors:** If a document contains duplicate or erroneous pages, removing them ensures the final version is clean and accurate.",
+          "**Preparing for Print:** Deleting blank pages or introductory sections can save printing costs and paper."
+        ]
+      },
+      {
+        "type": "p",
+        "text": "Whether you're preparing a document for distribution, archiving, or simply tidying up, the ability to efficiently remove pages from pdf files is invaluable. This tool complements other organizational features, such as the ability to [split large PDFs](/tools/split-pdf) into smaller, more manageable files."
+      },
+      {
+        "type": "h2",
+        "text": "Try it"
+      },
+      {
+        "type": "p",
+        "text": "Ready to streamline your PDF documents? Try it free at [GetPDFPro's Add / Remove Pages tool](/tools/add-remove-pages)."
+      }
+    ],
+    "sources": [
+      {
+        "label": "GetPDFPro source: apps/web/app/tools/add-remove-pages/page.tsx",
+        "url": "apps/web/app/tools/add-remove-pages/page.tsx",
+        "accessedOn": "2026-07-04"
+      }
+    ],
+    "slug": "add-remove-pages-guide",
+    "date": "2026-07-04",
+    "author": "GetPDFPro",
+    "cover": "/blog/cover-add-remove-pages-guide.webp",
+    "readingMinutes": 3
+  },
+  {
     "title": "Reorder PDF Pages: A Technical Guide to Arranging Documents",
     "description": "Learn how to reorder PDF pages efficiently with GetPDFPro. Our browser-based tool lets you arrange and move pages without re-encoding content, preserving document quality and integrity.",
     "excerpt": "To reorder PDF pages, GetPDFPro allows you to visually drag and drop pages into any desired sequence, performing a metadata-level operation that preserves original content streams. This method ensures your document's quality remains intact while you arrange its structure.",
