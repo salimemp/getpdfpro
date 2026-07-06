@@ -1,0 +1,150 @@
+{
+  "title": "How to Extract Pages from PDF Documents",
+  "description": "Learn how to easily extract pages from PDF documents with GetPDFPro. Select, save specific PDF pages, and pull pages from PDF files while maintaining original quality.",
+  "excerpt": "To extract pages from a PDF, use a browser-based tool like GetPDFPro's Extract Pages feature to select and save only the specific pages you need into a new document.",
+  "tags": [
+    "extract-pages",
+    "pdf-organize",
+    "tutorial",
+    "document-management"
+  ],
+  "sections": [
+    {
+      "type": "p",
+      "text": "Extracting specific pages from a PDF allows you to create a new document containing only the relevant information, streamlining your workflow and reducing file clutter. Whether you need to pull pages from a lengthy report or save specific PDF pages for a presentation, GetPDFPro offers a straightforward, browser-based solution."
+    },
+    {
+      "type": "h2",
+      "text": "The 30-second version"
+    },
+    {
+      "type": "ol",
+      "items": [
+        "Navigate to the GetPDFPro [Extract Pages tool](/tools/extract-pages).",
+        "Upload your PDF document by dragging and dropping or selecting it from your device.",
+        "Visually select the pages you wish to extract using the intuitive interface.",
+        "Confirm your selection and click the 'Extract' button.",
+        "Download your new PDF containing only the selected pages."
+      ]
+    },
+    {
+      "type": "h2",
+      "text": "Why You Might Need to Extract Pages"
+    },
+    {
+      "type": "p",
+      "text": "There are numerous scenarios where you'll want to extract pages from a PDF. Perhaps you've received a large document, but only a few pages are pertinent to your task. Instead of sharing the entire file, you can efficiently save specific PDF pages, creating a focused document that's easier to distribute and manage. This is particularly useful for legal documents, academic papers, or lengthy reports where only certain sections are relevant to a particular audience."
+    },
+    {
+      "type": "h3",
+      "text": "Common Use Cases"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "**Sharing Specific Sections:** Send only the relevant parts of a document to colleagues or clients.",
+        "**Creating Handouts:** Pull pages from a larger presentation or textbook to create concise handouts.",
+        "**Archiving:** Isolate important sections for long-term storage without keeping the entire original file.",
+        "**Combining Documents:** Extract pages from multiple PDFs and then use a tool like [Merge PDF](/tools/merge-pdf) to combine them into a new, consolidated document."
+      ]
+    },
+    {
+      "type": "h2",
+      "text": "Maintaining Document Quality During Extraction"
+    },
+    {
+      "type": "p",
+      "text": "A common concern when modifying PDFs is the potential loss of quality or changes in formatting. Many tools re-encode PDF content during processing, which can lead to larger file sizes or visual degradation. GetPDFPro's Extract Pages tool is engineered to avoid these issues, ensuring your extracted pages are identical to their source."
+    },
+    {
+      "type": "callout",
+      "tone": "tip",
+      "text": "When you extract pages with GetPDFPro, the original page objects are reused, not re-encoded. This critical detail ensures that the output PDF maintains the exact same quality as your input document [1]."
+    },
+    {
+      "type": "p",
+      "text": "This means that fonts, images, and vector graphics within your selected pages will retain their original fidelity. You won't encounter pixelation, blurry text, or unexpected file size increases, which is a significant advantage, especially for documents where visual precision is paramount."
+    },
+    {
+      "type": "h2",
+      "text": "Step-by-Step: How to Pull Pages from PDF with GetPDFPro"
+    },
+    {
+      "type": "ol",
+      "items": [
+        "**Access the Tool:** Open your web browser and navigate to the GetPDFPro [Extract Pages tool](/tools/extract-pages). No software installation is required.",
+        "**Upload Your PDF:** Click the 'Upload PDF' button or simply drag and drop your PDF file into the designated area. The tool will quickly process and display your document.",
+        "**Select Pages:** You'll see thumbnails of all pages in your PDF. Click on each page you wish to extract. Selected pages will be highlighted. You can select individual pages, a range (e.g., 5-10), or even non-contiguous pages (e.g., 1, 3, 7).",
+        "**Review and Confirm:** Double-check your selected pages to ensure you've included everything you need and excluded what you don't.",
+        "**Initiate Extraction:** Click the 'Extract' button. GetPDFPro will then generate a new PDF containing only your chosen pages.",
+        "**Download Your New PDF:** Once the process is complete, a download link will appear. Click it to save your newly extracted PDF to your device."
+      ]
+    },
+    {
+      "type": "h3",
+      "text": "Comparing Extraction Methods"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "Feature",
+        "GetPDFPro Extract Pages",
+        "Typical Desktop Software / Online Converters"
+      ],
+      "rows": [
+        [
+          "Page Object Handling",
+          "Reused, not re-encoded [1]",
+          "Often re-encoded"
+        ],
+        [
+          "Output Quality",
+          "Matches input exactly [1]",
+          "May degrade due to re-encoding"
+        ],
+        [
+          "Ease of Access",
+          "Browser-based, no installation",
+          "Requires software installation or specific OS"
+        ],
+        [
+          "File Size Impact",
+          "Optimized, often smaller than re-encoded output",
+          "Can increase if re-encoded inefficiently"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "This table highlights a key differentiator: GetPDFPro's commitment to preserving the original document integrity. While many tools might offer similar functionality, the underlying technical approach significantly impacts the final output. For tasks requiring high fidelity, such as preparing documents for print or professional review, this distinction is crucial."
+    },
+    {
+      "type": "h3",
+      "text": "Beyond Extraction: Related PDF Operations"
+    },
+    {
+      "type": "p",
+      "text": "Once you've mastered how to extract pages from PDF, you might find other GetPDFPro tools useful for further document refinement. For instance, after you pull pages from pdf, you might want to [Compress PDF](/tools/compress-pdf) to reduce its file size for email attachments, or if you've extracted pages from multiple sources, you could use the [Merge PDF](/tools/merge-pdf) tool to combine them into a single, cohesive document. For more advanced organization, consider exploring options to [Split PDF](/tools/split-pdf) into multiple smaller files."
+    },
+    {
+      "type": "h2",
+      "text": "Try it"
+    },
+    {
+      "type": "p",
+      "text": "Ready to streamline your document management? Experience the simplicity and quality of GetPDFPro's extraction tool. Try it free at [/tools/extract-pages](https://getpdfpro.com/tools/extract-pages)."
+    }
+  ],
+  "sources": [
+    {
+      "label": "GetPDFPro source: apps/web/app/tools/extract-pages/page.tsx",
+      "url": "apps/web/app/tools/extract-pages/page.tsx",
+      "accessedOn": "2026-07-06"
+    }
+  ],
+  "slug": "extract-pages-guide",
+  "date": "2026-07-06",
+  "author": "GetPDFPro",
+  "cover": "/blog/cover-extract-pages-guide.webp",
+  "readingMinutes": 3
+}
