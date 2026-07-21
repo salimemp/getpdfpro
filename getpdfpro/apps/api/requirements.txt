@@ -24,7 +24,7 @@ redis==5.1.1
 
 # PDF engine
 pymupdf==1.24.13      # MuPDF bindings
-pillow==11.0.0
+pillow==12.3.0
 pytesseract==0.3.13   # OCR (optional, Tesseract)
 
 # AI
